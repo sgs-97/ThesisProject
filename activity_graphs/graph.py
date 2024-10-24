@@ -86,6 +86,12 @@ for i, sensor_name in enumerate(sensor_names):
     plot_data = []
     intervals = sensor_intervals[sensor_name]
 
+    # If the first event is a start time, set inactive from the beginning
+    if pd.to_datetime(intervals[0]['Start Time']) > pd.to_datetime(df['Time'].min()):
+        plot_data.append({'Time': df['Time'].min(), 'Y': 0})  # Inactive from start
+        plot_data.append({'Time': intervals[0]['Start Time'] - pd.Timedelta(milliseconds=1), 'Y': 0})
+
+
     # Create plot data for the sensor, including inactive states between intervals
     for i in range(len(intervals)):
         # Add active interval
@@ -96,6 +102,21 @@ for i, sensor_name in enumerate(sensor_names):
         if i < len(intervals) - 1:
             plot_data.append({'Time': intervals[i]['Stop Time'] + pd.Timedelta(milliseconds=1), 'Y': 0})  # After stop (inactive)
             plot_data.append({'Time': intervals[i+1]['Start Time'] - pd.Timedelta(milliseconds=1), 'Y': 0})  # Before next start (inactive)
+
+
+    # Handle what happens after the last interval
+    last_interval = intervals[-1]
+    
+    if pd.to_datetime(last_interval['Stop Time']) >= pd.to_datetime(last_interval['Start Time']):
+        # If last interval ends with a stop, make sensor inactive for the rest of the graph
+        plot_data.append({'Time': last_interval['Stop Time'] + pd.Timedelta(milliseconds=1), 'Y': 0})  # After stop (inactive)
+        plot_data.append({'Time': df['Time'].max(), 'Y': 0})  # Inactive until the end of the graph
+    
+    elif pd.to_datetime(last_interval['Start Time']) > pd.to_datetime(last_interval['Stop Time']):
+        # If last interval ends with a start, make sensor active for the rest of the graph
+        plot_data.append({'Time': last_interval['Start Time'], 'Y': 1})  # Active after last start
+        plot_data.append({'Time': df['Time'].max(), 'Y': 1})  # Active until the end of the graph
+
 
     # Ensure sensor returns to inactive state after the last stop
     plot_data.append({'Time': intervals[-1]['Stop Time'] + pd.Timedelta(milliseconds=1), 'Y': 0})
@@ -116,10 +137,13 @@ for i, sensor_name in enumerate(sensor_names):
     ))
     j+=1
 
+graph_start_time = pd.to_datetime(df['Time'].min())  # Start of the graph (can be customized)
+graph_end_time = pd.to_datetime(df['Time'].max())    # End of the graph (can be customized)
+
 # Set title and labels
 fig.update_layout(
     title='Sensor Start/Stop Intervals',
-    xaxis_title='Time',
+    xaxis=dict(range=[graph_start_time,graph_end_time],title='Time'),
     yaxis_title='Sensor Active (1=Active, 0=Inactive)',
     yaxis=dict(tickvals=[0, 1], ticktext=['Inactive', 'Active'])  # Customize Y-axis ticks
 )
