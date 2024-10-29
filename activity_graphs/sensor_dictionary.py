@@ -45,49 +45,7 @@ my_dict = [
     "interval_start_strings":["ColorCamera 5", "starting"],
     "interval_stop_strings":["ColorCamera 5", "Stop"],
     },
-{
-    "label": "ColorCamera 0(E/D)",
-    "key": "ColorCamera0",
-    "color": "red",
-    "interval_start_strings":["ColorCamera 0", "enabling"],
-    "interval_stop_strings":["ColorCamera 0", "disabling"],
-    },
-    {
-    "label": "ColorCamera 1(E/D)",
-    "key": "ColorCamera1",
-    "color": "green",
-    "interval_start_strings":["ColorCamera 1", "enabling"],
-    "interval_stop_strings":["ColorCamera 1", "disabling"],
-    },
-        {
-    "label": "ColorCamera 2(E/D)",
-    "key": "ColorCamera2",
-    "color": "orange",
-    "interval_start_strings":["ColorCamera 2", "enabling"],
-    "interval_stop_strings":["ColorCamera 2", "disabling"],
-    },
 
-        {
-    "label": "ColorCamera 3(E/D)",
-    "key": "ColorCamera3",
-    "color": "blue",
-    "interval_start_strings":["ColorCamera 3", "enabling"],
-    "interval_stop_strings":["ColorCamera 3", "disabling"],
-    },
-    {
-    "label": "ColorCamera 4(E/D)",
-    "key": "ColorCamera4",
-    "color": "pink",
-    "interval_start_strings":["ColorCamera 4", "enabling"],
-    "interval_stop_strings":["ColorCamera 4", "disabling"],
-    },
-        {
-    "label": "ColorCamera 5(E/D)",
-    "key": "ColorCamera5",
-    "color": "yellow",
-    "interval_start_strings":["ColorCamera 5", "enabling"],
-    "interval_stop_strings":["ColorCamera 5", "disabling"],
-    },
 
 ]
 

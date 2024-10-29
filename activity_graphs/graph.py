@@ -80,7 +80,7 @@ for condition in parsing_conditions:
         		sensor_intervals[sensor_name].append({'Start Time': last_start_time, 'Stop Time': df['Time'].max()})  # Active from last start to end
 # Plotting with Plotly
 fig = go.Figure()
-print("colors: ",colors)
+print("sensor_intervals: ",sensor_intervals)
 j=0
 for i, sensor_name in enumerate(sensor_names):
     plot_data = []
@@ -137,8 +137,8 @@ for i, sensor_name in enumerate(sensor_names):
     ))
     j+=1
 
-graph_start_time = pd.to_datetime(df['Time'].min())  # Start of the graph (can be customized)
-graph_end_time = pd.to_datetime(df['Time'].max())    # End of the graph (can be customized)
+graph_start_time = pd.to_datetime(df['Time'].min())-pd.Timedelta(seconds=5)  # Start of the graph (can be customized)
+graph_end_time = pd.to_datetime(df['Time'].max())+pd.Timedelta(seconds=5)    # End of the graph (can be customized)
 
 # Set title and labels
 fig.update_layout(
