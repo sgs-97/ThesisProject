@@ -1,4 +1,5 @@
 import json
+import os
 
 # Your dictionary
 my_dict = [
@@ -111,7 +112,8 @@ my_dict = [
 ]
 
 # Export dictionary to a JSON file
-with open("sensor_json.json", "w") as json_file:
+sensor_json_file = os.path.join('..', 'io_files', 'sensor_json.json')
+with open(sensor_json_file, "w") as json_file:
     json.dump(my_dict, json_file)
 
 print("Dictionary has been exported to json")

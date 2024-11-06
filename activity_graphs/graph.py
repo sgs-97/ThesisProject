@@ -2,12 +2,14 @@ import pandas as pd
 import plotly.graph_objects as go
 import json
 import plotly.io as pio
+import os
 
-csv_file_path = 'csv_output.csv'
+csv_file_path = os.path.join('..', 'io_files', 'csv_output.csv')
 df_original = pd.read_csv(csv_file_path)
 
 # Import dictionary from a JSON file
-with open('sensor_json.json', 'r') as json_file:
+json_file_path = os.path.join('..', 'io_files', 'sensor_json.json')
+with open(json_file_path, 'r') as json_file:
     parsing_conditions = json.load(json_file)
 
 df = df_original[['Time', 'Message']]
@@ -129,4 +131,5 @@ fig.update_layout(
 fig.show()
 
 # Save the figure as an HTML file
-pio.write_html(fig, file='plotly_graph.html', auto_open=True)
+plotly_graph_file = os.path.join('..', 'io_files', 'plotly_graph.html')
+pio.write_html(fig, file=plotly_graph_file, auto_open=True)
