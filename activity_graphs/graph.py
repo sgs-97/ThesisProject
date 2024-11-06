@@ -1,6 +1,7 @@
 import pandas as pd
 import plotly.graph_objects as go
 import json
+import plotly.io as pio
 
 csv_file_path = 'csv_output.csv'
 df_original = pd.read_csv(csv_file_path)
@@ -31,7 +32,8 @@ for condition in parsing_conditions:
     # Loop through each row in the DataFrame to detect start and stop events
     for _, row in df.iterrows():
         message = row['Message']
-        time = pd.to_datetime(row['Time'])  # Convert 'Time' to datetime
+        
+        time = pd.to_datetime(row['Time'],format='%H:%M:%S.%f')  # Convert 'Time' to datetime
 
         # Check if the row contains start condition
         if all(substring in message for substring in interval_start_strings):
@@ -50,6 +52,8 @@ for i, sensor_name in enumerate(sensor_names):
     active = False
 
     print("events: ",events)
+    if len(events) == 0:
+    	continue
 
     # Handle the state before the first event
     first_event_time = events[0]['Time']
@@ -66,7 +70,8 @@ for i, sensor_name in enumerate(sensor_names):
         if event['Type'] == 'Start':
             if not active:
                 # Add inactive state before the start
-                if j == 0 and event['Time'] > pd.to_datetime(df['Time'].min()):
+                
+                if j == 0 and event['Time'] > pd.to_datetime(df['Time'].min(),format='%H:%M:%S.%f'):
                     plot_data.append({'Time': df['Time'].min(), 'Y': 0})
                     plot_data.append({'Time': event['Time'] - pd.Timedelta(milliseconds=1), 'Y': 0})
                 
@@ -97,7 +102,7 @@ for i, sensor_name in enumerate(sensor_names):
     
     # Convert plot data to DataFrame
     plot_df = pd.DataFrame(plot_data)
-    plot_df['Time'] = pd.to_datetime(plot_df['Time'])
+    plot_df['Time'] = pd.to_datetime(plot_df['Time'],format='%H:%M:%S.%f')
     
     # Add trace for the sensor with specific color
     fig.add_trace(go.Scatter(
@@ -109,8 +114,9 @@ for i, sensor_name in enumerate(sensor_names):
     ))
 
 # Set title and labels
-graph_start_time = pd.to_datetime(df['Time'].min()) - pd.Timedelta(seconds=5)
-graph_end_time = pd.to_datetime(df['Time'].max()) + pd.Timedelta(seconds=5)
+print("Time: ", df['Time'])
+graph_start_time = pd.to_datetime(df['Time'].min(),format='%H:%M:%S.%f') - pd.Timedelta(seconds=5)
+graph_end_time = pd.to_datetime(df['Time'].max(),format='%H:%M:%S.%f') + pd.Timedelta(seconds=5)
 
 fig.update_layout(
     title='Sensor Start/Stop Events',
@@ -121,3 +127,6 @@ fig.update_layout(
 
 # Show the plot
 fig.show()
+
+# Save the figure as an HTML file
+pio.write_html(fig, file='plotly_graph.html', auto_open=True)
