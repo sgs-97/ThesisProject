@@ -1,8 +1,10 @@
 import csv
+import os
 
 # Define the log file and the output CSV file
-log_file_path = "logcat_output.log"
-csv_file_path = "csv_output.csv"
+
+log_file_path = os.path.join('..', 'io_files', "logcat_output.log")
+csv_file_path = os.path.join('..', 'io_files',"csv_output.csv")
 
 def process_log_line(line):
     # Replace commas with empty spaces
@@ -72,49 +74,3 @@ with open(csv_file_path, 'w', newline='') as csv_file:
             ])
 
 print(f"Log file converted to CSV and saved as {csv_file_path}")
-
-
-
-# import csv
-# import re
-
-# # Define the log file and the output CSV file
-# log_file_path = "logcat_output.log"
-# csv_file_path = "csv_output.csv"
-
-# def process_log_line(line):
-#     # Replace commas with empty spaces
-#     line = line.replace(',', ' ')
-#     return line
-
-# # Regular expression to match logcat entries
-# logcat_pattern = re.compile(r'(?P<date>\d{2}-\d{2})\s+(?P<time>\d{2}:\d{2}:\d{2}\.\d{3})\s+(?P<pid>\d+)\s+(?P<tid>\d+)\s+(?P<level>[A-Z])\s+(?P<tag>[^\s]+)\s*:\s*(?P<message>.+)')
-
-
-# # Open the log file
-# with open(log_file_path, 'r') as log_file:
-#     log_lines = log_file.readlines()
-
-# # Open the CSV file for writing
-# with open(csv_file_path, 'w', newline='') as csv_file:
-#     csv_writer = csv.writer(csv_file)
-
-#     # Write the header row
-#     csv_writer.writerow(['Date', 'Time', 'PID', 'TID', 'Level', 'Tag', 'Message'])
-
-#     # Parse each line in the log file
-#     for line in log_lines:
-#         line = process_log_line(line)
-#         match = logcat_pattern.match(line)
-#         if match:
-#             csv_writer.writerow([
-#                 match.group('date'),
-#                 match.group('time'),
-#                 match.group('pid'),
-#                 match.group('tid'),
-#                 match.group('level'),
-#                 match.group('tag'),
-#                 match.group('message')
-#             ])
-
-# print(f"Log file converted to CSV and saved as {csv_file_path}")
