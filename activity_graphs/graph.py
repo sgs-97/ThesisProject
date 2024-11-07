@@ -131,5 +131,5 @@ fig.update_layout(
 fig.show()
 
 # Save the figure as an HTML file
-plotly_graph_file = os.path.join('..', 'io_files', 'plotly_graph.html')
+plotly_graph_file = os.path.join('..', 'io_files', 'graph.html')
 pio.write_html(fig, file=plotly_graph_file, auto_open=True)
