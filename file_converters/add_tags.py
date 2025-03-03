@@ -1,8 +1,10 @@
 import pandas as pd
+import os
 
 # Load the CSV file
-input_csv_path = 'csv_output.csv'  # Path to your input CSV file
-output_csv_path = 'with_tags.csv'  # Path to save the output CSV file
+
+input_csv_path = os.path.join('..', 'io_files', 'csv_output.csv') # Path to your input CSV file
+output_csv_path = os.path.join('..', 'io_files', 'with_tags.csv')  # Path to save the output CSV file
 
 # Keywords to search for
 keywords = ['camera', 'display', 'tracking']
