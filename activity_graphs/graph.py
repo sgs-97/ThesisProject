@@ -122,7 +122,7 @@ graph_end_time = pd.to_datetime(df['Time'].max(),format='%H:%M:%S.%f') + pd.Time
 
 fig.update_layout(
     title='Sensor Start/Stop Events',
-    xaxis=dict(range=[graph_start_time, graph_end_time], title='Time'),
+    xaxis=dict(range=[graph_start_time, graph_end_time], title='Time',tickformat="%H:%M:%S"),
     yaxis_title='Sensor Activity (1=Active, 0=Inactive)',
     yaxis=dict(tickvals=[0, 1], ticktext=['Inactive', 'Active'])
 )
