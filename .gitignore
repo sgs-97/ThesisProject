@@ -1,1 +1,8 @@
 io_files/*
+
+_test
+
+.idea
+
+.venv
+__pycache__

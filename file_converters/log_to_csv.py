@@ -1,10 +1,6 @@
 import csv
 import os
-
-# Define the log file and the output CSV file
-
-log_file_path = os.path.join('..', 'io_files', "logcat_output.log")
-csv_file_path = os.path.join('..', 'io_files',"csv_output.csv")
+import argparse
 
 def process_log_line(line):
     # Replace commas with empty spaces
@@ -47,30 +43,51 @@ def parse_log_line(line):
         'message': tag+': '+message
     }
 
-# Open the log file
-with open(log_file_path, 'r') as log_file:
-    log_lines = log_file.readlines()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Convert log file to CSV.")
+    parser.add_argument("log_file", help="Path to the log file")
+    parser.add_argument("--csv_file", default='<input>.csv', help="Path to the output CSV file (default: <input>.csv). Use <input> to replace with the log file name.")
 
-# Open the CSV file for writing
-with open(csv_file_path, 'w', newline='') as csv_file:
-    csv_writer = csv.writer(csv_file)
+    args = parser.parse_args()
 
-    # Write the header row
-    csv_writer.writerow(['Date', 'Time', 'PID', 'TID', 'Level', 'Tag', 'Message'])
+    log_file_path = args.log_file
+    csv_file_path = args.csv_file
+    csv_file_path = os.path.abspath(csv_file_path.replace('<input>', os.path.splitext(os.path.basename(log_file_path))[0]))
 
-    # Parse each line in the log file
-    for line in log_lines:
-        line = process_log_line(line)
-        parsed_log = parse_log_line(line)
-        if parsed_log:
-            csv_writer.writerow([
-                parsed_log['date'],
-                parsed_log['time'],
-                parsed_log['pid'],
-                parsed_log['tid'],
-                parsed_log['level'],
-                parsed_log['tag'],
-                parsed_log['message']
-            ])
+    # Check paths
+    if not os.path.exists(log_file_path):
+        raise FileNotFoundError(f"Log file {log_file_path} does not exist.")
+    if os.path.exists(csv_file_path):
+        raise FileExistsError(f"CSV file {csv_file_path} already exists. Please choose a different name.")
+    if not os.path.basename(csv_file_path).endswith('.csv'):
+        raise ValueError("The output file must have a .csv extension.")
+    # Create dir
+    os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
-print(f"Log file converted to CSV and saved as {csv_file_path}")
+    # Open the log file
+    with open(log_file_path, 'r') as log_file:
+        log_lines = log_file.readlines()
+
+    # Open the CSV file for writing
+    with open(csv_file_path, 'w', newline='') as csv_file:
+        csv_writer = csv.writer(csv_file)
+
+        # Write the header row
+        csv_writer.writerow(['Date', 'Time', 'PID', 'TID', 'Level', 'Tag', 'Message'])
+
+        # Parse each line in the log file
+        for line in log_lines:
+            line = process_log_line(line)
+            parsed_log = parse_log_line(line)
+            if parsed_log:
+                csv_writer.writerow([
+                    parsed_log['date'],
+                    parsed_log['time'],
+                    parsed_log['pid'],
+                    parsed_log['tid'],
+                    parsed_log['level'],
+                    parsed_log['tag'],
+                    parsed_log['message']
+                ])
+
+    print(f"Log file converted to CSV and saved as {csv_file_path}")
