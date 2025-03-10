@@ -1,2 +1,9 @@
 io_files/*
 activity_graphs/myenv/*
+
+_test/
+
+.idea/
+
+.venv/
+__pycache__/
