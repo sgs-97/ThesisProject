@@ -1,5 +1,7 @@
 io_files/*
 
+.DS_Store
+
 _test
 
 .idea
