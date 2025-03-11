@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     log_file_path = args.log_file
     csv_file_path = args.csv_file
-    csv_file_path = os.path.abspath(csv_file_path.replace('<input>', os.path.splitext(os.path.basename(log_file_path))[0]))
+    csv_file_path = csv_file_path.replace('<input>', (os.path.abspath(log_file_path.split('.')[0])))
 
     # Check paths
     if not os.path.exists(log_file_path):
