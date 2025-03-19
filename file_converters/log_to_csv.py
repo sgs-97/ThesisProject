@@ -57,16 +57,16 @@ if __name__ == "__main__":
     # Check paths
     if not os.path.exists(log_file_path):
         raise FileNotFoundError(f"Log file {log_file_path} does not exist.")
-    if os.path.exists(csv_file_path):
-        raise FileExistsError(f"CSV file {csv_file_path} already exists. Please choose a different name.")
+    # if os.path.exists(csv_file_path):
+    #     raise FileExistsError(f"CSV file {csv_file_path} already exists. Please choose a different name.")
     if not os.path.basename(csv_file_path).endswith('.csv'):
         raise ValueError("The output file must have a .csv extension.")
     # Create dir
     os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
 
     # Open the log file
-    with open(log_file_path, 'r') as log_file:
-        log_lines = log_file.readlines()
+    with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as log_file:
+        log_lines = [line for line in log_file if not line.startswith('-')]
 
     # Open the CSV file for writing
     with open(csv_file_path, 'w', newline='') as csv_file:

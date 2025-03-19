@@ -4,11 +4,13 @@ import plotly.graph_objects as go
 import json
 import plotly.io as pio
 import os
+import helpers
 
-def plot_additional_components(fig, additional_components):
+def plot_additional_components(fig, additional_components, graph_start_time):
+    graph_start_time_td = pd.Timedelta(hours=graph_start_time.hour, minutes=graph_start_time.minute, seconds=graph_start_time.second, milliseconds=graph_start_time.microsecond // 1000)
     fig_data = fig.data
-    fig_min_y = min([min([trace.y.min() for trace in fig_data]) for trace in fig_data]) - 1
-    fig_max_y = max([max([trace.y.max() for trace in fig_data]) for trace in fig_data]) + 1
+    fig_min_y = min([min([trace.y.min() for trace in fig_data]) for trace in fig_data]) - 0.05
+    fig_max_y = max([max([trace.y.max() for trace in fig_data]) for trace in fig_data]) + 0.05
     fig_min_x = min([min([trace.x.min() for trace in fig_data]) for trace in fig_data])
     fig_max_x = max([max([trace.x.max() for trace in fig_data]) for trace in fig_data])
     for component in additional_components:
@@ -16,8 +18,8 @@ def plot_additional_components(fig, additional_components):
             x0, x1, y0, y1 = 0, 0, 0, 0
             if 'orientation' in component:
                 if component['orientation'] == 'vertical':
-                    x0 = pd.to_datetime(component['value'], format='%m-%d %H:%M:%S.%f')
-                    x1 = pd.to_datetime(component['value'], format='%m-%d %H:%M:%S.%f')
+                    x0 = pd.to_datetime(component['value'], format='%H:%M:%S.%f') + graph_start_time_td
+                    x1 = pd.to_datetime(component['value'], format='%H:%M:%S.%f') + graph_start_time_td
                     y0 = fig_min_y
                     y1 = fig_max_y
                 elif component['orientation'] == 'horizontal':
@@ -36,14 +38,14 @@ def plot_additional_components(fig, additional_components):
                 mode='lines',
                 line=dict(
                     color=component['color'] if 'color' in component else 'black',
-                    width=component['width'] if 'width' in component else 1,
-                    dash='dash'
+                    width=component['width'] if 'width' in component else 2,
+                    dash=component['linetype'] if 'linetype' in component else 'dash'
                 ),
                 name=component['label'] if 'label' in component else 'Line'
             ))
         elif component['type'] == 'point':
             fig.add_trace(go.Scatter(
-                x=[pd.to_datetime(component['x'], format='%m-%d %H:%M:%S.%f')],
+                x=[pd.to_datetime(component['x'], format='%H:%M:%S.%f') + graph_start_time_td],
                 y=[component['y']],
                 mode='markers',
                 marker=dict(
@@ -54,7 +56,7 @@ def plot_additional_components(fig, additional_components):
             ))
         elif component['type'] == 'rect':
             fig.add_trace(go.Scatter(
-                x=[pd.to_datetime(component['x0'], format='%m-%d %H:%M:%S.%f'), pd.to_datetime(component['x1'], format='%m-%d %H:%M:%S.%f')],
+                x=[pd.to_datetime(component['x0'], format='%H:%M:%S.%f') + graph_start_time_td, pd.to_datetime(component['x1'], format='%H:%M:%S.%f') + graph_start_time_td],
                 y=[component['y0'], component['y1']],
                 mode='lines',
                 fill='toself',
@@ -67,39 +69,9 @@ def plot_additional_components(fig, additional_components):
                 name=component['label'] if 'label' in component else 'Rectangle'
             ))
 
-def extract_sensor_events(df, parsing_conditions):
-    sensor_events = {}
-    colors = []
-    sensor_names = []
-
-    for condition in parsing_conditions:
-        colors.append(condition["color"])
-        sensor_names.append(condition["label"])
-        sensor_name = condition["label"]
-        interval_start_strings = condition["interval_start_strings"]
-        interval_stop_strings = condition["interval_stop_strings"]
-
-        # Initialize a list to store events for the sensor
-        sensor_events[sensor_name] = []
-
-        # Loop through each row in the DataFrame to detect start and stop events
-        for _, row in df.iterrows():
-            message = row['Message']
-            time = row['Time']
-
-            # Check if the row contains start condition
-            if all(substring in message for substring in interval_start_strings):
-                sensor_events[sensor_name].append({'Type': 'Start', 'Time': time})
-
-            # Check if the row contains stop condition
-            elif all(substring in message for substring in interval_stop_strings):
-                sensor_events[sensor_name].append({'Type': 'Stop', 'Time': time})
-
-    return sensor_events, colors, sensor_names
-
-def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, additional_components=None):
-    if additional_components is None:
-        additional_components = []
+def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, app_events=None):
+    if app_events is None:
+        app_events = []
     # Plotting with Plotly
     fig = go.Figure()
 
@@ -171,7 +143,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
     graph_start_time = df['Time'].min() - pd.Timedelta(seconds=5)
     graph_end_time = df['Time'].max() + pd.Timedelta(seconds=5)
 
-    plot_additional_components(fig, additional_components)
+    plot_additional_components(fig, app_events, graph_start_time)
 
     fig.update_layout(
         title='Sensor Start/Stop Events',
@@ -191,7 +163,7 @@ if __name__ == "__main__":
     parser.add_argument("csv_file", help="Path to the input CSV file")
     parser.add_argument("--json_file", default='<script_dir_path>/dict.json', help="Path to the JSON file with parsing conditions. Default: <script_dir_path>/dict.json")
     parser.add_argument("--output_html", default='sensor_activity_graph.html', help="Path to save the output graph. Default: sensor_activity_graph.html")
-    parser.add_argument("--additional_components", default='[]', help="Path to the JSON file with additional components. Default: []")
+    parser.add_argument("--app_events", default='[]', help="Path to the JSON file with app events. Default: []")
 
     args = parser.parse_args()
 
@@ -199,29 +171,27 @@ if __name__ == "__main__":
     json_file_path = args.json_file
     json_file_path = json_file_path.replace('<script_dir_path>', (os.path.abspath(os.path.dirname(__file__))))
     plotly_graph_file = args.output_html
-    additional_components_path = args.additional_components
+    app_events_path = args.app_events
 
     # Check paths
     if not os.path.exists(csv_file_path):
         raise FileNotFoundError(f"CSV file {csv_file_path} does not exist.")
     if not os.path.exists(json_file_path):
         raise FileNotFoundError(f"JSON file {json_file_path} does not exist.")
-    if not os.path.exists(additional_components_path):
-        raise FileNotFoundError(f"JSON file {additional_components_path} does not exist.")
-
+    if not os.path.exists(app_events_path):
+        raise FileNotFoundError(f"JSON file {app_events_path} does not exist.")
 
     df_original = pd.read_csv(csv_file_path)
-
-    # Import dictionary from a JSON file
-    with open(json_file_path, 'r') as json_file:
-        parsing_conditions = json.load(json_file)
-
     df = df_original[['Time', 'Message']].copy()
-    df['Time'] = df_original['Date'] + ' ' + df_original['Time']
-    df['Time'] = pd.to_datetime(df['Time'], format='%m-%d %H:%M:%S.%f')
-    sensor_events, colors, sensor_names = extract_sensor_events(df, parsing_conditions)
+    df['Time'] = df_original['Time']
+    df['Time'] = pd.to_datetime(df['Time'], format='%H:%M:%S.%f')
+
+    # Extract sensor events from the CSV file using the parsing conditions from the JSON file
+    sensor_events, colors, sensor_names = helpers.extract_sensor_events(df, json_file_path)
+
     # Load Additional Components
-    with open(additional_components_path, 'r') as json_file:
-        additional_components = json.load(json_file)
-    plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, additional_components=additional_components)
+    with open(app_events_path, 'r') as json_file:
+        app_events = json.load(json_file)
+
+    plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, app_events=app_events)
     print("Graph has been generated and saved to graph.html")
