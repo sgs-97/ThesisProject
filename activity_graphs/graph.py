@@ -28,8 +28,8 @@ def plot_additional_components(fig, additional_components, graph_start_time):
                     y0 = component['value']
                     y1 = component['value']
             else:
-                x0 = component['x0']
-                x1 = component['x1']
+                x0 = pd.to_datetime(component['x0'], format='%H:%M:%S.%f') + graph_start_time_td
+                x1 = pd.to_datetime(component['x1'], format='%H:%M:%S.%f') + graph_start_time_td
                 y0 = component['y0']
                 y1 = component['y1']
             fig.add_trace(go.Scatter(
@@ -41,7 +41,8 @@ def plot_additional_components(fig, additional_components, graph_start_time):
                     width=component['width'] if 'width' in component else 2,
                     dash=component['linetype'] if 'linetype' in component else 'dash'
                 ),
-                name=component['label'] if 'label' in component else 'Line'
+                name=component['label'] if 'label' in component else 'Line',
+                showlegend=True if 'label' in component else False
             ))
         elif component['type'] == 'point':
             fig.add_trace(go.Scatter(
@@ -52,22 +53,40 @@ def plot_additional_components(fig, additional_components, graph_start_time):
                     color=component['color'] if 'color' in component else 'black',
                     size=component['size'] if 'size' in component else 5
                 ),
-                name = component['label'] if 'label' in component else 'Point'
+                name = component['label'] if 'label' in component else 'Point',
+                showlegend=True if 'label' in component else False
             ))
         elif component['type'] == 'rect':
-            fig.add_trace(go.Scatter(
-                x=[pd.to_datetime(component['x0'], format='%H:%M:%S.%f') + graph_start_time_td, pd.to_datetime(component['x1'], format='%H:%M:%S.%f') + graph_start_time_td],
-                y=[component['y0'], component['y1']],
-                mode='lines',
-                fill='toself',
+            fig.add_shape(
+                type='rect',
+                x0=pd.to_datetime(component['x0'], format='%H:%M:%S.%f') + graph_start_time_td,
+                x1=pd.to_datetime(component['x1'], format='%H:%M:%S.%f') + graph_start_time_td,
+                y0 = component['y0'],
+                y1 = component['y1'],
                 fillcolor=component['fillcolor'] if 'fillcolor' in component else 'rgba(0,0,0,0)',
                 opacity=component['opacity'] if 'opacity' in component else 1,
                 line=dict(
                     color=component['line_color'] if 'line_color' in component else 'black',
                     width=component['line_width'] if 'line_width' in component else 1
                 ),
-                name=component['label'] if 'label' in component else 'Rectangle'
-            ))
+                name=component['label'] if 'label' in component else 'Rectangle',
+                showlegend=True if 'label' in component else False
+            )
+        elif component['type'] == 'annotation':
+            fig.add_annotation(
+                x=pd.to_datetime(component['x'], format='%H:%M:%S.%f') + graph_start_time_td,
+                y=component['y'],
+                yshift=component['yshift'] if 'yshift' in component else 0,
+                text=component['text'],
+                showarrow=component['showarrow'] if 'showarrow' in component else True,
+                arrowhead=2,
+                ax=0,
+                ay=-40,
+                font=dict(
+                    color=component['color'] if 'color' in component else 'black',
+                    size=12
+                )
+            )
 
 def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, app_events=None):
     if app_events is None:
@@ -138,16 +157,23 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
             line=dict(color=colors[i % len(colors)])
         ))
 
+    five_sec_slack = pd.Timedelta(seconds=5)
     # Set title and labels
-    print("Time: ", df['Time'])
-    graph_start_time = df['Time'].min() - pd.Timedelta(seconds=5)
-    graph_end_time = df['Time'].max() + pd.Timedelta(seconds=5)
+    graph_start_time = df['Time'].min() - five_sec_slack
+    graph_end_time = df['Time'].max()
 
+    for item in app_events:
+        if 'label' in item and item['label'].lower() == 'device sleep':
+            graph_end_time = pd.to_datetime(item['value'], format='%H:%M:%S.%f') + pd.Timedelta(hours=graph_start_time.hour, minutes=graph_start_time.minute, seconds=graph_start_time.second,
+                         milliseconds=graph_start_time.microsecond // 1000)
+
+    print("graph_start_time: ", graph_start_time)
+    print("graph_end_time: ", graph_end_time)
     plot_additional_components(fig, app_events, graph_start_time)
 
     fig.update_layout(
         title='Sensor Start/Stop Events',
-        xaxis=dict(range=[graph_start_time, graph_end_time], title='Time'),
+        xaxis=dict(range=[graph_start_time - five_sec_slack, graph_end_time + five_sec_slack], title='Time'),
         yaxis_title='Sensor Activity (1=Active, 0=Inactive)',
         yaxis=dict(range=[-0.1,1.1], tickvals=[0, 1], ticktext=['Inactive', 'Active'])
     )

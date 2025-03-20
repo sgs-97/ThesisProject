@@ -1,6 +1,6 @@
 import argparse
 import os
-
+import pandas as pd
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Converts given states to JSON format. The input format is: \"state1 - time1\nstate2 - time2\n...\"')
@@ -12,7 +12,11 @@ def parse_arguments():
 # Function to convert states file to JSON format
 def convert_states_to_json(states_file_path, json_output_path):
     dict = []
-
+    x_start = 0  # Placeholder for the start x value, if needed
+    x_stop = 0  # Placeholder for the stop x value, if needed
+    x_mount = 0  # Placeholder for the mount x value, if needed
+    x_unmount = 0  # Placeholder for the unmount x value, if needed
+    x_idle = 0  # Placeholder for the idle x value, if needed
     with open(states_file_path, 'r') as states_file:
         for line in states_file:
             dict.append({})  # Create a new dictionary for each line
@@ -23,16 +27,110 @@ def convert_states_to_json(states_file_path, json_output_path):
                 dict[len(dict)-1]["value"] = str(time)
                 dict[len(dict)-1]["label"] = str(state)
                 dict[len(dict)-1]["linetype"] = "dash"
-                if any(x == state.lower() for x in ["start", "open app"]) or any(x in state.lower() for x in ["mount"]):
+                if state.lower() == "start":
                     dict[len(dict)-1]["color"] = "green"
-                elif any(x == state.lower() for x in ["quit app"]) or any(x in state.lower() for x in ["unmount", "device sleep"]):
-                    dict[len(dict)-1]["color"] = "red"
-                elif "idle" in state.lower():
+                elif state.lower() == "mount":  # Assuming "mount" indicates the start of a mounted period
+                    dict[len(dict)-1]["color"] = "green"
+                    x_mount = pd.Timestamp(time)  # Update mount x value
+                elif state.lower() == "idle":
                     dict[len(dict)-1]["color"] = "gray"
+                    x_idle = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update idle x value
+                elif state.lower() == "open app": # Assuming "open app" indicates the start of an app period
+                    dict[len(dict)-1]["color"] = "green"
+                    x_start = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update start x value
+                elif state.lower() == "quit app": # Assuming "quit app" indicates the end of an app period
+                    dict[len(dict)-1]["color"] = "red"
+                    x_stop = pd.to_datetime(time, format='%H:%M:%S.%f')
+                elif "unmount" == state.lower():  # Assuming "unmount" indicates the end of a mounted period
+                    dict[len(dict)-1]["color"] = "red"
+                    x_unmount = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update unmount x value
+                elif "device sleep" in state.lower():
+                    dict[len(dict)-1]["color"] = "red"
+
                 else:
                     dict[len(dict)-1]["color"] = "blue"  # Default color. TODO: Change this to a case by case basis depending on label/state
 
     # TODO: Add horizontal lines or shaded areas to show app period, mounted period, etc.
+
+        # Horizontal line from start to stop (App Period)
+        # dict.append({
+        #     "type": "line",
+        #     "x0": x_start,
+        #     "x1": x_stop,
+        #     "y0": 1.01,
+        #     "y1": 1.01,
+        #     "label": "App Running",
+        #     "linetype": "solid",
+        #     "color": "blue"
+        # })
+        # Test a rect with 0.5 opacity instead of hor line
+        dict.append({
+            "type": "rect",
+            "x0": x_start.strftime('%H:%M:%S.%f'),
+            "x1": x_stop.strftime('%H:%M:%S.%f'),
+            "y0": 0.93,
+            "y1": 1.03,
+            "label": "App Running",
+            "fillcolor": "blue",
+            "opacity": 0.2,
+            "line_width": 1  # No border
+        })
+        # Annotation for the app period
+        dict.append({
+            "type": "annotation",
+            "x": (x_start + (x_stop-x_start)/2).strftime('%H:%M:%S.%f'),
+            "y": 1.0,
+            "text": "App Running",
+            "showarrow": False,
+            "size": 12,
+            "color": "blue"
+        })
+        # Horizontal line from idle to unmount (Idle Period)
+        dict.append({
+            "type": "rect",
+            "x0": x_mount.strftime('%H:%M:%S.%f'),
+            "x1": x_idle.strftime('%H:%M:%S.%f'),
+            "y0": 0.93,
+            "y1": 1.03,
+            "label": "Device Idle",
+            "fillcolor": "gray",
+            "opacity": 0.2,
+            "line_width": 1
+        })
+        # Annotation for the idle period
+        dict.append({
+            "type": "annotation",
+            "x": (x_mount + (x_idle-x_mount)/2).strftime('%H:%M:%S.%f'),
+            "y": 1.0,
+            "text": "Device Idle",
+            "showarrow": False,
+            "size": 12,
+            "color": "gray"
+        })
+        # Horizontal line from mount to unmount (Mounted Period)
+        dict.append({
+            "type": "rect",
+            "x0": x_mount.strftime('%H:%M:%S.%f'),
+            "x1": x_unmount.strftime('%H:%M:%S.%f'),
+            "y0": -0.03,
+            "y1": 1.03,
+            "label": "Device Mounted",
+            "fillcolor": "green",
+            "opacity": 0.1,
+            "line_width": 1
+        })
+        # Annotation for the mounted period
+        dict.append({
+            "type": "annotation",
+            "x": (x_mount + (x_unmount-x_mount)/2).strftime('%H:%M:%S.%f'),  # Center the annotation
+            "y": 0.02,  # Adjust y position to avoid overlap with the rect
+            # "yshift": -10,
+            "text": "Device Mounted",
+            "showarrow": False,
+            "size": 12,
+            "color": "green"
+        })
+
 
     with open(json_output_path, 'w') as json_file:
         import json
