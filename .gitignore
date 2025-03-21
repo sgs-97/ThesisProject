@@ -13,7 +13,7 @@ scripts/*.log
 scripts/multmux_logs
 
 # Data
-/data/SpatialData/
+/data
 
 # Misc
 /nnmav_README.md
