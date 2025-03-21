@@ -8,3 +8,6 @@ _test
 
 .venv
 __pycache__
+
+scripts/*.log
+scripts/multmux_logs

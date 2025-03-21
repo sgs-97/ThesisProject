@@ -2,13 +2,6 @@ import argparse
 import os
 import pandas as pd
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='Converts given states to JSON format. The input format is: \"state1 - time1\nstate2 - time2\n...\"')
-    parser.add_argument('states', type=str, help='Path to the input states file.')
-    parser.add_argument('--json_output', default="<input>.json", type=str, help='Path to the output JSON file.')
-    parser.add_argument('--verbose', action='store_true', help='Enable verbose mode.')
-    return parser.parse_args()
-
 # Function to convert states file to JSON format
 def convert_states_to_json(states_file_path, json_output_path):
     dict = []
@@ -138,17 +131,26 @@ def convert_states_to_json(states_file_path, json_output_path):
 
     return dict
 
-def main():
+if __name__ == '__main__':
     script_name = os.path.basename(__file__)
-    print(f"[\033[1;33mSTART\033[0m] {script_name}")
 
-    args = parse_arguments()
-    states_file_path = args.states
+    parser = argparse.ArgumentParser(
+        description='Converts given states to JSON format. The input format is: \"state1 - time1\nstate2 - time2\n...\"')
+    parser.add_argument('states', type=str, help='Path to the input states file.')
+    parser.add_argument('--json_output', default="<input>.json", type=str, help='Path to the output JSON file.')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose mode.')
+    args = parser.parse_args()
+
+    verbose = args.verbose
+    if verbose:
+        print(f"[\033[1;33mSTART\033[0m] {script_name}")
+
+    states_file_path = os.path.abspath(args.states)
+    if not os.path.exists(states_file_path):
+        raise FileNotFoundError(f"States file {states_file_path} does not exist.")
     json_output_path = args.json_output.replace("<input>", os.path.splitext(states_file_path)[0])
 
     # Check Paths
-    if not os.path.exists(states_file_path):
-        raise FileNotFoundError(f"States file {states_file_path} does not exist.")
 
     if args.verbose:
         print(f"States file path: {args.states}")
@@ -158,9 +160,5 @@ def main():
 
     if args.verbose:
         print("Processing completed.")
+        print(f"[\033[1;32mEXIT\033[0m] {script_name} ended successfully!\033[0m")
 
-    print(f"[\033[1;32mEXIT\033[0m] {script_name} ended successfully!\033[0m")
-
-
-if __name__ == '__main__':
-    main()

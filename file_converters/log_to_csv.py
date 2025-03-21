@@ -50,19 +50,19 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    log_file_path = args.log_file
-    csv_file_path = args.csv_file
-    csv_file_path = csv_file_path.replace('<input>', (os.path.abspath(log_file_path.split('.')[0])))
-
-    # Check paths
+    log_file_path = os.path.realpath(args.log_file)
     if not os.path.exists(log_file_path):
         raise FileNotFoundError(f"Log file {log_file_path} does not exist.")
+    csv_file_path = args.csv_file
+    csv_file_path = csv_file_path.replace('<input>', log_file_path.split('.')[0])
+
+    # Check paths
     # if os.path.exists(csv_file_path):
     #     raise FileExistsError(f"CSV file {csv_file_path} already exists. Please choose a different name.")
     if not os.path.basename(csv_file_path).endswith('.csv'):
         raise ValueError("The output file must have a .csv extension.")
-    # Create dir
-    os.makedirs(os.path.dirname(csv_file_path), exist_ok=True)
+
+    os.makedirs(os.path.dirname(csv_file_path), exist_ok=True) # Create dir
 
     # Open the log file
     with open(log_file_path, 'r', encoding='utf-8', errors='ignore') as log_file:
