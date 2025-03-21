@@ -64,24 +64,27 @@ Utilities,ALVR,N/A,,,,,,,,,,,
 Utilities,Wolvic,N/A,"00:00:00.00 - Start
 00:00:06.54 - Mount
 00:00:24.58 - Idle
-00:00:30.41- Open App
+00:00:30.41 - Open App
 00:00:40.66 - App Launch Complete
 00:02:05.25 - search and browsing; CNN and Google Maps
 00:02:25.36 - Quit App
 00:02:28.59 - Unmount
-00:02:32.01 - Device Sleep",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- > searching and browsing-> exit,yes,-,,yes,"00:00:13.01 - mounted the device, (non-Passthrough)
-00:00:48.69 - stay idle(non- Passthrough),open app
+00:02:32.01 - Device Sleep",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- > searching and browsing-> exit,yes,-,,yes,"00:00:00.00 - Start
+00:00:13.01 - Mount
+00:00:48.69 - Idle
+00:00:48.69 - Open app
 00:00:16.36 - enter into app
 00:00:12.15 - search with a link
 00:01:23.26 - Play video in full screen 360 degrees,exit full screen
 00:00:51.84 -  playing video and exit window, exit
-00:00:42.82 - unmount the device and collect logs",open app-> search bar and suggested videos->choose video->full screen for 360 degrees view->exit fulscreen->exit app,,"Open App
+00:00:51.84 - Quit App
+00:00:42.82 - device sleep",open app-> search bar and suggested videos->choose video->full screen for 360 degrees view->exit fulscreen->exit app,,"Open App
  App Launch Complete
 Search and browsing
 ",
-Utilities,Spatial Phone: Mirror & Control,4.99,,,,,,,,,,,
+Utilities,Spatial Phone: Mirror n Control,4.99,,,,,,,,,,,
 Utilities,Brailleliga Experience,N/A,,,,,,,,,,,
-Utilities,Arkio (MR),N/A,"00:00:00.00 - Start
+Utilities,Arkio,N/A,"00:00:00.00 - Start
 00:00:44.93 - Mount
 00:01:07.12 - Idle
 00:00:49.29 - Open App
@@ -92,12 +95,15 @@ Utilities,Arkio (MR),N/A,"00:00:00.00 - Start
 00:02:22.63 - make jump
 00:02:31.72 - Quit App
 00:02:37.17 - Unmount
-00:02:51.59 - Device Sleep",start (quest home menu)->  permission (spacial data)-> difficulty level(n/a)- > starting build/ tutorial/ import-> explore the architecture (insert/ modify/ delete objects)-> exit,yes,-,,yes,"00:00:11.13 - mounted the device, (non-Passthrough)
-00:01:06.74 - stay idle(non- Passthrough),open app
+00:02:51.59 - Device Sleep",start (quest home menu)->  permission (spacial data)-> difficulty level(n/a)- > starting build/ tutorial/ import-> explore the architecture (insert/ modify/ delete objects)-> exit,yes,-,,yes,"00:00:00.00 - Start
+00:00:11.13 - Mount
+00:01:06.74 - Idle
+00:01:06.74 - Open App
 00:00:32.26 - enter into app/permissions
 00:01:17.51 - use samples
 00:03:33.13 - use scenes
-00:00:36.23 - unmount the device and collect logs","Enter App->A panel with many options like samples, groups, etc-> choose samples->exit app
+00:03:33.13 - Quit App
+00:00:36.23 - Device Sleep","Enter App->A panel with many options like samples, groups, etc-> choose samples->exit app
 
 
 Permissions:
@@ -106,7 +112,13 @@ Permissions asked/granted- headset tracking, spatial
 
 Passthrough-on without asking permission
 
-eyes/face-tracking not enabled although app requested",,,
+eyes/face-tracking not enabled although app requested",,"Open App
+ Ask for special data(granted)
+ App Launch Complete
+created something
+ manipulated those
+
+",
 Utilities,First Steps,N/A,,,,,,,,,,,
 Utilities,Meta Quest HDMI Link,N/A,,,,,,,,,,,
 Utilities,Litesport: Join the Fitness Revolution,N/A,,,,,,,,,,,
@@ -115,7 +127,7 @@ Utilities,3DVista VR,N/A,,,,,,,,,,,
 Entertainment,SKYBOX VR Video Player,9.99,,,,,,,,,,,
 Entertainment,HereSphere VR Video Player Demo,N/A,,,,,,,,,,,
 Entertainment,Cirque du Soleil,6.99,,,,,,,,,,,
-Entertainment,Felix & Paul Studios 2024,N/A,"00:00:00.00 - Start
+Entertainment,Felix n Paul Studios 2024,N/A,"00:00:00.00 - Start
         00:00:07.94 - Mount
 00:00:42.83 - Idle
 00:00:54.66 - Open App
@@ -126,7 +138,7 @@ Entertainment,Felix & Paul Studios 2024,N/A,"00:00:00.00 - Start
 00:03:48.17 - End Stream
 00:04:00.38 - Quit App
 00:04:11.72 - Unmount
-00:04:14.80- Device Sleep",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- > options to choose what type of scenario you want to experience -> based on selected experience (need to download) show a 360 video -> exit,yes,yes,"00:00:00.00 - Start
+00:04:14.80 - Device Sleep",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- > options to choose what type of scenario you want to experience -> based on selected experience (need to download) show a 360 video -> exit,yes,yes,"00:00:00.00 - Start
 00:00:10.03 - Mount
 00:00:53.13 - Idle
 00:01:01.89 - Open App
@@ -137,7 +149,12 @@ Entertainment,Felix & Paul Studios 2024,N/A,"00:00:00.00 - Start
 00:03:36.17 - End Stream
 00:03:42.27 - Quit App
 00:03:48.86 - Unmount
-00:04:56.75 - Device Sleep",-,,,,,
+00:04:56.75 - Device Sleep",-,,,,"Open App
+Select Experience
+Start Download
+Start Stream
+End Stream
+",
 Entertainment,Sphere Toon - VR Comic,N/A,"00:00:00.00 - Start
 00:00:07.84 - Mount
 00:00:27.72 - Idle
@@ -169,7 +186,7 @@ Training,Let's Create! Pottery VR,19.99,,,,,,,,,,,
 Training,LES MILLS BODYCOMBAT,29.99,,,,,,,,,,,
 Training,Dissection Simulator: Frog Edition,N/A,,,,,,,,,,,
 Training,PianoVision,9.99,,,,,,,,,,,
-Training,Pianogram (MR),N/A,"00:00:00.00 - Start
+Training,Pianogram,N/A,"00:00:00.00 - Start
 00:00:11.60 - Mount
 00:00:44.97 - Idle
 00:00:59.22 - Open App
@@ -181,32 +198,45 @@ Training,Pianogram (MR),N/A,"00:00:00.00 - Start
 00:02:52.781 - End audio
 00:02:59.54 - Quit App
 00:03:13.84 - Unmount
-00:03:17.53 - Device Sleep",start (quest home menu)->  permission (n/a)-> calibration instructions- > difficulty level of audio (easy/mid/hard)- > play any music  -> try to match with their pace of keys-> exit,yes,-,,yes,"00:00:16.18 - mounted the device, (non-Passthrough)
-00:01:06.47 - stay idle(non- Passthrough),open app
-00:00:28.95 - enter into app/permissions
+00:03:17.53 - Device Sleep",start (quest home menu)->  permission (n/a)-> calibration instructions- > difficulty level of audio (easy/mid/hard)- > play any music  -> try to match with their pace of keys-> exit,yes,-,,yes,"00:00:00.00 - Start
+00:00:16.18 - Mount
+00:01:06.47 - Idle
+00:01:06.47 - Open app
+00:00:28.95 - permissions
 00:00:26.22 - choose no.of piano keys and calibrate
 00:01:05.42 - play a song from list
 01:05.66 - play second song from list
 00:00:13.46 - exited from player in app's home screen
-00:00:23.65 - unmount the device and collect logs","Enter app->unity logo-> permissions->app's home screen->choose a song to play by filtering->player screen->exit from player screen->exit from app
+00:00:13.46 - Quit App
+00:00:23.65 - Device Sleep","Enter app->unity logo-> permissions->app's home screen->choose a song to play by filtering->player screen->exit from player screen->exit from app
 
 Passthrough is on
 
-location permission asked",,,
+location permission asked",,"Open App
+ App Launch Complete
+choose  no.of piano keys Calibration
+ Choose music
+Started audio
+Waving controller, playing audio
+End audio
+",
 Training,VirtualSpeech,N/A,,,,,,,,,,,
 Training,Tribe XR | DJ Academy,N/A,,,,,,,,,,,
 Training,Guitar Strummer,N/A,"00:00:00.00 - Start
 00:00:17.47 - Mount
 00:01:12.19 - Idle
-00:01:26.06- Open App
-00:01:47.38- App Launch Complete
+00:01:26.06 - Open App
+00:01:47.38 - App Launch Complete
 00:01:56.24 - Played the guitar by waving the right controller
 00:02:02.35 - Quit App
 00:02:03.66 - Unmount
-00:02:17.48 - Device Sleep",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- > simulate the guitar playing by  waving both controllers -> exit,yes,-,,yes,"0:08.26 - mounted the device, (non-Passthrough)
-00:00:53.99 - stay idle(non- Passthrough),open app
+00:02:17.48 - Device Sleep",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- > simulate the guitar playing by  waving both controllers -> exit,yes,-,,yes,"00:00:00.00 - Start
+00:00:08.26 - Mount
+00:00:53.99 - Idle
+00:00:53.99 - Open app
 00:03:30.38 - enter into app and play guitar and exit app
-00:00:24.25 - unmount the device and collect logs","Enter app->set guitar position using controllers->set notes using Y button->play guitar->exit app
+00:03:30.38 - Quit App
+00:00:24.25 - Device Sleep","Enter app->set guitar position using controllers->set notes using Y button->play guitar->exit app
 
 no permissions asked",,,
 Training,Machine Shop Simulator,N/A,,,,,,,,,,,
@@ -236,7 +266,12 @@ Learning,Keep Going VR,N/A,"00:00:00.00 - Start
 00:05:34.42 - Bugged outside the correct environment while reading some text
 00:06:00.12 - Quit App
 00:06:04.83 - Unmount
-00:07:29.16 - Device Sleep",-,,,,,
+00:07:29.16 - Device Sleep",-,,,," Open App
+00:01:0.13 - App Launched
+ Ask for mic permission (granted)
+Enter name and nationality and hit enter
+ Navigate around the room
+",
 Learning,VRflow C172N,39.99,,,,,,,,,,,
 Learning,Wooorld,9.99,,,,,,,,,,,
 Learning,Crazy Kung Fu,14.99,,,,,,,,,,,
@@ -261,7 +296,13 @@ Learning,Mission: ISS,N/A,"00:00:00.00 - Start
 00:06:15.00 - Completed portion of training
 00:06:16.40 - Quit App
 00:06:21.97 - Unmount
-00:07:44.42 - Device Sleep",-,,,,,
+00:07:44.42 - Device Sleep",-,,,,"Open App
+App Launched
+Select Mission
+Mission Launched
+Complete the mission
+Quit App
+",
 Travel & Exploration,EarthQuest,8.99,,,,,,,,,,,
 Travel & Exploration,Apollo 11,9.99,,,,,,,,,,,
 Travel & Exploration,Into the Scaniverse,N/A,"00:00:00.00 - Start
@@ -270,10 +311,14 @@ Travel & Exploration,Into the Scaniverse,N/A,"00:00:00.00 - Start
 00:00:44.83 - Open App
 00:01:05.21 - App Launched
 00:01:14.85 - Select place
-00:02:15.05 - Plcae explored
+00:02:15.05 - Place explored
 00:02:31.83 - Quit App
 00:02:37.33 - Unmount
-00:02:51.49- Device Sleep ",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- >menu (choose location) ->  explore: look around selected location  (only up and down)  -> exit,yes,,,yes,,,,,
+00:02:51.49 - Device Sleep ",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- >menu (choose location) ->  explore: look around selected location  (only up and down)  -> exit,yes,yes (since the app does not work for qust pro),,yes,,,,"Open App
+App Launched
+ Select place
+Place explored
+ Quit App",
 Travel & Exploration,Wander,9.99,,,,,,,,,,,
 Travel & Exploration,Titans of Space PLUS,9.99,,,,,,,,,,,
 Travel & Exploration,Ocean Rift,9.99,,,,,,,,,,,
@@ -288,9 +333,10 @@ Travel & Exploration,Holofit by Holodia,N/A,"00:00:00.00 - Start
 00:06:16.57 - Do exercise
 00:06:28.88 - Quit App
 00:06:43.50 - Unmount
-00:06:44.91- Device Sleep",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- >menu (choose language) -> choose whether have workout machine or not ->   row boat and simple work out to proceed to the next setps  -> exit,yes,,,yes,"00:00:00.00 - Start
-00:00:09.90 - mounting device
-00:00:50.30 - stay in home screen
+00:06:44.91 - Device Sleep",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- >menu (choose language) -> choose whether have workout machine or not ->   row boat and simple work out to proceed to the next setps  -> exit,yes,,,yes,"00:00:00.00 - Start
+00:00:09.90 - Mount
+00:00:50.30 - Idle
+00:00:50.30 - Open App
 00:00:33.73-create profile
 00:00:38.15 - Signup page
 00:00:52.84 - cutomize and select workout screen
@@ -301,8 +347,14 @@ Travel & Exploration,Holofit by Holodia,N/A,"00:00:00.00 - Start
 00:02:57.62 - ball throw
 00:01:26.39 - Lap3 -Karate
 00:01:40.89 - ball throw
-00:00:23.40 - exit workout
-00:01:23.80 - Quit game and unmount",,,,
+00:00:23.40 - Quit App
+00:01:23.80 - Device Sleep",,,"Open App
+create a profile
+Signup page
+customize and select the workout screen
+choose workouts(boxing, cubes picking, log cutting,whack-a-mule)
+workout
+ Quit App",
 Travel & Exploration,Star Chart,9.99,,,,,,,,,,,
 Travel & Exploration,Where Thoughts Go,9.99,,,,,,,,,,,
 Travel & Exploration,Astra,9.99,,,,,,,,,,,
@@ -318,8 +370,8 @@ Health & Fitness,XRWorkout Free to Play VR Fitness,N/A,"00:00:00.00 - Start
 00:04:37.83 - Do exercise (finished one session)
 00:04:47.89 - Quit App
 00:04:55.86 - Unmount
-00:05:08.98- Device Sleep","start (quest home menu)->  permission (special data, media, mic)-> difficulty level(easy, medium, hard )- >menu (choose a place to work out) ->  use the controllers to do various workouts-> after each session you can see the leaderboard and your preference to save or quit  -> exit",yes,yes,"00:00:00.00 - Start
-00:00:09.64 - Mount & Start Rec
+00:05:08.98 - Device Sleep","start (quest home menu)->  permission (special data, media, mic)-> difficulty level(easy, medium, hard )- >menu (choose a place to work out) ->  use the controllers to do various workouts-> after each session you can see the leaderboard and your preference to save or quit  -> exit",yes,yes,"00:00:00.00 - Start
+00:00:09.64 - Mount
 00:00:51.10 - Idle
 00:00:53.60 - Open App
 00:01:09.44 - App Launched
@@ -329,8 +381,14 @@ Health & Fitness,XRWorkout Free to Play VR Fitness,N/A,"00:00:00.00 - Start
 00:01:50.50 - Workout started
 00:03:50.00 - Completed portion of workout
 00:03:51.40 - Quit App
-00:04:16.63 - Stop Rec & Unmount
-00:05:31.42 - Device Sleep",,,,,,
+00:04:16.63 - Unmount
+00:05:31.42 - Device Sleep",,,,,"Open App
+ Ask for special data permission 
+ Ask for media permission 
+Ask for mic permission 
+App Launched
+ Do exercise 
+Quit App",
 Health & Fitness,Club Pilates,14.99,,,,,,,,,,,
 Health & Fitness,Shardfall,19.99,,,,,,,,,,,
 Health & Fitness,FITNESS,19.99,,,,,,,,,,,
@@ -341,104 +399,136 @@ Health & Fitness,Beat Hit,19.99,,,,,,,,,,,
 Health & Fitness,FloatVR Relaxation and Focus,N/A,"00:00:00.00 - Start
 00:00:09.63 - Mount
 00:00:41.56 - Idle
-00:00:46.48- Open App
-00:01:14.18- App Launch Complete
+00:00:46.48 - Open App
+00:01:14.18 - App Launch
 00:01:30.60 - Select an immersive activity type (relaxation)
 00:01:38.01 - Activity  launched
 00:02:53.08 - Watched a portion of the activity
 00:02:55.11 - Quit App
 00:02:58.55 - Unmount
 00:03:13.39 - Device Sleep","start (quest home menu)->  permission (n/a)-> difficulty level(easy, medium, hard )- >menu (choose an immersive activity) ->  use the controllers to do various workouts->  listen the misic and immersiion for selected activity -> exit",yes,yes,"00:00:00.00 - Start
-00:00:19.64 - Mount & Start Rec
+00:00:19.64 - Mount
 00:01:27.10 - Idle
 00:01:30.60 - Open App
 00:01:44.44 - App Launched
 00:03:04.50 - Selected Intro
 00:03:40.00 - Completed portion of Intro
 00:03:42.40 - Quit App
-00:03:44.63 - Stop Rec & Unmount
-00:05:10.50 - Device Sleep",,,,,,
+00:03:44.63 - Unmount
+00:05:10.50 - Device Sleep",,,,," Open App
+App Launched
+Select an immersive activity type
+Activity  launched
+ Watch immersive video of that activity
+Quit App
+",
 Sports,Be Your Best,N/A,,,,,,,,,,,
 Sports,Rezzil Player: Sports Training,4.99,,,,,,,,,,,
 Sports,FunFitLand,N/A,"00:00:00.00 - Start
 00:00:13.87 - Mount
 00:00:42.59 - Idle
-00:00:46.90- Open App 
-00:01:04.29- App Launch Complete
+00:00:46.90 - Open App 
+00:01:04.29 - App Launch Complete
 00:01:21.62 - Select a workout type 
 00:01:28.22 - Activity  launched
 00:03:50.77 - Did the some workout
 00:03:58.62 - Quit App
 00:04:04.32 - Unmount
-00:04:18.90 - Device Sleep","start (quest home menu)->  permission (n/a)-> difficulty level(easy, medium, hard )- >menu (choose an workout) ->  use the controllers to do various workouts->  do varioius workout and stating with wormups -> exit",yes,,,yes,,,,,
+00:04:18.90 - Device Sleep","start (quest home menu)->  permission (n/a)-> difficulty level(easy, medium, hard )- >menu (choose an workout) ->  use the controllers to do various workouts->  do varioius workout and stating with wormups -> exit",yes,,,yes,,,,"Open App 
+App Launch 
+Select a workout type 
+Activity  launched
+Do some workout
+Quit App
+",
 Sports,Gorilla Soccer,N/A," 00:00:00.00 - Start
 00:00:15.35 - Mount 
 00:00:42.40 - Idle 
-00:00:45.62- Open App 
-00:00:55.27- App Launch Complete
+00:00:45.62 - Open App 
+00:00:48.32 - Mic permission (Granted)
+00:00:55.27 - App Launch Complete
 00:01:12.64 - Select a game type 
 00:01:18.38 - Game launched
 00:02:28.18 - Play the game sometimes
 00:02:36.43 - Quit App
 00:02:41.38 - Unmount
 00:02:56.12 - Device Sleep",start (quest home menu)->  permission (mic)-> difficulty level(n/a)- >menu (choose a game) ->  use the controllers to do various moves ->  paly the game -> exit,yes,,,yes,"00:00:00.00 - Start
-00:00:11.15 - mount headset
-00:00:46.09 - stay in home screen
+00:00:11.15 - Mount
+00:00:46.09 - Idle
+00:00:46.09 - Open App
 00:00:36.54 - game boards chose 3vs 3 game(with available matches to join)
 00:06:22.78 - entered soccer match
-00:00:36.54 - game board and quit game
-00:00:52.64 - unmount headset",Permissions:mic(allowed),,,
+00:00:36.54 - game board
+00:00:36.54 - Quit App
+00:00:52.64 - Device Sleep",Permissions:mic(allowed),,"Open App 
+Mic permission
+App Launch 
+Select a game type in the gameboard
+Game launched
+Play the game sometimes
+Quit App",
 Sports,WIN Reality Baseball,N/A,,,,,,,,,,,
 Sports,Baseball Practice,1.99,,,,,,,,,,,
 Sports,Ember Sports VR,14.99,,,,,,,,,,,
-Sports,Video Assistant Referees (VAR),9.99,,,,,,,,,,,
+Sports,Video Assistant Referees ,9.99,,,,,,,,,,,
 Sports,STEPMASTER,19.99,,,,,,,,,,,
 Sports,VR Basketball: Training Challenge,7.99,,,,,,,,,,,
 Productivity,Harbor,N/A,,,,,,,,,,,
 Productivity,Gravity Sketch,N/A," 00:00:00.00 - Start
 00:00:15.55 - Mount 
 00:00:42.70 - Idle 
-00:00:45.71- Open App
-00:00:53.09- App Launch Complete
+00:00:45.71 - Open App
+00:00:53.09 - App Launch Complete
 00:00:53.09 - Select an option from the menu to start 
 00:01:09.13 - selected one launched
 00:03:06.67 -manipulate  the space sometime 
 00:03:13.11 - Quit App
 00:03:19.60 - Unmount
 00:03:32.71 - Device Sleep ","start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- >menu (choose drawing from template/ new drawing/ previous file, etc) ->  use the controllers to do object manipulation (write / update/ delete, etc) -> exit",yes,yes,"00:00:00.00 - Start
-00:00:10.58 - Mount & Start Rec
+00:00:10.58 - Mount
 00:00:52.10 - Idle
 00:01:13.78 - Open App
 00:01:33.40 - App Launched
 00:02:01.57 - Intro Started
 00:03:33.00 - Completed Intro
 00:03:37.40 - Quit App
-00:03:49.70 - Stop Rec & Unmount
-00:05:11.38 - Device Sleep",,,,,,
+00:03:49.70 - Unmount
+00:05:11.38 - Device Sleep",,,,,"Open App
+ App Launch 
+ Select an option from the menu to start 
+selected one launched
+manipulate  the space 
+Quit App",
 Productivity,Immersed,N/A,,,,,,,,,,,
-Productivity,Meta Horizon Workrooms (Beta),N/A,,,,,,,,,,,
+Productivity,Meta Horizon Workrooms ,N/A,,,,,,,,,,,
 Productivity,ENGAGE,N/A,,,,,,,,,,,
-Productivity,Fluid (MR??),N/A,"00:00:00.00 - Start
+Productivity,Fluid,N/A,"00:00:00.00 - Start
 00:00:12.58 - Mount
 00:00:42.29 - Idle 
-00:00:47.37- Open App
-00:00:49.11 - Mic permission
+00:00:47.37 - Open App
+00:00:49.11 - Mic permission (Granted)
 00:00:56.66 - App Launch Complete
 00:03:36.52 - search and browsing
 00:03:44.55 - Quit App
 00:03:48.84 - Unmount
-00:04:03.55 - Device Sleep ",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- >menu (choose a site to visit; some sort fo browser) ->  use the controllers to  do the browsing and see around (filed inside home scenario) -> exit,yes,yes,"00:00:00.00 - Start
-00:00:08.64 - Mount & Start Rec
+00:04:03.55 - Device Sleep ","start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- >menu (choose a site to visit; some sort of browser) ->  use the controllers to  do the browsing and see around (filed inside home scenario) -> exit
+looked into it again by disabling everything but still when the app launches the front potion is transparent so you can see your hand.",yes,yes,"00:00:00.00 - Start
+00:00:08.64 - Mount
 00:01:01.10 - Idle
 00:01:38.60 - Open App
 00:01:50.44 - App Launched
-00:01:52:00 - Mic Permission asked (granted)
+00:01:52.00 - Mic Permission asked (granted)
 00:02:43.50 - Opened Webpage (Apple.com)
 00:03:23.00 - Opened webpage (Discord.com)
 00:03:44.00 - Changed Environment
 00:03:52.40 - Quit App
-00:04:00.46 - Stop Rec & Unmount
-00:07:38.98 - Device Sleep",,,,,,
+00:04:00.46 - Unmount
+00:07:38.98 - Device Sleep",,,,,"Open App
+ Mic permission
+ App Launch 
+search and browsing
+ Quit App
+",
 Productivity,Resolve,N/A,,,,,,,,,,,
 Productivity,SketchUp Viewer,N/A,,,,,,,,,,,
 Productivity,"TRIPP: Meditation, Relaxation, Sleep",N/A,,,,,,,,,,,
@@ -447,44 +537,57 @@ Medical,Impulse: Playing with Reality,7.99,,,,,,,,,,,
 ,Auscultation training,N/A,"00:00:00.00 - Start
 00:00:12.47 - Mount
 00:00:41.60 - Idle 
-00:00:44.46- Open App
+00:00:44.46 - Open App
 00:00:58.47 - App Launch Complete
 00:02:50.30 - used the stethoscope to listen to the heartbeats for specific gender/ organ (heart and lung) /condition / etc 
 00:02:54.67 - Quit App
 00:02:58.99 - Unmount
 00:03:13.12 - Device Sleep",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- > use the controllers to menu (choose a organ) then use the  stethoscope to listen to the heartbeats in the same state  -> exit,yes,,,yes,"00:00:00.00 - Start
-00:00:12.95 - Mounted headset
-00:00:47.14 - stayed in homescreen
+00:00:12.95 - Mount
+00:00:47.14 - Idle
+00:00:47.14 - Open App
 00:02:39.42 - enter game, grabbed stethescope and monitored heart beat 
-00:01:23.46 - monitored lungs and quit app
-00:01:02.89 - unmounted headset",,,,
+00:01:23.46 - monitored lungs
+00:01:23.46 - Quit App
+00:01:02.89 - Device Sleep",,,"Open App
+App Launch Complete
+used the stethoscope to listen to the heartbeats for specific gender/ organ (heart and lung) /condition / etc 
+ Quit App",
 Medical,NeVR Fear The Dentist,N/A,,,,,,,,,,,
 Medical,Human Anatomy VR for Institutions,N/A,"00:00:00.00 - Start
 00:00:11.71 - Mount 
 00:00:46.40 - Idle 
-00:00:51.00- Open App
+00:00:51.00 - Open App
 00:01:25.49 - App Launch Complete 
 00:01:39.40 - Selected Start (Option: tutorial, settings, start, shop)
 00:03:04.32 - analyzed the skeletons (only free option)
 00:03:09.74 - Quit App
 00:03:15.17 - Unmount
 00:03:30.09 - Device Sleep",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- > use the controllers to menu (choose to start) -> use the controller to analyze the skeliton  -> exit,yes,,,yes,"00:00:00.00 - Start
-00:00:10.33 - mounted headset
-00:00:47.82 - Home screen
+00:00:10.33 - Mount
+00:00:47.82 - Idle
+00:00:47.82 - Open App
 00:00:47 - Menu(start, tutorial)
 00:01:46.45 - Tutorial
-00:03:23.15 - Analyzing human skeleton(Start game) and quit app
-00:00:40.04 - unmounted headset and collected logs",Permissions:mic(allowed),,,
+00:03:23.15 - Analyzing human skeleton(Start game)
+00:03:23.15 - Quit App
+00:00:40.04 - Device Sleep",Permissions:mic(allowed),," Open App
+mic permisson
+ App Launch 
+Select Start (Option: tutorial, settings, start, shop)
+analyzed the skeletons (only free option)
+Quit App
+",
 Medical,SIMVANA Anesthesia,N/A,,,,,,,,,,,
 Medical,AI Therapist: Your Emotional Guide,7.99,,,,,,,,,,,
 Medical,Echo Eyes,9.99,,,,,,,,,,,
 Medical,BodyMap for Anatomy and Medical Education,N/A,,,,,,,,,,,
 Medical,Human Anatomy VR Learning,N/A,,,,,,,,,,,
 Medical,NHSBT Blood Identification VR AL,31.99,,,,,,,,,,,
-Event,Glue (need to check the colaboation multi user ),N/A,"00:00:00.00 - Start
+Event,Glue,N/A,"00:00:00.00 - Start
 00:00:07.73 - Mount 
 00:00:43.29 - Idle 
-00:00:45.41- Open App 
+00:00:45.41 - Open App 
 00:00:54.18 - Mic permission (Granted)
 00:01:03.86 - Storage Permission (Granted)
 00:01:16.01 - App Launch Complete
@@ -492,71 +595,111 @@ Event,Glue (need to check the colaboation multi user ),N/A,"00:00:00.00 - Start
 00:04:01.46 - did drawings in the whiteboard
 00:04:06.69 - Quit App
 00:04:13.13 - Unmount
-00:04:36.41 - Device Sleep ","start (quest home menu)->  permission (mic, storage)-> difficulty level(n/a)- >menu (choose a utility the app offers to start from whiteboard/ browser/ 3d drawing etc ) ->  use the controllers to  do the browsing and see around (filed inside home scenario) -> exit",yes,yes,"00:00:00.00 - Start
-00:00:12.64 - Mount & Start Rec
+00:04:36.41 - Device Sleep ","start (quest home menu)->  permission (mic, storage)-> difficulty level(n/a)- >menu (choose a utility the app offers to start from whiteboard/ browser/ 3d drawing etc ) ->  use the controllers to  do the browsing and see around (filed inside home scenario) -> exit
+did not explore the collaboration option yet",yes,yes,"00:00:00.00 - Start
+00:00:12.64 - Mount
 00:00:56.10 - Idle
 00:00:59.60 - Open App
 00:01:06.44 - Mic Permission asked (granted)
-00:01:38:00 - App Launched
+00:01:38.00 - App Launched
 00:04:29.50 - Pressing buttons before login
 00:11:16.00 - Logged in
 00:11:23.00 - Opened Whiteboard
 00:12:30.00 - Try to use whiteboard
 00:12:34.40 - Quit App
-00:12:39.46 - Stop Rec & Unmount
-00:14:01.98 - Device Sleep",,,,,,
+00:12:39.46 - Unmount
+00:14:01.98 - Device Sleep",,,,," Open App 
+Mic permission (Granted)
+Storage Permission (Granted)
+ App Launch Complet
+select something from all the options (whiteboard, 3d drawing, browser, etc)
+explore the selected option
+Quit App",
 Event,MeetinVR,N/A,,,,,,,,,,,
 Event,"Mindway - Mindfulness Meditation, Sleep, ASMR",N/A,,,,,,,,,,,
 Event,Virtual Courtroom,29.99,,,,,,,,,,,
 Event,Extendra Hub,N/A,,,,,,,,,,,
-Event,Fly Villa: AI World Travel & Creational,N/A,,,yes,yes,,,,,,,
-Event,MYX ARKADIA (need extented exp),N/A,"00:00:00.00 - Start
+Event,Fly Villa: AI World Travel n Creational,N/A,,,yes,yes,,,,,,,
+Event,MYX ARKADIA,N/A,"00:00:00.00 - Start
 00:00:06.97 - Mount 
 00:00:42.64 - Idle 
-00:00:46.36- Open App 
+00:00:46.36 - Open App 
 00:01:01.79 - App Launch Complete
 00:03:26.09 - Explore the city environment 
 00:03:32.40 - Quit App
 00:03:539.94 - Unmount
 00:03:51.73 - Device Sleep ",start (quest home menu)->  permission (n/a)-> difficulty level(n/a)- > choose option start use the controllers to expore and mover around a city  -> exit,yes,yes,"00:00:00.00 - Start
-00:00:15.64 - Mount & Start Rec
+00:00:15.64 - Mount
 00:00:58.10 - Idle
 00:02:36.60 - Open App
 00:02:39.44 - Mic Permission asked (granted)
-00:02:48:00 - App Launched
+00:02:48.00 - App Launched
 00:03:03.50 - Start Game, Explore (Need more context, game seems vast)
 00:05:10.40 - Quit App
-00:05:14.90 - Stop Rec & Unmount
-00:07:38.98 - Device Sleep",,,,,,
+00:05:14.90 - Unmount
+00:07:38.98 - Device Sleep",,,,,"Open App 
+mic permission
+App Launch 
+Explore the city environment 
+Quit App",
 Event,Go Clubbing VR,9.99,,,,,,,,,,,
 Event,Joshua Tree Music Festival 2023,9.99,,,,,,,,,,,
 Event,Chat XR,N/A,,,,,,,,,,,
 Creativity & Design,Noda,N/A,"00:00:00.00 - Start
 00:00:11.44 - Mount 
 00:00:49.39 - Idle 
-00:00:53.16- Open App 
+00:00:53.16 - Open App 
 00:01:02.37 - Mic permission (Granted)
 00:01:05.20 - App Launch Complete
 00:03:05.36 - used the controller to manipulate nodes (create/ modify / delete/ etc) 
 00:03:12.27 - Quit App
 00:03:17.64 - Unmount
-00:03:33.0 - Device Sleep ",start (quest home menu)->  permission (mic)-> difficulty level(n/a)- > manipulate node (create/ connect one another/ change color/ delete/ etc)  -> exit,yes,,,yes,,,,,
+00:03:33.0 - Device Sleep ",start (quest home menu)->  permission (mic)-> difficulty level(n/a)- > manipulate node (create/ connect one another/ change color/ delete/ etc)  -> exit,yes,,,yes,"00:00:00.00 - Start
+00:00:09.96 - Mount
+00:00:59.37 - Idle
+00:00:59.37 - Open App
+00:00:57.25 - Permissions
+00:07:46.82 - constructed a structure
+00:00:03.73 - Quit App
+00:11.40 - Unmount
+00:01:04.01 - Device Sleep","Permissions:
+mic:granted
+eye tracking : not enabled/not asked
+Spatial data : granted",,"Open App 
+Mic permission
+App Launch Complete
+ use the controller to manipulate nodes (create/ modify / delete/ etc) 
+Quit App
+",
 Creativity & Design,Kingspray Graffiti,14.99,,,,,,,,,,,
 Creativity & Design,Open Brush - 3D Painting,N/A,"00:00:00.00 - Start
 00:00:09.88 - Mount 
 00:00:41.78 - Idle 
-00:00:45.46- Open App 
+00:00:45.46 - Open App 
 00:00:51.91 -  storage permission (Granted)
 00:01:10.78 - App Launch Complete
 00:01:23.55 - Choose to start a new sketch
 00:03:05.57 - used the controller to draw and modify 
 00:03:11.32 - Quit App
 00:03:15.99 - Unmount
-00:03:31.12 - Device Sleep ",start (quest home menu)->  permission (storage)-> difficulty level(n/a)- > start a new sketch and manipulate the drawing -> exit,yes,,,yes,,,,,
+00:03:31.12 - Device Sleep ",start (quest home menu)->  permission (storage)-> difficulty level(n/a)- > start a new sketch and manipulate the drawing -> exit,yes,,,yes,"00:00:00.00 - Start
+00:00:10.71 - Mount
+00:00:51.24 - Idle
+00:00:51.24 - Open app
+00:00:35.40 - Permissions
+00:03:58.17 - Play game
+00:03:58.17 - Quit App
+00:00:20.28 - Unmount
+00:00:27.23 - Device sleep",,,"Open App 
+storage permission
+App Launch Complete
+Choose to start a new sketch
+ use the controller to draw and modify 
+Quit App",
 Creativity & Design,Color Space,9.99,,,,,,,,,,,
 Creativity & Design,djay,19.99,,,,,,,,,,,
 Creativity & Design,Autodesk Workshop XR,N/A,,,,,,,,,,,
 Creativity & Design,Home Design 3D VR,19.99,,,,,,,,,,,
 Creativity & Design,Rube Goldberg Workshop,9.99,,,,,,,,,,,
 Creativity & Design,Gesture VR,16.99,,,,,,,,,,,
-Creativity & Design,"Doodle Board — whiteboard, paint, sketch, draw, and get creative in VR & MR",N/A,,,,,,,,,,,
+Creativity & Design,"Doodle Board — whiteboard, paint, sketch, draw, and get creative in VR n MR",N/A,,,,,,,,,,,

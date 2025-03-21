@@ -22,7 +22,7 @@ def process_csv(csv_file, output_dir):
                     app_dir = os.path.join(ann_dir, app_name)
                     os.makedirs(app_dir, exist_ok=True)
 
-                    filename = os.path.join(app_dir, f"{ann_no}.txt")
+                    filename = os.path.join(app_dir, f"{app_name}_{ann_no}.txt")
                     with open(filename, 'w', encoding='utf-8') as txt_file:
                         txt_file.write(content)
                     print(f"Created: {filename}")

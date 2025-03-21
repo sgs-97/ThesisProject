@@ -1,13 +1,19 @@
-io_files/*
-
+# System / IDE / venv
 .DS_Store
-
-_test
-
 .idea
-
 .venv
 __pycache__
 
+# Temporary files
+_test
+io_files/*
+
+# scripts trash
 scripts/*.log
 scripts/multmux_logs
+
+# Data
+/data/SpatialData/
+
+# Misc
+/nnmav_README.md
