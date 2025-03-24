@@ -203,11 +203,16 @@ if __name__ == "__main__":
     plotly_graph_file = args.output_html
     plotly_graph_file = plotly_graph_file.replace('<csv_file_dir>', (os.path.abspath(os.path.dirname(csv_file_path))))
     app_events_path = args.app_events
-    if not os.path.exists(app_events_path):
-        raise FileNotFoundError(f"JSON file {app_events_path} does not exist.")
-    skip_fig_show = args.skip_fig_show
 
-    # Check paths
+    # Load additional app events components
+    if not os.path.exists(app_events_path):
+        print(f"JSON file {app_events_path} does not exist. Continuing without app events.")
+        app_events = []
+    else:
+        with open(app_events_path, 'r') as json_file:
+            app_events = json.load(json_file)
+
+    skip_fig_show = args.skip_fig_show
 
     df_original = pd.read_csv(csv_file_path)
     df = df_original[['Time', 'Message']].copy()
@@ -216,10 +221,6 @@ if __name__ == "__main__":
 
     # Extract sensor events from the CSV file using the parsing conditions from the JSON file
     sensor_events, colors, sensor_names = helpers.extract_sensor_events(df, json_file_path)
-
-    # Load Additional Components
-    with open(app_events_path, 'r') as json_file:
-        app_events = json.load(json_file)
 
     plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, app_events=app_events, skip_fig_show=skip_fig_show)
     print(f"Graph has been generated and saved to {plotly_graph_file}")
