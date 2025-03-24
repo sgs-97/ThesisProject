@@ -3,6 +3,42 @@ import os
 import pandas as pd
 import helpers
 
+def sensors_events_to_df(sensor_events):
+    """
+    Convert sensor events to a DataFrame.
+    :param sensor_events: Dictionary containing sensor events.
+    :return: DataFrame with columns ['Time', 'Sensor', 'Type'].
+    """
+    # Convert sensor_events to pd.DataFrame ['Time', 'Sensor', 'Type'] and cleanup
+    sensor_events_df = []
+    for sensor_name, events in sensor_events.items():
+        for event in events:
+            sensor_events_df.append([event['Time'], sensor_name, event['Type']])
+    sensor_events_df = pd.DataFrame(sensor_events_df, columns=['Time', 'Sensor', 'Type'])
+    sensor_events_df.rename(columns={'Type': 'Event'}, inplace=True)
+    sensor_events_df['Time'] = pd.to_datetime(sensor_events_df['Time'], format='%H:%M:%S.%f')
+    sensor_events_df.sort_values(by='Time', inplace=True)
+    sensor_events_df.reset_index(drop=True, inplace=True)
+    return sensor_events_df
+
+def app_events_to_df(app_events, experiment_start_time_td):
+    """
+    Convert app events to a DataFrame.
+    :param app_events: DataFrame containing app events.
+    :param experiment_start_time_td: Time delta for the experiment start time.
+    :return: DataFrame with columns ['Time', 'Event'].
+    """
+    # Convert app_events to pd.DataFrame ['Time', 'Event'] and cleanup
+    app_events_df = pd.DataFrame(app_events, columns=['time', 'label', 'type'])
+    # Drop columns that have a type different than line
+    app_events_df = app_events_df[app_events_df['type'] == 'line']
+    app_events_df.drop(columns=['type'], inplace=True)
+    app_events_df.rename(columns={'time': 'Time', 'label': 'Event'}, inplace=True)
+    app_events_df['Time'] = pd.to_datetime(app_events_df['Time'], format='%H:%M:%S.%f') + experiment_start_time_td
+    app_events_df.sort_values(by='Time', inplace=True)
+    app_events_df.reset_index(drop=True, inplace=True)
+    return app_events_df
+
 def extract_sensor_app_activity(sensor_events, sensor_names, df, app_events=None):
     all_timestamps = []
     sensor_activity = {}
@@ -111,12 +147,12 @@ if __name__ == '__main__':
     parser.add_argument('app_events', type=str, help='Path to the input app events json file.')
     parser.add_argument("--json_file", default='<script_dir_path>/dict.json',
                         help="Path to the JSON file with parsing conditions. Default: <script_dir_path>/dict.json")
-    parser.add_argument('--verbose', action='store_true', help='Enable verbose mode.')
+    parser.add_argument('--verbosity', choices=['normal', 'verbose', 'debug'], default='normal', help='Set the verbosity level.')
     args = parser.parse_args()
 
     script_name = os.path.basename(__file__)
     print(f"[\033[1;33mSTART\033[0m] {script_name}")
-
+    verbosity = {'normal': 0, 'verbose': 1, 'debug': 2}[args.verbosity]
     log_file_path = args.csv_log
     json_file_path = args.json_file
     json_file_path = json_file_path.replace('<script_dir_path>', (os.path.abspath(os.path.dirname(__file__))))
@@ -130,7 +166,7 @@ if __name__ == '__main__':
     if not os.path.exists(app_events_path):
         raise FileNotFoundError(f"App events file {app_events_path} does not exist.")
 
-    if args.verbose:
+    if verbosity > 0:
         print(f"Log file path: {log_file_path}")
         print(f"JSON file path: {json_file_path}")
         print(f"App events file path: {app_events_path}")
@@ -146,43 +182,32 @@ if __name__ == '__main__':
     experiment_start_time = logs_df['Time'].min() + timer_lag
     experiment_start_time_td = pd.Timedelta(hours=experiment_start_time.hour, minutes=experiment_start_time.minute,
                                             seconds=experiment_start_time.second)
-    # experiment_end_time = logs_df['Time'].max() + timer_lag
 
     # Extract sensor events from the CSV file using the parsing conditions from the JSON file
     sensor_events, colors, sensor_names = helpers.extract_sensor_events(logs_df, json_file_path)
 
-    # Convert sensor_events to pd.DataFrame ['Time', 'Sensor', 'Type'] and cleanup
-    sensor_events_df = []
-    for sensor_name, events in sensor_events.items():
-        for event in events:
-            sensor_events_df.append([event['Time'], sensor_name, event['Type']])
-    sensor_events_df = pd.DataFrame(sensor_events_df, columns=['Time', 'Sensor', 'Type'])
-    sensor_events_df.rename(columns={'Type': 'Event'}, inplace=True)
-    sensor_events_df['Time'] = pd.to_datetime(sensor_events_df['Time'], format='%H:%M:%S.%f')
-    sensor_events_df.sort_values(by='Time', inplace=True)
-    sensor_events_df.reset_index(drop=True, inplace=True)
-
     # Convert app_events to pd.DataFrame ['Time', 'event'] and cleanup
-    app_events_df = pd.read_json(app_events_path)
-    # Delete rows that have a type different than line. Only rows with a type of line are enough to represent all events. Rest are supplementary rects, annotations, etc.
-    app_events_df = app_events_df[app_events_df['type'] == 'line']
-    # Drop any non-relevant columns
-    app_events_df = app_events_df[['time', 'label']]
-    # Rename columns to match the sensor_events_array
-    app_events_df.rename(columns={'time': 'Time', 'label': 'Event'}, inplace=True)
-    app_events_df['Time'] = pd.to_datetime(app_events_df['Time'], format='%H:%M:%S.%f') + experiment_start_time_td
-    app_events_df.sort_values(by='Time', inplace=True)
-    app_events_df.reset_index(drop=True, inplace=True)
+    app_events = pd.read_json(app_events_path)
+    app_events_df = app_events_to_df(app_events.to_dict(orient='records'), experiment_start_time_td)
+    if verbosity > 0:
+        print(f"App events DataFrame:\n{app_events_df}")
+
+    # Convert sensor events to pd.DataFrame ['Time', 'Sensor', 'Type'] and cleanup
+    sensor_events_df = sensors_events_to_df(sensor_events)
+    if verbosity > 0:
+        print(f"Sensor events DataFrame:\n{sensor_events_df}")
 
     # Concatenate the two arrays and sort by timestamp
-    combined_events = pd.concat([sensor_events_df, app_events_df], ignore_index=True)
-    combined_events.sort_values(by='Time', inplace=True)
-    combined_events.reset_index(drop=True, inplace=True)
-    print(f"[\033[1;34mINFO\033[0m] Combined events:\n{combined_events}")
+    combined_sensor_app_events = pd.concat([sensor_events_df, app_events_df], ignore_index=True)
+    combined_sensor_app_events.sort_values(by='Time', inplace=True)
+    combined_sensor_app_events.reset_index(drop=True, inplace=True)
+    if verbosity > 0:
+        print(f"Combined sensor and app events DataFrame:\n{combined_sensor_app_events}")
 
     # TODO: Export array to csv
     # TODO: Create a combined array with sensor_events and app_events combined when their timestamps are close enough (maybe <5s)
     # TODO: Try: instaed of one sensor column to have one column for each sensor with its name as a header plus a column for app events and add the start/stop events and app events in the respective column and timestamp row
+
 
     # Extract sensor activity for each sensor
     summary_sensor_activity = extract_sensor_app_activity(sensor_events, sensor_names, logs_df,
@@ -190,6 +215,16 @@ if __name__ == '__main__':
 
     # Delete rows that have the same exact events (both sensor and app) to avoid duplicates. Keep the one with the less timestamp
     summary_sensor_activity = delete_duplicates(summary_sensor_activity)
+
+    # Statistics for time spent in each state and number of state changes. Statistics will be only calculated and printed in the final csv
+    for column in summary_sensor_activity.columns[:-1]:
+        for i in range(len(summary_sensor_activity)):
+            print(summary_sensor_activity.index[i])
+            print(type(summary_sensor_activity.index[i]))
+        total_time = sum(summary_sensor_activity.index[i] - summary_sensor_activity.index[i-1] for i in range(1, len(summary_sensor_activity)) if summary_sensor_activity[column].iloc[i] == 1)
+        num_changes = summary_sensor_activity[column].diff().ne(0).sum() - 2
+        print(f"[\033[1;34mINFO\033[0m] Sensor '{column}' - Total time spent: {total_time}, Number of state changes: {num_changes}")
+
 
     print(f"[\033[1;34mINFO\033[0m] Summary of sensor activity:\n{summary_sensor_activity}")
 

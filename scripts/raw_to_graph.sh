@@ -33,9 +33,11 @@ function main() {
         exit 1
     fi
 
-    python3 ../file_converters/log_to_csv.py "$dir"/*.log
-    python3 ../file_converters/states_to_json.py "$dir"/Ann*.txt
-    python3 ../activity_graphs/graph.py "$dir"/*.csv --app_events "$dir"/Ann*.json
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+    python3 $SCRIPT_DIR/../file_converters/log_to_csv.py "$dir"/*.log
+    python3 $SCRIPT_DIR/../file_converters/states_to_json.py "$dir"/Ann*.txt
+    python3 $SCRIPT_DIR/../activity_graphs/graph.py "$dir"/*.csv --app_events "$dir"/Ann*.json
 
 }
 
