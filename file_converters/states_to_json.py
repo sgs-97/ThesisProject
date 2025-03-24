@@ -17,7 +17,7 @@ def convert_states_to_json(states_file_path, json_output_path):
                 time, state = line.strip().split(' - ')
                 dict[len(dict)-1]["type"] = "line"
                 dict[len(dict)-1]["orientation"] = "vertical"  # Assuming vertical orientation since all events will be vertical lines
-                dict[len(dict)-1]["value"] = str(time)
+                dict[len(dict)-1]["time"] = str(time)
                 dict[len(dict)-1]["label"] = str(state)
                 dict[len(dict)-1]["linetype"] = "dash"
                 if state.lower() == "start":
@@ -45,8 +45,8 @@ def convert_states_to_json(states_file_path, json_output_path):
         if x_start and x_stop:
             dict.append({
                 "type": "rect",
-                "x0": x_start.strftime('%H:%M:%S.%f'),
-                "x1": x_stop.strftime('%H:%M:%S.%f'),
+                "t0": x_start.strftime('%H:%M:%S.%f'),
+                "t1": x_stop.strftime('%H:%M:%S.%f'),
                 "y0": 0.93,
                 "y1": 1.03,
                 "label": "App Running",
@@ -57,7 +57,7 @@ def convert_states_to_json(states_file_path, json_output_path):
             # Annotation for the app period
             dict.append({
                 "type": "annotation",
-                "x": (x_start + (x_stop-x_start)/2).strftime('%H:%M:%S.%f'),
+                "t": (x_start + (x_stop-x_start)/2).strftime('%H:%M:%S.%f'),
                 "y": 1.0,
                 "text": "App Running",
                 "showarrow": False,
@@ -68,8 +68,8 @@ def convert_states_to_json(states_file_path, json_output_path):
             # Horizontal line from idle to unmount (Idle Period)
             dict.append({
                 "type": "rect",
-                "x0": x_mount.strftime('%H:%M:%S.%f'),
-                "x1": x_idle.strftime('%H:%M:%S.%f'),
+                "t0": x_mount.strftime('%H:%M:%S.%f'),
+                "t1": x_idle.strftime('%H:%M:%S.%f'),
                 "y0": 0.93,
                 "y1": 1.03,
                 "label": "Device Idle",
@@ -80,7 +80,7 @@ def convert_states_to_json(states_file_path, json_output_path):
             # Annotation for the idle period
             dict.append({
                 "type": "annotation",
-                "x": (x_mount + (x_idle-x_mount)/2).strftime('%H:%M:%S.%f'),
+                "t": (x_mount + (x_idle-x_mount)/2).strftime('%H:%M:%S.%f'),
                 "y": 1.0,
                 "text": "Device Idle",
                 "showarrow": False,
@@ -91,8 +91,8 @@ def convert_states_to_json(states_file_path, json_output_path):
             # Horizontal line from mount to unmount (Mounted Period)
             dict.append({
                 "type": "rect",
-                "x0": x_mount.strftime('%H:%M:%S.%f'),
-                "x1": x_unmount.strftime('%H:%M:%S.%f'),
+                "t0": x_mount.strftime('%H:%M:%S.%f'),
+                "t1": x_unmount.strftime('%H:%M:%S.%f'),
                 "y0": -0.03,
                 "y1": 1.03,
                 "label": "Device Mounted",
@@ -103,7 +103,7 @@ def convert_states_to_json(states_file_path, json_output_path):
             # Annotation for the mounted period
             dict.append({
                 "type": "annotation",
-                "x": (x_mount + (x_unmount-x_mount)/2).strftime('%H:%M:%S.%f'),  # Center the annotation
+                "t": (x_mount + (x_unmount-x_mount)/2).strftime('%H:%M:%S.%f'),  # Center the annotation
                 "y": 0.02,  # Adjust y position to avoid overlap with the rect
                 # "yshift": -10,
                 "text": "Device Mounted",

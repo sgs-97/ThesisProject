@@ -18,18 +18,18 @@ def plot_additional_components(fig, additional_components, graph_start_time):
             x0, x1, y0, y1 = 0, 0, 0, 0
             if 'orientation' in component:
                 if component['orientation'] == 'vertical':
-                    x0 = pd.to_datetime(component['value'], format='%H:%M:%S.%f') + graph_start_time_td
-                    x1 = pd.to_datetime(component['value'], format='%H:%M:%S.%f') + graph_start_time_td
+                    x0 = pd.to_datetime(component['time'], format='%H:%M:%S.%f') + graph_start_time_td
+                    x1 = pd.to_datetime(component['time'], format='%H:%M:%S.%f') + graph_start_time_td
                     y0 = fig_min_y
                     y1 = fig_max_y
                 elif component['orientation'] == 'horizontal':
                     x0 = fig_min_x
                     x1 = fig_max_x
-                    y0 = component['value']
-                    y1 = component['value']
+                    y0 = component['time']
+                    y1 = component['time']
             else:
-                x0 = pd.to_datetime(component['x0'], format='%H:%M:%S.%f') + graph_start_time_td
-                x1 = pd.to_datetime(component['x1'], format='%H:%M:%S.%f') + graph_start_time_td
+                x0 = pd.to_datetime(component['t0'], format='%H:%M:%S.%f') + graph_start_time_td
+                x1 = pd.to_datetime(component['t1'], format='%H:%M:%S.%f') + graph_start_time_td
                 y0 = component['y0']
                 y1 = component['y1']
             fig.add_trace(go.Scatter(
@@ -46,7 +46,7 @@ def plot_additional_components(fig, additional_components, graph_start_time):
             ))
         elif component['type'] == 'point':
             fig.add_trace(go.Scatter(
-                x=[pd.to_datetime(component['x'], format='%H:%M:%S.%f') + graph_start_time_td],
+                x=[pd.to_datetime(component['t'], format='%H:%M:%S.%f') + graph_start_time_td],
                 y=[component['y']],
                 mode='markers',
                 marker=dict(
@@ -59,8 +59,8 @@ def plot_additional_components(fig, additional_components, graph_start_time):
         elif component['type'] == 'rect':
             fig.add_shape(
                 type='rect',
-                x0=pd.to_datetime(component['x0'], format='%H:%M:%S.%f') + graph_start_time_td,
-                x1=pd.to_datetime(component['x1'], format='%H:%M:%S.%f') + graph_start_time_td,
+                x0=pd.to_datetime(component['t0'], format='%H:%M:%S.%f') + graph_start_time_td,
+                x1=pd.to_datetime(component['t1'], format='%H:%M:%S.%f') + graph_start_time_td,
                 y0 = component['y0'],
                 y1 = component['y1'],
                 fillcolor=component['fillcolor'] if 'fillcolor' in component else 'rgba(0,0,0,0)',
@@ -74,7 +74,7 @@ def plot_additional_components(fig, additional_components, graph_start_time):
             )
         elif component['type'] == 'annotation':
             fig.add_annotation(
-                x=pd.to_datetime(component['x'], format='%H:%M:%S.%f') + graph_start_time_td,
+                x=pd.to_datetime(component['t'], format='%H:%M:%S.%f') + graph_start_time_td,
                 y=component['y'],
                 yshift=component['yshift'] if 'yshift' in component else 0,
                 text=component['text'],
@@ -104,7 +104,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
 
         # Handle the state before the first event
         first_event_time = events[0]['Time']
-        if events[0]['Type'] == 'Start':
+        if events[0]['type'] == 'Start':
             plot_data.append({'Time': df['Time'].min(), 'Y': 0})
             plot_data.append({'Time': first_event_time, 'Y': 0})
         else:
@@ -112,7 +112,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
             plot_data.append({'Time': first_event_time - pd.Timedelta(milliseconds=1), 'Y': 1})
 
         for j, event in enumerate(events):
-            if event['Type'] == 'Start':
+            if event['type'] == 'Start':
                 if not active:
                     # Add inactive state before the start
                     if j == 0 and event['Time'] > df['Time'].min():
@@ -120,7 +120,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
                         plot_data.append({'Time': event['Time'] - pd.Timedelta(milliseconds=1), 'Y': 0})
 
                     # Ensure inactive state between Stop and next Start
-                    if j > 0 and events[j - 1]['Type'] == 'Stop':
+                    if j > 0 and events[j - 1]['type'] == 'Stop':
                         # Add inactive period from the previous Stop to the current Start
                         plot_data.append({'Time': events[j - 1]['Time'] + pd.Timedelta(milliseconds=1), 'Y': 0})
                         plot_data.append({'Time': event['Time'] - pd.Timedelta(milliseconds=1), 'Y': 0})
@@ -128,7 +128,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
                     # Add active state from start time
                     plot_data.append({'Time': event['Time'], 'Y': 1})
                     active = True
-            elif event['Type'] == 'Stop' and active:
+            elif event['type'] == 'Stop' and active:
                 # Add active state up to stop time
                 plot_data.append({'Time': event['Time'], 'Y': 1})
                 # Add inactive state after the stop time
@@ -137,7 +137,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
 
         # Handle the state after the last event
         last_event_time = events[-1]['Time']
-        if events[-1]['Type'] == 'Start':
+        if events[-1]['type'] == 'Start':
             plot_data.append({'Time': last_event_time, 'Y': 1})
             plot_data.append({'Time': df['Time'].max(), 'Y': 1})
         else:
@@ -163,7 +163,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
 
     for item in app_events:
         if 'label' in item and item['label'].lower() == 'device sleep':
-            graph_end_time = pd.to_datetime(item['value'], format='%H:%M:%S.%f') + pd.Timedelta(hours=graph_start_time.hour, minutes=graph_start_time.minute, seconds=graph_start_time.second,
+            graph_end_time = pd.to_datetime(item['Time'], format='%H:%M:%S.%f') + pd.Timedelta(hours=graph_start_time.hour, minutes=graph_start_time.minute, seconds=graph_start_time.second,
                          milliseconds=graph_start_time.microsecond // 1000)
 
     plot_additional_components(fig, app_events, graph_start_time)
