@@ -104,7 +104,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
 
         # Handle the state before the first event
         first_event_time = events[0]['Time']
-        if events[0]['type'] == 'Start':
+        if events[0]['Type'] == 'Start':
             plot_data.append({'Time': df['Time'].min(), 'Y': 0})
             plot_data.append({'Time': first_event_time, 'Y': 0})
         else:
@@ -112,7 +112,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
             plot_data.append({'Time': first_event_time - pd.Timedelta(milliseconds=1), 'Y': 1})
 
         for j, event in enumerate(events):
-            if event['type'] == 'Start':
+            if event['Type'] == 'Start':
                 if not active:
                     # Add inactive state before the start
                     if j == 0 and event['Time'] > df['Time'].min():
@@ -120,7 +120,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
                         plot_data.append({'Time': event['Time'] - pd.Timedelta(milliseconds=1), 'Y': 0})
 
                     # Ensure inactive state between Stop and next Start
-                    if j > 0 and events[j - 1]['type'] == 'Stop':
+                    if j > 0 and events[j - 1]['Type'] == 'Stop':
                         # Add inactive period from the previous Stop to the current Start
                         plot_data.append({'Time': events[j - 1]['Time'] + pd.Timedelta(milliseconds=1), 'Y': 0})
                         plot_data.append({'Time': event['Time'] - pd.Timedelta(milliseconds=1), 'Y': 0})
@@ -128,7 +128,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
                     # Add active state from start time
                     plot_data.append({'Time': event['Time'], 'Y': 1})
                     active = True
-            elif event['type'] == 'Stop' and active:
+            elif event['Type'] == 'Stop' and active:
                 # Add active state up to stop time
                 plot_data.append({'Time': event['Time'], 'Y': 1})
                 # Add inactive state after the stop time
@@ -137,7 +137,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
 
         # Handle the state after the last event
         last_event_time = events[-1]['Time']
-        if events[-1]['type'] == 'Start':
+        if events[-1]['Type'] == 'Start':
             plot_data.append({'Time': last_event_time, 'Y': 1})
             plot_data.append({'Time': df['Time'].max(), 'Y': 1})
         else:
