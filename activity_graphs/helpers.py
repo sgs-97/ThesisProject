@@ -11,7 +11,6 @@ def extract_sensor_events(df, json_file_path):
     with open(json_file_path, 'r') as json_file:
         parsing_conditions = json.load(json_file)
 
-
     sensor_events = {}
     colors = []
     sensor_names = []
@@ -73,5 +72,4 @@ def extract_sensor_events(df, json_file_path):
             sensor_events[sensor_name].append({'Type': 'Start', 'Time': last_start_time})
         sensor_events[sensor_name].sort(key=lambda x: x['Time'])
         
-    print("\n sensor events : ", sensor_events['Camera 4'])
     return sensor_events, colors, sensor_names

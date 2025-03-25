@@ -257,5 +257,30 @@
     "count": 2,
     "interval_start_strings": ["imx471", "CAM_START_DEV"],
     "interval_stop_strings": ["imx471", "CAM_STOP_DEV"]
+  },
+  {
+    "label": "OG01A1B",
+    "key": "OG01A1B",
+    "color": "yellow",
+    "count": 2,
+    "interval_start_strings": ["og01a1b", "CAM_START_DEV"],
+    "interval_stop_strings": ["og01a1b", "CAM_STOP_DEV"]
+  },
+  {
+    "label": "OV7251",
+    "key": "OV7251",
+    "color": "red",
+    "count": 2,
+    "interval_start_strings": ["ov7251", "CAM_START_DEV"],
+    "interval_stop_strings": ["ov7251", "CAM_STOP_DEV"]
+  },
+  {
+    "label": "OG0VE1B",
+    "key": "OG0VE1B",
+    "color": "violet",
+    "count": 4,
+    "interval_start_strings": ["og0ve1b", "CAM_START_DEV"],
+    "interval_stop_strings": ["og0ve1b", "CAM_STOP_DEV"]
   }
+
 ]
