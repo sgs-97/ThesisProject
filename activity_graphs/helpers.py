@@ -71,5 +71,7 @@ def extract_sensor_events(df, json_file_path):
         # Append only start event if start messages met count requirement but no stop messages were encountered
         if start_count == count and stop_count == 0:
             sensor_events[sensor_name].append({'Type': 'Start', 'Time': last_start_time})
-    print("\n sensor events : ", sensor_events)
+        sensor_events[sensor_name].sort(key=lambda x: x['Time'])
+        
+    print("\n sensor events : ", sensor_events['Camera 4'])
     return sensor_events, colors, sensor_names
