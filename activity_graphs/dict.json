@@ -3,6 +3,7 @@
     "label": "Camera 0",
     "key": "Camera0",
     "color": "yellow",
+    "count": 1,
     "interval_start_strings": ["Camera 0 StartCamera"],
     "interval_stop_strings": ["Camera 0 StopCamera"]
   },
@@ -10,6 +11,7 @@
     "label": "Camera 1",
     "key": "Camera1",
     "color": "red",
+    "count": 1,
     "interval_start_strings": ["Camera 1 StartCamera"],
     "interval_stop_strings": ["Camera 1 StopCamera"]
   },
@@ -17,6 +19,7 @@
     "label": "Camera 2",
     "key": "Camera2",
     "color": "yellow",
+    "count": 1,
     "interval_start_strings": ["Camera 2 StartCamera"],
     "interval_stop_strings": ["Camera 2 StopCamera"]
   },
@@ -24,6 +27,7 @@
     "label": "Camera 3",
     "key": "Camera3",
     "color": "orange",
+    "count": 1,
     "interval_start_strings": ["Camera 3 StartCamera"],
     "interval_stop_strings": ["Camera 3 StopCamera"]
   },
@@ -31,6 +35,7 @@
     "label": "Camera 4",
     "key": "Camera4",
     "color": "blue",
+    "count": 1,
     "interval_start_strings": ["Camera 4 StartCamera"],
     "interval_stop_strings": ["Camera 4 StopCamera"]
   },
@@ -38,6 +43,7 @@
     "label": "Camera 5",
     "key": "Camera5",
     "color": "pink",
+    "count": 1,
     "interval_start_strings": ["Camera 5 StartCamera"],
     "interval_stop_strings": ["Camera 5 StopCamera"]
   },
@@ -48,6 +54,7 @@
     "label": "ColorCamera 0",
     "key": "ColorCamera0",
     "color": "yellow",
+    "count": 1,
     "interval_start_strings": ["ColorCamera 0", "starting"],
     "interval_stop_strings": ["ColorCamera 0", "Stop"]
   },
@@ -55,6 +62,7 @@
     "label": "ColorCamera 1",
     "key": "ColorCamera1",
     "color": "red",
+    "count": 1,
     "interval_start_strings": ["ColorCamera 1", "starting"],
     "interval_stop_strings": ["ColorCamera 1", "Stop"]
   },
@@ -62,6 +70,7 @@
     "label": "ColorCamera 2",
     "key": "ColorCamera2",
     "color": "green",
+    "count": 1,
     "interval_start_strings": ["ColorCamera 2", "starting"],
     "interval_stop_strings": ["ColorCamera 2", "Stop"]
   },
@@ -69,6 +78,7 @@
     "label": "ColorCamera 3",
     "key": "ColorCamera3",
     "color": "orange",
+    "count": 1,
     "interval_start_strings": ["ColorCamera 3", "starting"],
     "interval_stop_strings": ["ColorCamera 3", "Stop"]
   },
@@ -76,6 +86,7 @@
     "label": "ColorCamera 4",
     "key": "ColorCamera4",
     "color": "blue",
+    "count": 1,
     "interval_start_strings": ["ColorCamera 4", "starting"],
     "interval_stop_strings": ["ColorCamera 4", "Stop"]
   },
@@ -83,6 +94,7 @@
     "label": "ColorCamera 5",
     "key": "ColorCamera5",
     "color": "pink",
+    "count": 1,
     "interval_start_strings": ["ColorCamera 5", "starting"],
     "interval_stop_strings": ["ColorCamera 5", "Stop"]
   },
@@ -90,6 +102,7 @@
        "label": "ColorCamera 0(E/D)",
        "key": "ColorCamera0",
        "color": "red",
+       "count": 1,
        "interval_start_strings": ["ColorCamera 0", "enabling"],
        "interval_stop_strings": ["ColorCamera 0", "disabling"]
    },
@@ -97,6 +110,7 @@
        "label": "ColorCamera 1(E/D)",
        "key": "ColorCamera1",
        "color": "green",
+       "count": 1,
        "interval_start_strings": ["ColorCamera 1", "enabling"],
        "interval_stop_strings": ["ColorCamera 1", "disabling"]
    },
@@ -104,6 +118,7 @@
        "label": "ColorCamera 2(E/D)",
        "key": "ColorCamera2",
        "color": "orange",
+       "count": 1,
        "interval_start_strings": ["ColorCamera 2", "enabling"],
        "interval_stop_strings": ["ColorCamera 2", "disabling"]
    },
@@ -111,6 +126,7 @@
        "label": "ColorCamera 3(E/D)",
        "key": "ColorCamera3",
        "color": "blue",
+       "count": 1,
        "interval_start_strings": ["ColorCamera 3", "enabling"],
        "interval_stop_strings": ["ColorCamera 3", "disabling"]
    },
@@ -118,6 +134,7 @@
        "label": "ColorCamera 4(E/D)",
        "key": "ColorCamera4",
        "color": "pink",
+       "count": 1,
        "interval_start_strings": ["ColorCamera 4", "enabling"],
        "interval_stop_strings": ["ColorCamera 4", "disabling"]
    },
@@ -125,6 +142,7 @@
        "label": "ColorCamera 5(E/D)",
        "key": "ColorCamera5",
        "color": "yellow",
+       "count": 1,
        "interval_start_strings": ["ColorCamera 5", "enabling"],
        "interval_stop_strings": ["ColorCamera 5", "disabling"]
    },
@@ -132,6 +150,7 @@
     "label": "og01a1b 0x1",
     "key": "og01a1b_0x1",
     "color": "yellow",
+    "count": 1,
     "interval_start_strings": ["Start og01a1b streaming 0x1"],
     "interval_stop_strings": ["Stop og01a1b streaming 0x1"]
   },
@@ -139,6 +158,7 @@
     "label": "og01a1b 0x2",
     "key": "og01a1b_0x2",
     "color": "blue",
+    "count": 1,
     "interval_start_strings": ["Start og01a1b streaming 0x2"],
     "interval_stop_strings": ["Stop og01a1b streaming 0x2"]
   },
@@ -146,6 +166,7 @@
     "label": "ov7251 0x4",
     "key": "ov7251_0x4",
     "color": "red",
+    "count": 1,
     "interval_start_strings": ["Start ov7251 streaming 0x4"],
     "interval_stop_strings": ["Stop ov7251 streaming 0x4"]
   },
@@ -153,6 +174,7 @@
     "label": "ov7251 0x8",
     "key": "ov7251_0x8",
     "color": "pink",
+    "count": 1,
     "interval_start_strings": ["Start ov7251 streaming 0x8"],
     "interval_stop_strings": ["Stop ov7251 streaming 0x8"]
   },
@@ -160,6 +182,7 @@
     "label": "imx471",
     "key": "imx471",
     "color": "violet",
+    "count": 1,
     "interval_start_strings": ["Start imx471 streaming 0x10"],
     "interval_stop_strings": ["Stop imx471 streaming 0x10"]
   },
@@ -167,6 +190,7 @@
     "label": "ov6211 0x20",
     "key": "ov6211_0x20",
     "color": "orange",
+    "count": 1,
     "interval_start_strings": ["Start ov6211 streaming 0x20"],
     "interval_stop_strings": ["Stop ov6211 streaming 0x20"]
   },
@@ -174,6 +198,7 @@
     "label": "ov6211 0x40",
     "key": "ov6211_0x40",
     "color": "grey",
+    "count": 1,
     "interval_start_strings": ["Start ov6211 streaming 0x40"],
     "interval_stop_strings": ["Stop ov6211 streaming 0x40"]
   },
@@ -181,20 +206,23 @@
     "label": "ov6211 0x80",
     "key": "ov6211_0x80",
     "color": "violet",
+    "count": 1,
     "interval_start_strings": ["Start ov6211 streaming 0x80"],
     "interval_stop_strings": ["Stop ov6211 streaming 0x80"]
   },
   {
     "label": "ov6211 0x100",
     "key": "ov6211_0x100",
-    "color": "violet",
+    "color": "red",
+    "count": 1,
     "interval_start_strings": ["Start ov6211 streaming 0x100"],
     "interval_stop_strings": ["Stop ov6211 streaming 0x100"]
   },
   {
     "label": "ov6211 0x200",
     "key": "ov6211_0x200",
-    "color": "violet",
+    "color": "green",
+    "count": 1,
     "interval_start_strings": ["Start ov6211 streaming 0x200"],
     "interval_stop_strings": ["Stop ov6211 streaming 0x200"]
   },
@@ -202,6 +230,7 @@
     "label": "Controller 57fe0d1c7704b76f",
     "key": "57fe0d1c7704b76f",
     "color": "violet",
+    "count": 1,
     "interval_start_strings": ["57fe0d1c7704b76f", "1 -> 0"],
     "interval_stop_strings": ["57fe0d1c7704b76f", "0 -> 1"]
   },
@@ -209,6 +238,7 @@
     "label": "Controller e1499eb38bf1e9b6",
     "key": "e1499eb38bf1e9b6",
     "color": "maroon",
+    "count": 1,
     "interval_start_strings": ["e1499eb38bf1e9b6", "1 -> 0"],
     "interval_stop_strings": ["e1499eb38bf1e9b6", "0 -> 1"]
   },
@@ -216,7 +246,16 @@
     "label": "Passthrough",
     "key": "Passthrough",
     "color": "black",
+    "count": 1,
     "interval_start_strings": ["[passthrough]]", "start","completed"],
     "interval_stop_strings": ["[passthrough]]", "stop","completed"]
+  },
+  {
+    "label": "IMX471",
+    "key": "IMX471",
+    "color": "green",
+    "count": 2,
+    "interval_start_strings": ["imx471", "CAM_START_DEV"],
+    "interval_stop_strings": ["imx471", "CAM_STOP_DEV"]
   }
 ]
