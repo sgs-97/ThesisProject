@@ -156,21 +156,22 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
             line=dict(color=colors[i % len(colors)])
         ))
 
-    five_sec_slack = pd.Timedelta(seconds=5)
+    # Time between clearing the logs and starting the timer (Experiment defect)
+    timer_lag = pd.Timedelta(seconds=2)
     # Set title and labels
-    graph_start_time = df['Time'].min() - five_sec_slack
+    graph_start_time = df['Time'].min() - timer_lag
     graph_end_time = df['Time'].max()
 
     for item in app_events:
         if 'label' in item and item['label'].lower() == 'device sleep':
-            graph_end_time = pd.to_datetime(item['Time'], format='%H:%M:%S.%f') + pd.Timedelta(hours=graph_start_time.hour, minutes=graph_start_time.minute, seconds=graph_start_time.second,
+            graph_end_time = pd.to_datetime(item['time'], format='%H:%M:%S.%f') + pd.Timedelta(hours=graph_start_time.hour, minutes=graph_start_time.minute, seconds=graph_start_time.second,
                          milliseconds=graph_start_time.microsecond // 1000)
 
     plot_additional_components(fig, app_events, graph_start_time)
 
     fig.update_layout(
         title='Sensor Start/Stop Events',
-        xaxis=dict(range=[graph_start_time - five_sec_slack, graph_end_time + five_sec_slack], title='Time'),
+        xaxis=dict(range=[graph_start_time - timer_lag, graph_end_time + timer_lag], title='Time'),
         yaxis_title='Sensor Activity (1=Active, 0=Inactive)',
         yaxis=dict(range=[-0.1,1.1], tickvals=[0, 1], ticktext=['Inactive', 'Active'])
     )

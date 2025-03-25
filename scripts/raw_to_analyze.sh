@@ -36,7 +36,7 @@ function main() {
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
     python3 $SCRIPT_DIR/preprocess_dir.sh "$dir"
-    python3 $SCRIPT_DIR/graph_dir.sh "$dir"
+    python3 $SCRIPT_DIR/analyze_dir.sh "$dir"
 
 }
 

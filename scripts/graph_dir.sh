@@ -33,10 +33,19 @@ function main() {
         exit 1
     fi
 
+    # If preprocessing output is missing exit
+    if [[ ! -f "$dir"/adb_log*.csv ]]; then
+        echo "Error: adb_log not found in dir '$dir'. First run preprocess_dir.sh"
+        exit 1
+    fi
+    if [[ ! -f "$dir"/*.json ]]; then
+        echo "Error: app_events json not found in dir '$dir'. First run preprocess_dir.sh"
+        exit 1
+    fi
+
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    python3 $SCRIPT_DIR/preprocess_dir.sh "$dir"
-    python3 $SCRIPT_DIR/graph_dir.sh "$dir"
+    python3 $SCRIPT_DIR/../activity_graphs/graph.py "$dir"/adb_log*.csv --app_events "$dir"/*.json
 
 }
 

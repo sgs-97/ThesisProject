@@ -1,5 +1,7 @@
 import argparse
 import os
+from functools import total_ordering
+
 import pandas as pd
 import helpers
 
@@ -208,7 +210,6 @@ if __name__ == '__main__':
     # TODO: Create a combined array with sensor_events and app_events combined when their timestamps are close enough (maybe <5s)
     # TODO: Try: instaed of one sensor column to have one column for each sensor with its name as a header plus a column for app events and add the start/stop events and app events in the respective column and timestamp row
 
-
     # Extract sensor activity for each sensor
     summary_sensor_activity = extract_sensor_app_activity(sensor_events, sensor_names, logs_df,
                                                           app_events=app_events_df.to_dict(orient='records'))
@@ -216,15 +217,28 @@ if __name__ == '__main__':
     # Delete rows that have the same exact events (both sensor and app) to avoid duplicates. Keep the one with the less timestamp
     summary_sensor_activity = delete_duplicates(summary_sensor_activity)
 
-    # Statistics for time spent in each state and number of state changes. Statistics will be only calculated and printed in the final csv
-    for column in summary_sensor_activity.columns[:-1]:
-        for i in range(len(summary_sensor_activity)):
-            print(summary_sensor_activity.index[i])
-            print(type(summary_sensor_activity.index[i]))
-        total_time = sum(summary_sensor_activity.index[i] - summary_sensor_activity.index[i-1] for i in range(1, len(summary_sensor_activity)) if summary_sensor_activity[column].iloc[i] == 1)
-        num_changes = summary_sensor_activity[column].diff().ne(0).sum() - 2
-        print(f"[\033[1;34mINFO\033[0m] Sensor '{column}' - Total time spent: {total_time}, Number of state changes: {num_changes}")
+    # Create two new rows to dataframe with time spent in each state and number of state changes. Statistics will be only calculated and printed in the final csv
+    summary_sensor_activity.loc['total time spent'] = None
+    summary_sensor_activity.loc['number of state changes'] = None
 
+
+    for column in summary_sensor_activity.columns[:-1]:
+        total_activity_uptime = pd.Timedelta(0)
+        num_changes = 0
+        for i in range(1, len(summary_sensor_activity)-2): # Exclude last two rows (satatistics)
+            if summary_sensor_activity[column].iloc[i] == 1:
+                total_activity_uptime += helpers.timedelta_pd(summary_sensor_activity.index[i], summary_sensor_activity.index[i-1])
+            if summary_sensor_activity[column].iloc[i] != summary_sensor_activity[column].iloc[i-1]:
+                num_changes += 1
+        # num_changes = int(summary_sensor_activity[column].diff().ne(0).sum() - 1)  # Subtract 1 to exclude the initial state from being considered a change
+        print(f"[\033[1;34mINFO\033[0m] Sensor '{column}' - Total time spent: {total_activity_uptime}, Number of state changes: {num_changes}")
+        # append the totals to the last statistics rows
+        summary_sensor_activity.at['number of state changes', column] = num_changes
+        summary_sensor_activity.at['total time spent', column] = total_activity_uptime
+
+    # Export to csv at the same path as the input file
+    output_csv_path = os.path.join(os.path.dirname(log_file_path), 'summary.csv')
+    summary_sensor_activity.to_csv(output_csv_path)
 
     print(f"[\033[1;34mINFO\033[0m] Summary of sensor activity:\n{summary_sensor_activity}")
 
