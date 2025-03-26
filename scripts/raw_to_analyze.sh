@@ -4,7 +4,7 @@
 
 function show_help() {
     echo "Description:"
-    echo "  This is a template script for bash scripts. Use this as a starting point for your scripts."
+    echo "  Run preprocess and analyze logs python scripts on the specified directory containing log and annotation (laps) data."
     echo
     echo "Usage: path/to/$(basename $0) [args] [options]" # Keep as it is
     echo
@@ -13,7 +13,6 @@ function show_help() {
     echo
     echo "Options:"
     echo "  -h, --help         Show this help message and exit" # Keep as it is
-    echo "  -v, --verbose      Enable verbose mode"
     echo
 }
 

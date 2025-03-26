@@ -1,7 +1,8 @@
 import argparse
 import os
-from functools import total_ordering
+from functools import reduce
 
+import xlsxwriter
 import pandas as pd
 import helpers
 
@@ -143,6 +144,97 @@ def delete_duplicates(df):
     df = df.sort_index()  # Sort by index to maintain original order
     return df
 
+def add_statistics_rows(summary_sensor_activity) -> (pd.DataFrame, int):
+    """
+    Add statistics rows to the DataFrame.
+    :param summary_sensor_activity: DataFrame to add statistics rows to.
+    The statistics rows are: 'total time spent' and 'number of state changes'.
+    :return: DataFrame with statistics rows added and the number of timestamps.
+    """
+    summary_sensor_activity.loc['total time spent'] = None
+    summary_sensor_activity.loc['number of state changes'] = None
+    number_of_statistics_rows = 2
+
+    for column in summary_sensor_activity.columns[:-1]:
+        total_activity_uptime = pd.Timedelta(0)
+        num_changes = 0
+        for i in range(1,
+                       len(summary_sensor_activity) - number_of_statistics_rows):  # Exclude last two rows (satatistics)
+            if summary_sensor_activity[column].iloc[i] == 1:
+                total_activity_uptime += helpers.timedelta_pd(summary_sensor_activity.index[i],
+                                                              summary_sensor_activity.index[i - 1])
+            if summary_sensor_activity[column].iloc[i] != summary_sensor_activity[column].iloc[i - 1]:
+                num_changes += 1
+        # num_changes = int(summary_sensor_activity[column].diff().ne(0).sum() - 1)  # Subtract 1 to exclude the initial state from being considered a change
+        print(
+            f"[\033[1;34mINFO\033[0m] Sensor '{column}' - Total time spent: {total_activity_uptime}, Number of state changes: {num_changes}")
+        # append the totals to the last statistics rows
+        summary_sensor_activity.at['number of state changes', column] = num_changes
+        summary_sensor_activity.at['total time spent', column] = total_activity_uptime
+    # Add None to the last column of the last rows
+    summary_sensor_activity.at['number of state changes', 'App Event'] = None
+    summary_sensor_activity.at['total time spent', 'App Event'] = None
+
+    number_of_timestamps = summary_sensor_activity.shape[0] - number_of_statistics_rows
+    return summary_sensor_activity, number_of_timestamps
+
+
+def export_to_xlsx(summary_sensor_activity, log_file_path):
+    """
+    Export DataFrame to an xlsx file.
+    :param df: DataFrame to export.
+    :param output_path: Path to the output xlsx file.
+    """
+    # Export to xlsx at the same path as the input file
+    output_xlsx_path = os.path.join(os.path.dirname(log_file_path), 'summary.xlsx')
+    first_excel_row = 1
+
+    with pd.ExcelWriter(output_xlsx_path, engine='xlsxwriter') as writer:
+        # Dump the DataFrame to the Excel file at the second row
+        summary_sensor_activity.to_excel(writer, startrow=first_excel_row, sheet_name='Sheet1')
+
+        # Enable nan_inf_to_errors option
+        writer.book.use_nan_inf_to_errors = True
+        worksheet = writer.sheets['Sheet1']
+
+        # Add information to the first row
+        worksheet.write(0, 0, 'Sensor Activity Summary', writer.book.add_format({'bold': True}))
+        path_components = log_file_path.split('/')[1:]
+        for i, component in enumerate(path_components):
+            worksheet.write(0, i + 2, component)
+
+        # Set the header format
+        header_format_properties = helpers.xlsx_header_format()
+        header_format = writer.book.add_format(header_format_properties)
+
+        # Format the header
+        for col_num, value in enumerate(summary_sensor_activity.columns):
+            worksheet.write(first_excel_row, col_num + 1, value, header_format)
+
+        # Set highlight to cells that contain zero or one in the last row
+        red_format = writer.book.add_format({'bg_color': '#FF0000'})
+        yellow_format = writer.book.add_format({'bg_color': '#FFFF00'})
+        for col_num, value in enumerate(summary_sensor_activity.iloc[-1]):
+            if value == 0: # Set red highlight to cells that contain 0 in the last row
+                worksheet.write(first_excel_row + summary_sensor_activity.shape[0], col_num + 1, value, red_format)
+            elif value == 1: # Set yellow highlight to cells that contain 1 in the last row
+                worksheet.write(first_excel_row + summary_sensor_activity.shape[0], col_num + 1, value, yellow_format)
+
+        # Set the date format
+        index_timestamps_format = writer.book.add_format({**header_format_properties, 'num_format': 'hh:mm:ss.000'})
+        for i in range(1, summary_sensor_activity.shape[0] + 1):
+            if i <= number_of_timestamps:
+                worksheet.write(first_excel_row + i, 0, summary_sensor_activity.index[i - 1],
+                                index_timestamps_format)  # Add timestamps format for the rows that have a timestamp in their first col
+            else:
+                worksheet.write(first_excel_row + i, 0, summary_sensor_activity.index[i - 1], header_format)
+
+        timestamps_format = writer.book.add_format({'num_format': 'hh:mm:ss.000'})
+        for col_num in range(1, summary_sensor_activity.shape[1]):
+            data = summary_sensor_activity.iloc[number_of_timestamps, col_num] if summary_sensor_activity.iloc[
+                                                                                      number_of_timestamps, col_num] is not None else 0
+            worksheet.write(first_excel_row + number_of_timestamps + 1, col_num, data, timestamps_format)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Description of your script.')
     parser.add_argument('csv_log', type=str, help='Path to the input csv log file.')
@@ -206,10 +298,6 @@ if __name__ == '__main__':
     if verbosity > 0:
         print(f"Combined sensor and app events DataFrame:\n{combined_sensor_app_events}")
 
-    # TODO: Export array to csv
-    # TODO: Create a combined array with sensor_events and app_events combined when their timestamps are close enough (maybe <5s)
-    # TODO: Try: instaed of one sensor column to have one column for each sensor with its name as a header plus a column for app events and add the start/stop events and app events in the respective column and timestamp row
-
     # Extract sensor activity for each sensor
     summary_sensor_activity = extract_sensor_app_activity(sensor_events, sensor_names, logs_df,
                                                           app_events=app_events_df.to_dict(orient='records'))
@@ -218,27 +306,10 @@ if __name__ == '__main__':
     summary_sensor_activity = delete_duplicates(summary_sensor_activity)
 
     # Create two new rows to dataframe with time spent in each state and number of state changes. Statistics will be only calculated and printed in the final csv
-    summary_sensor_activity.loc['total time spent'] = None
-    summary_sensor_activity.loc['number of state changes'] = None
+    summary_sensor_activity, number_of_timestamps = add_statistics_rows(summary_sensor_activity)
 
-
-    for column in summary_sensor_activity.columns[:-1]:
-        total_activity_uptime = pd.Timedelta(0)
-        num_changes = 0
-        for i in range(1, len(summary_sensor_activity)-2): # Exclude last two rows (satatistics)
-            if summary_sensor_activity[column].iloc[i] == 1:
-                total_activity_uptime += helpers.timedelta_pd(summary_sensor_activity.index[i], summary_sensor_activity.index[i-1])
-            if summary_sensor_activity[column].iloc[i] != summary_sensor_activity[column].iloc[i-1]:
-                num_changes += 1
-        # num_changes = int(summary_sensor_activity[column].diff().ne(0).sum() - 1)  # Subtract 1 to exclude the initial state from being considered a change
-        print(f"[\033[1;34mINFO\033[0m] Sensor '{column}' - Total time spent: {total_activity_uptime}, Number of state changes: {num_changes}")
-        # append the totals to the last statistics rows
-        summary_sensor_activity.at['number of state changes', column] = num_changes
-        summary_sensor_activity.at['total time spent', column] = total_activity_uptime
-
-    # Export to csv at the same path as the input file
-    output_csv_path = os.path.join(os.path.dirname(log_file_path), 'summary.csv')
-    summary_sensor_activity.to_csv(output_csv_path)
+    export_to_xlsx(summary_sensor_activity, log_file_path)
+    # TODO: Add data for comparing multiple experiments behaviour
 
     print(f"[\033[1;34mINFO\033[0m] Summary of sensor activity:\n{summary_sensor_activity}")
 

@@ -4,12 +4,12 @@
 
 function show_help() {
     echo "Description:"
-    echo "  Run analyze_logs.py on the specified directory containing log and annotation (laps) data after being preprocessed."
+    echo "  Run analyze_dir on all subdirectories of a given directory."
     echo
     echo "Usage: path/to/$(basename $0) [args] [options]" # Keep as it is
     echo
     echo "Arguments:"
-    echo "  <dir>              Directory of log and annotation (laps) data"
+    echo "  <dir>              Directory containing subdirectories to be analyzed"
     echo
     echo "Options:"
     echo "  -h, --help         Show this help message and exit" # Keep as it is
@@ -23,28 +23,21 @@ function main() {
         exit 1
     fi
 
-    # Add your main script logic here
-    echo "Processing directory: $dir"
-
     # Check path of dir
     if [[ ! -d "$dir" ]]; then
         echo "Error: Directory '$dir' does not exist."
         exit 1
     fi
 
-    # If preprocessing output is missing exit
-    if ! ls "$dir"/adb_log*.csv 1> /dev/null 2>&1; then
-        echo "Error: adb log not found in dir '$dir'. First run preprocess_dir.sh"
-        exit 1
-    fi
-    if ! ls "$dir"/*.json 1> /dev/null 2>&1; then
-        echo "Error: app_events json not found in dir '$dir'. First run preprocess_dir.sh"
-        exit 1
-    fi
+    # Add your main script logic here
+    echo "Analyzing all directories in $dir"
+    sleep 2
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    python3 $SCRIPT_DIR/../activity_graphs/analyze_logs.py "$dir"/adb_log*.csv "$dir"/*.json
+    for sub_dir in "$dir"/*/; do
+         $SCRIPT_DIR/analyze_dir.sh "$sub_dir"
+    done
 
 }
 

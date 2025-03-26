@@ -4,7 +4,7 @@
 
 function show_help() {
     echo "Description:"
-    echo "  This is a template script for bash scripts. Use this as a starting point for your scripts."
+    echo "  Run graph.py on the specified directory containing log and annotation (laps) data after being preprocessed."
     echo
     echo "Usage: path/to/$(basename $0) [args] [options]" # Keep as it is
     echo
@@ -13,7 +13,6 @@ function show_help() {
     echo
     echo "Options:"
     echo "  -h, --help         Show this help message and exit" # Keep as it is
-    echo "  -v, --verbose      Enable verbose mode"
     echo
 }
 
@@ -34,11 +33,12 @@ function main() {
     fi
 
     # If preprocessing output is missing exit
-    if [[ ! -f "$dir"/adb_log*.csv ]]; then
-        echo "Error: adb_log not found in dir '$dir'. First run preprocess_dir.sh"
+    if ! ls "$dir"/adb_log*.csv 1> /dev/null 2>&1; then
+        ls -l "$dir"/adb_log*.csv
+        echo "Error: adb log not found in dir '$dir'. First run preprocess_dir.sh"
         exit 1
     fi
-    if [[ ! -f "$dir"/*.json ]]; then
+    if ! ls "$dir"/*.json 1> /dev/null 2>&1; then
         echo "Error: app_events json not found in dir '$dir'. First run preprocess_dir.sh"
         exit 1
     fi

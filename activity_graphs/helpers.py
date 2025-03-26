@@ -93,3 +93,32 @@ def extract_sensor_events(df, json_file_path):
         sensor_events[sensor_name].sort(key=lambda x: x['Time'])
         
     return sensor_events, colors, sensor_names
+
+
+
+# MARK: FORMATTING
+
+def xlsx_header_format():
+    """
+    Create a header format for xlsx files.
+    :return: Header format for xlsx files.
+    """
+    return {
+        'bold': True,
+        'font_color': 'black',
+        'bg_color': '#D9EAD3',
+        'border': 1,
+        'align': 'center',
+        'valign': 'vcenter'
+    }
+
+def xlsx_add_format(initial_format, additional_format):
+    """
+    Add additional formatting to an initial format.
+    :param initial_format: Initial format.
+    :param additional_format: Additional format to add.
+    :return: Combined format.
+    """
+    combined_format = initial_format.copy()
+    combined_format.update(additional_format)
+    return combined_format
