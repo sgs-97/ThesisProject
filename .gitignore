@@ -7,10 +7,12 @@ __pycache__
 # Temporary files
 _test
 io_files/*
+_output
 
 # scripts trash
 scripts/*.log
 scripts/multmux_logs
+scripts/commands.txt
 
 # Data
 /data
