@@ -4,12 +4,12 @@
 
 function show_help() {
     echo "Description:"
-    echo "  Run analyze_dir on all subdirectories of a given directory."
+    echo "  Run preprocess_dir on all subdirectories of a given directory."
     echo
     echo "Usage: path/to/$(basename $0) [args] [options]" # Keep as it is
     echo
     echo "Arguments:"
-    echo "  <dir>              Directory containing subdirectories to be analyzed"
+    echo "  <dir>              Directory containing subdirectories to be preprocessed"
     echo
     echo "Options:"
     echo "  -h, --help         Show this help message and exit" # Keep as it is
@@ -31,13 +31,22 @@ function main() {
 
     # Add your main script logic here
     sub_dir_count=$(find "$dir" -mindepth 1 -maxdepth 1 -type d | wc -l)
-    echo "Analyzing $sub_dir_count directories in $dir"
+    echo "Preprocessing $sub_dir_count directories in $dir"
     sleep 2
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
     for sub_dir in "$dir"/*/; do
-         $SCRIPT_DIR/analyze_dir.sh "$sub_dir"
+          # If preprocessing input is missing then skip
+          if ! ls "$sub_dir"/adb_log*.log 1> /dev/null 2>&1; then
+              echo "Warning: adb log not found in dir '$sub_dir'. Continuing to next directory."
+              continue
+          fi
+          if ! ls "$sub_dir"/*.txt 1> /dev/null 2>&1; then
+              echo "Warning: app events txt file not found in dir '$sub_dir'. Continuing to next directory."
+              continue
+          fi
+         $SCRIPT_DIR/preprocess_dir.sh "$sub_dir"
     done
 
 }

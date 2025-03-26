@@ -30,7 +30,8 @@ function main() {
     fi
 
     # Add your main script logic here
-    echo "Graphing all directories in $dir"
+    sub_dir_count=$(find "$dir" -mindepth 1 -maxdepth 1 -type d | wc -l)
+    echo "Graphing $sub_dir_count directories in $dir"
     sleep 2
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
