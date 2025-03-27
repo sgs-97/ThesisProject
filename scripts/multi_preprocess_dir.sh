@@ -40,7 +40,6 @@ function main() {
           # If preprocessing input is missing then skip
           if ! ls "$sub_dir"/adb_log*.log 1> /dev/null 2>&1; then
               print_error "adb log not found in dir '$sub_dir'. Continuing to next directory."
-              print_info "Check if the directory is empty or if the adb log file is missing."
               continue
           fi
           if ! ls "$sub_dir"/*.txt 1> /dev/null 2>&1; then

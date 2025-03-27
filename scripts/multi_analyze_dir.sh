@@ -37,7 +37,15 @@ function main() {
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
     for sub_dir in "$dir"/*/; do
-         $SCRIPT_DIR/analyze_dir.sh "$sub_dir"
+      if ! ls "$sub_dir"/adb_log*.csv 1> /dev/null 2>&1; then
+          print_error "adb log not found in dir '$sub_dir'. Continuing to next directory."
+          continue
+      fi
+      if ! ls "$sub_dir"/*.json 1> /dev/null 2>&1; then
+          print_error "app events json not found in dir '$sub_dir'. Continuing to next directory."
+          continue
+      fi
+      $SCRIPT_DIR/analyze_dir.sh "$sub_dir"
     done
 
 }
