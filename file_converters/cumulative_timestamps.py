@@ -5,9 +5,15 @@ from datetime import timedelta
 
 def parse_time(time_str):
     """Parses a timestamp in HH:MM:SS.SS format into a timedelta object."""
+    if len(time_str.split(':')) != 3:
+        print(f"Parsing time: {time_str}")
     h, m, s = time_str.split(':')
-    s, ms = map(int, s.split('.'))
-    return timedelta(hours=int(h), minutes=int(m), seconds=s, milliseconds=ms)
+    s, ms = map(str, s.split('.'))
+    if len(ms) == 2:
+        ms += '0'
+    elif len(ms) == 1:
+        ms += '00'
+    return timedelta(hours=int(h), minutes=int(m), seconds=int(s), milliseconds=int(ms))
 
 def format_time(td):
     """Formats a timedelta object back into HH:MM:SS.SS format with milliseconds."""

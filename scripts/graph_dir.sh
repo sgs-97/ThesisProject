@@ -19,7 +19,7 @@ function show_help() {
 function main() {
     local dir="$1"
     if [[ -z "$dir" ]]; then
-        echo "Error: Directory argument is required."
+        print_error "Directory argument is required."
         exit 1
     fi
 
@@ -28,18 +28,18 @@ function main() {
 
     # Check path of dir
     if [[ ! -d "$dir" ]]; then
-        echo "Error: Directory '$dir' does not exist."
+        print_error "Directory '$dir' does not exist."
         exit 1
     fi
 
     # If preprocessing output is missing exit
     if ! ls "$dir"/adb_log*.csv 1> /dev/null 2>&1; then
         ls -l "$dir"/adb_log*.csv
-        echo "Error: adb log not found in dir '$dir'. First run preprocess_dir.sh"
+        print_error "adb log not found in dir '$dir'. First run preprocess_dir.sh"
         exit 1
     fi
     if ! ls "$dir"/*.json 1> /dev/null 2>&1; then
-        echo "Error: app_events json not found in dir '$dir'. First run preprocess_dir.sh"
+        print_error "app_events json not found in dir '$dir'. First run preprocess_dir.sh"
         exit 1
     fi
 
@@ -111,6 +111,11 @@ function _on_exit() {
   else
     printf "\n\033[0;31m[\u2718]\033[0m [\033[0;31mEXIT\033[0m][$(basename $0)]: Error occurred! (Exit Code: $EXIT_CODE)\n"
   fi
+}
+
+function print_error() {
+    local MESSAGE="$*"
+    printf "\033[0;31m[\u2718] [ERROR][$(basename $0):${BASH_LINENO[0]}]: %s\033[0m\n" "$MESSAGE"
 }
 
 trap 'EXIT_CODE=$?; printf "\n\033[0;33m[!] [INTERRUPT][$(basename $0)] Script was interrupted! (Exit Code: $EXIT_CODE)\033[0m\n"; exit $EXIT_CODE' INT TERM

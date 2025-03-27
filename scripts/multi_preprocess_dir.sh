@@ -19,13 +19,13 @@ function show_help() {
 function main() {
     local dir="$1"
     if [[ -z "$dir" ]]; then
-        echo "Error: Directory argument is required."
+        print_error "Directory argument is required."
         exit 1
     fi
 
     # Check path of dir
     if [[ ! -d "$dir" ]]; then
-        echo "Error: Directory '$dir' does not exist."
+        print_error "Directory '$dir' does not exist."
         exit 1
     fi
 
@@ -39,11 +39,12 @@ function main() {
     for sub_dir in "$dir"/*/; do
           # If preprocessing input is missing then skip
           if ! ls "$sub_dir"/adb_log*.log 1> /dev/null 2>&1; then
-              echo "Warning: adb log not found in dir '$sub_dir'. Continuing to next directory."
+              print_error "adb log not found in dir '$sub_dir'. Continuing to next directory."
+              print_info "Check if the directory is empty or if the adb log file is missing."
               continue
           fi
           if ! ls "$sub_dir"/*.txt 1> /dev/null 2>&1; then
-              echo "Warning: app events txt file not found in dir '$sub_dir'. Continuing to next directory."
+              print_error "app events txt file not found in dir '$sub_dir'. Continuing to next directory."
               continue
           fi
          $SCRIPT_DIR/preprocess_dir.sh "$sub_dir"
@@ -113,6 +114,16 @@ function _on_exit() {
   else
     printf "\n\033[0;31m[\u2718]\033[0m [\033[0;31mEXIT\033[0m][$(basename $0)]: Error occurred! (Exit Code: $EXIT_CODE)\n"
   fi
+}
+
+function print_error() {
+    local MESSAGE="$*"
+    printf "\033[0;31m[\u2718] [ERROR][$(basename $0):${BASH_LINENO[0]}]: %s\033[0m\n" "$MESSAGE"
+}
+
+function print_error() {
+    local MESSAGE="$*"
+    printf "\033[0;31m[\u2718] [ERROR][$(basename $0):${BASH_LINENO[0]}]: %s\033[0m\n" "$MESSAGE"
 }
 
 trap 'EXIT_CODE=$?; printf "\n\033[0;33m[!] [INTERRUPT][$(basename $0)] Script was interrupted! (Exit Code: $EXIT_CODE)\033[0m\n"; exit $EXIT_CODE' INT TERM
