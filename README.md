@@ -4,7 +4,7 @@ Steps to run:
 
 1. Turn Google Sheet recorded laps into a txt file
     ```
-   python3 ./file_converters/laps_to_txt.py <path_to_google_sheet_csv> --output_dir ./data```
+   python3 ./file_converters/laps_to_txt.py <path_to_google_sheet_csv> --output_dir ./_data```
     ```
 2. Sort the txt laps txt files into their correct folders with their corresponding .log file
 3. Run analysis for each subdirectory (experiment)

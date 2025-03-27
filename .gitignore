@@ -15,7 +15,7 @@ scripts/multmux_logs
 scripts/commands.txt
 
 # Data
-/data
+/_data
 
 # Misc
 /nnmav_README.md
