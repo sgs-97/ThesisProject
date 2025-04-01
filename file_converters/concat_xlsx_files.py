@@ -60,7 +60,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Description of your script.')
     parser.add_argument('directory', type=str, help='Directory to do the recursive search for xlsx files.')
     parser.add_argument('--names', default=['summary.xlsx'], nargs='+', help='Names of the Excel files to look for. Default: summary.xlsx')
-    parser.add_argument('--output_file', default='combined.xlsx', type=str, help='Output file name for the combined Excel file.')
+    parser.add_argument('--output_file', default='combined.xlsx', type=str, help='Output file name for the combined Excel file. Default: ./combined.xlsx')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose mode.')
     args = parser.parse_args()
 
