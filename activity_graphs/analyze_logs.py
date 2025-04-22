@@ -304,6 +304,8 @@ if __name__ == '__main__':
 
     # Delete rows that have the same exact events (both sensor and app) to avoid duplicates. Keep the one with the less timestamp
     summary_sensor_activity = delete_duplicates(summary_sensor_activity)
+    # TODO: Correct whatever is going wrong and there are timestamps that events occur or sensor activity changes and do not show up.
+    # TODO: Possibly due to delete_duplicates function
 
     # Create two new rows to dataframe with time spent in each state and number of state changes. Statistics will be only calculated and printed in the final csv
     summary_sensor_activity, number_of_timestamps = add_statistics_rows(summary_sensor_activity)

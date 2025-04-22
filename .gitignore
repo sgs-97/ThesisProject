@@ -5,6 +5,7 @@
 __pycache__
 
 # Temporary files
+_temp
 _test
 io_files/*
 _output
@@ -15,7 +16,7 @@ scripts/multmux_logs
 scripts/commands.txt
 
 # Data
-/_data
+/experiments
 
 # Misc
 /nnmav_README.md

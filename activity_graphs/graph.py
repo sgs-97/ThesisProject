@@ -88,6 +88,7 @@ def plot_additional_components(fig, additional_components, graph_start_time):
                 )
             )
 
+# TODO: Add titles (+tab titles) and description for readability of graphs
 def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, app_events=None, skip_fig_show=False):
     if app_events is None:
         app_events = []
