@@ -271,7 +271,7 @@ if __name__ == '__main__':
     logs_df['Time'] = pd.to_datetime(logs_df['Time'], format='%H:%M:%S.%f')
 
     # Time between clearing the logs and starting the timer (Experiment defect)
-    timer_lag = pd.Timedelta(seconds=2)
+    timer_lag = pd.Timedelta(seconds=1)
 
     experiment_start_time = logs_df['Time'].min() + timer_lag
     experiment_start_time_td = pd.Timedelta(hours=experiment_start_time.hour, minutes=experiment_start_time.minute,
