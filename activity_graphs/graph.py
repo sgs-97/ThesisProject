@@ -170,8 +170,10 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
 
     plot_additional_components(fig, app_events, graph_start_time)
 
+    title = plotly_graph_file.split('experiments')[-1] if 'experiments' in plotly_graph_file else os.path.relpath(plotly_graph_file)[-3:-1]
+
     fig.update_layout(
-        title=os.path.relpath(csv_file_path, start=os.path.join(os.path.dirname(csv_file_path), 'experiments')) if 'experiments' in csv_file_path else '/'.join(csv_file_path.split(os.sep)[-3:]),
+        title=title,
         xaxis=dict(range=[graph_start_time - timer_lag, graph_end_time + timer_lag], title='Time'),
         yaxis_title='Sensor Activity (1=Active, 0=Inactive)',
         yaxis=dict(range=[-0.1,1.1], tickvals=[0, 1], ticktext=['Inactive', 'Active'])
@@ -195,15 +197,18 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    csv_file_path = os.path.abspath(args.csv_file)
+    csv_file_path = os.path.realpath(args.csv_file)
     if not os.path.exists(csv_file_path):
         raise FileNotFoundError(f"CSV file {csv_file_path} does not exist.")
     json_file_path = args.json_file
-    json_file_path = json_file_path.replace('<script_dir_path>', (os.path.abspath(os.path.dirname(__file__))))
+    json_file_path = json_file_path.replace('<script_dir_path>', (os.path.realpath(os.path.dirname(__file__))))
     if not os.path.exists(json_file_path):
         raise FileNotFoundError(f"JSON file {json_file_path} does not exist.")
     plotly_graph_file = args.output_html
-    plotly_graph_file = plotly_graph_file.replace('<csv_file_dir>', (os.path.abspath(os.path.dirname(csv_file_path))))
+    plotly_graph_file = plotly_graph_file.replace('<csv_file_dir>', (os.path.realpath(os.path.dirname(csv_file_path))))
+    plotly_graph_file = os.path.realpath(plotly_graph_file)
+    if not os.path.exists(os.path.dirname(plotly_graph_file)):
+        os.makedirs(os.path.dirname(plotly_graph_file), exist_ok=True)
     app_events_path = args.app_events
 
     # Load additional app events components
