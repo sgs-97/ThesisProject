@@ -12,6 +12,7 @@ function show_help() {
     echo "  <dir>              Directory containing subdirectories to be graphed"
     echo
     echo "Options:"
+    echo "  --show_in_browser  Open the generated graph in a web browser" # Keep as it is
     echo "  -h, --help         Show this help message and exit" # Keep as it is
     echo
 }
@@ -22,6 +23,15 @@ function main() {
         print_error "Directory argument is required."
         exit 1
     fi
+    # Check if the --show_in_browser option is provided
+    local show_in_browser=''
+    for arg in "$@"; do
+        case $arg in
+            --show_in_browser)
+                show_in_browser="--show_in_browser"
+                ;;
+        esac
+    done
 
     # Check path of dir
     if [[ ! -d "$dir" ]]; then
@@ -48,7 +58,7 @@ function main() {
             print_error "app events json not found in dir '$sub_dir'. Continuing to next directory."
             continue
         fi
-        $SCRIPT_DIR/graph_dir.sh "$sub_dir"
+        $SCRIPT_DIR/graph_dir.sh "$sub_dir" $show_in_browser
     done
 
 }
