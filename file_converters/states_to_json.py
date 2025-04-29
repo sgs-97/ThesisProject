@@ -15,11 +15,11 @@ def convert_states_to_json(states_file_path, json_output_path):
             dict.append({})  # Create a new dictionary for each line
             if line.strip():  # Ignore empty lines
                 time, state = line.strip().split(' - ')
-                dict[len(dict)-1]["type"] = "line"
-                dict[len(dict)-1]["orientation"] = "vertical"  # Assuming vertical orientation since all events will be vertical lines
                 if pd.to_datetime(time, format='%H:%M:%S.%f', errors='coerce') is pd.NaT:
                     raise ValueError(f"Invalid time format: {time} in line \'{line}\',\nfile: {states_file_path}")
-                dict[len(dict)-1]["time"] = str(pd.to_datetime(time, format='%H:%M:%S.%f'))
+                dict[len(dict)-1]["type"] = "line"
+                dict[len(dict)-1]["orientation"] = "vertical"  # Assuming vertical orientation since all events will be vertical lines
+                dict[len(dict)-1]["time"] = str(time)
                 dict[len(dict)-1]["label"] = str(state)
                 dict[len(dict)-1]["linetype"] = "dash"
                 if state.lower() == "start":

@@ -12,6 +12,7 @@ function show_help() {
     echo "  <dir>              Directory of log and annotation (laps) data"
     echo
     echo "Options:"
+    echo "  --show_in_browser  Open the generated graph in a web browser" # Keep as it is
     echo "  -h, --help         Show this help message and exit" # Keep as it is
     echo
 }
@@ -22,6 +23,15 @@ function main() {
         print_error "Directory argument is required."
         exit 1
     fi
+    # Check if the --show_in_browser option is provided
+    local show_in_browser=''
+    for arg in "$@"; do
+        case $arg in
+            --show_in_browser)
+                show_in_browser="--show_in_browser"
+                ;;
+        esac
+    done
 
     # Add your main script logic here
     echo "Processing directory: $dir"
@@ -45,7 +55,7 @@ function main() {
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    python3 $SCRIPT_DIR/../activity_graphs/graph.py "$dir"/adb_log*.csv --app_events "$dir"/*.json
+    python3 $SCRIPT_DIR/../activity_graphs/graph.py "$dir"/adb_log*.csv --app_events "$dir"/*.json $show_in_browser
 
 }
 

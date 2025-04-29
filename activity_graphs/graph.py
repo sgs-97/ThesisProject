@@ -89,7 +89,7 @@ def plot_additional_components(fig, additional_components, graph_start_time):
             )
 
 # TODO: Add titles (+tab titles) and description for readability of graphs
-def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, app_events=None, skip_fig_show=False):
+def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, app_events=None, show_in_browser=False):
     if app_events is None:
         app_events = []
     # Plotting with Plotly
@@ -180,12 +180,11 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
     )
 
     # Show the plot
-    if not skip_fig_show:
-        print("Showing the figure in the browser...")
+    if show_in_browser:
         fig.show()
 
     # Save the figure as an HTML file
-    pio.write_html(fig, file=plotly_graph_file, auto_open=True)
+    pio.write_html(fig, file=plotly_graph_file, auto_open=show_in_browser)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate sensor activity graph from CSV.")
@@ -193,7 +192,7 @@ if __name__ == "__main__":
     parser.add_argument("--json_file", default='<script_dir_path>/dict.json', help="Path to the JSON file with parsing conditions. Default: <script_dir_path>/dict.json")
     parser.add_argument("--app_events", default='[]', help="Path to the JSON file with app events. Default: []")
     parser.add_argument("--output_html", default='<csv_file_dir>/sensor_activity_graph.html', help="Path to save the output graph. Default: <csv_file_dir>/sensor_activity_graph.html")
-    parser.add_argument("--skip_fig_show", action='store_true', help="Skip showing the figure in the browser. Default: False")
+    parser.add_argument("--show_in_browser", action='store_true', help="Skip showing the figure in the browser. Default: False")
 
     args = parser.parse_args()
 
@@ -219,7 +218,7 @@ if __name__ == "__main__":
         with open(app_events_path, 'r') as json_file:
             app_events = json.load(json_file)
 
-    skip_fig_show = args.skip_fig_show
+    show_in_browser = args.show_in_browser
 
     df_original = pd.read_csv(csv_file_path)
     df = df_original[['Time', 'Message']].copy()
@@ -229,5 +228,5 @@ if __name__ == "__main__":
     # Extract sensor events from the CSV file using the parsing conditions from the JSON file
     sensor_events, colors, sensor_names = helpers.extract_sensor_events(df, json_file_path)
 
-    plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, app_events=app_events, skip_fig_show=skip_fig_show)
+    plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, app_events=app_events, show_in_browser=show_in_browser)
     print(f"Graph has been generated and saved to {plotly_graph_file}")
