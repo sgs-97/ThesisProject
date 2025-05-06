@@ -66,7 +66,7 @@ def convert_states_to_json(states_file_path, json_output_path):
                 "size": 12,
                 "color": "blue"
             })
-        if x_mount and x_unmount:
+        if x_mount and x_idle:
             # Horizontal line from idle to unmount (Idle Period)
             dict.append({
                 "type": "rect",
