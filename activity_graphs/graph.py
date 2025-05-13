@@ -170,7 +170,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
 
     plot_additional_components(fig, app_events, graph_start_time)
 
-    title = plotly_graph_file.split('experiments')[-1] if 'experiments' in plotly_graph_file else os.path.relpath(plotly_graph_file)[-3:-1]
+    title = plotly_graph_file.lower().split('experiments')[-1] if 'experiments1' in plotly_graph_file.lower() else '/'.join(os.path.relpath(plotly_graph_file).split('/')[-4:-1])
 
     fig.update_layout(
         title=title,
