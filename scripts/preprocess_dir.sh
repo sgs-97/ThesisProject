@@ -38,7 +38,7 @@ function main() {
         exit 1
     fi
     if ! ls "$dir"/*.txt 1> /dev/null 2>&1; then
-        print_error "app events txt file not found in dir '$dir'."
+        print_error "user events txt file not found in dir '$dir'."
         exit 1
     fi
 

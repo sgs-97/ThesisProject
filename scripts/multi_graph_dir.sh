@@ -13,6 +13,7 @@ function show_help() {
     echo
     echo "Options:"
     echo "  --show_in_browser  Open the generated graph in a web browser" # Keep as it is
+    echo "  --skip_imx471_spikes_csv  Skip generating IMX471 spikes CSV"
     echo "  -h, --help         Show this help message and exit" # Keep as it is
     echo
 }
@@ -23,12 +24,16 @@ function main() {
         print_error "Directory argument is required."
         exit 1
     fi
+    local include_imx471_spikes_csv="--include_imx471_spikes_csv"
     # Check if the --show_in_browser option is provided
     local show_in_browser=''
     for arg in "$@"; do
         case $arg in
             --show_in_browser)
                 show_in_browser="--show_in_browser"
+                ;;
+              --skip_imx471_spikes_csv)
+                include_imx471_spikes_csv=""
                 ;;
         esac
     done
@@ -55,10 +60,10 @@ function main() {
             continue
         fi
         if ! ls "$sub_dir"/*.json 1> /dev/null 2>&1; then
-            print_error "app events json not found in dir '$sub_dir'. Continuing to next directory."
+            print_error "user events json not found in dir '$sub_dir'. Continuing to next directory."
             continue
         fi
-        $SCRIPT_DIR/graph_dir.sh "$sub_dir" $show_in_browser
+        $SCRIPT_DIR/graph_dir.sh "$sub_dir" $show_in_browser $include_imx471_spikes_csv
     done
 
 }

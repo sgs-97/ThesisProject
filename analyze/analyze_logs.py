@@ -24,25 +24,25 @@ def sensors_events_to_df(sensor_events):
     sensor_events_df.reset_index(drop=True, inplace=True)
     return sensor_events_df
 
-def app_events_to_df(app_events, experiment_start_time_td):
+def user_events_to_df(user_events, experiment_start_time_td):
     """
-    Convert app events to a DataFrame.
-    :param app_events: DataFrame containing app events.
+    Convert user events to a DataFrame.
+    :param user_events: DataFrame containing user events.
     :param experiment_start_time_td: Time delta for the experiment start time.
     :return: DataFrame with columns ['Time', 'Event'].
     """
-    # Convert app_events to pd.DataFrame ['Time', 'Event'] and cleanup
-    app_events_df = pd.DataFrame(app_events, columns=['time', 'label', 'type'])
+    # Convert user_events to pd.DataFrame ['Time', 'Event'] and cleanup
+    user_events_df = pd.DataFrame(user_events, columns=['time', 'label', 'type'])
     # Drop columns that have a type different than line
-    app_events_df = app_events_df[app_events_df['type'] == 'line']
-    app_events_df.drop(columns=['type'], inplace=True)
-    app_events_df.rename(columns={'time': 'Time', 'label': 'Event'}, inplace=True)
-    app_events_df['Time'] = pd.to_datetime(app_events_df['Time'], format='%H:%M:%S.%f') + experiment_start_time_td
-    app_events_df.sort_values(by='Time', inplace=True)
-    app_events_df.reset_index(drop=True, inplace=True)
-    return app_events_df
+    user_events_df = user_events_df[user_events_df['type'] == 'line']
+    user_events_df.drop(columns=['type'], inplace=True)
+    user_events_df.rename(columns={'time': 'Time', 'label': 'Event'}, inplace=True)
+    user_events_df['Time'] = pd.to_datetime(user_events_df['Time'], format='%H:%M:%S.%f') + experiment_start_time_td
+    user_events_df.sort_values(by='Time', inplace=True)
+    user_events_df.reset_index(drop=True, inplace=True)
+    return user_events_df
 
-def extract_sensor_app_activity(sensor_events, sensor_names, df, app_events=None):
+def extract_sensor_app_activity(sensor_events, sensor_names, df, user_events=None):
     all_timestamps = []
     sensor_activity = {}
     for i, sensor_name in enumerate(sensor_names):
@@ -100,7 +100,7 @@ def extract_sensor_app_activity(sensor_events, sensor_names, df, app_events=None
             sensor_activity[sensor_name].append([last_event_time + pd.Timedelta(milliseconds=1), 0])
             sensor_activity[sensor_name].append([df['Time'].max(), 0])
 
-    for event in app_events:
+    for event in user_events:
         all_timestamps.append(event['Time'])
 
     # Convert summary_sensors_activity to DataFrame for easier manipulation.
@@ -118,14 +118,14 @@ def extract_sensor_app_activity(sensor_events, sensor_names, df, app_events=None
             else:
                 row.append(None)
         row.append(None)  # Default for app event if not found
-        for event in app_events:
+        for event in user_events:
             if event['Time'] == timestamp:
                 row[-1] = event['Event']  # Update app event state if it matches the timestamp
                 break
 
         summary_sensors_activity.append(row)
 
-    summary_sensors_activity_df = pd.DataFrame(summary_sensors_activity, columns=['Timestamp'] + list(sensor_activity.keys()) + ['App Event'])
+    summary_sensors_activity_df = pd.DataFrame(summary_sensors_activity, columns=['Timestamp'] + list(sensor_activity.keys()) + ['User Event'])
     summary_sensors_activity_df['Timestamp'] = pd.to_datetime(summary_sensors_activity_df['Timestamp'], format='%H:%M:%S.%f')
     summary_sensors_activity_df.set_index('Timestamp', inplace=True)
 
@@ -172,8 +172,8 @@ def add_statistics_rows(summary_sensor_activity) -> (pd.DataFrame, int):
         summary_sensor_activity.at['number of state changes', column] = num_changes
         summary_sensor_activity.at['total time spent', column] = total_activity_uptime
     # Add None to the last column of the last rows
-    summary_sensor_activity.at['number of state changes', 'App Event'] = None
-    summary_sensor_activity.at['total time spent', 'App Event'] = None
+    summary_sensor_activity.at['number of state changes', 'User Event'] = None
+    summary_sensor_activity.at['total time spent', 'User Event'] = None
 
     number_of_timestamps = summary_sensor_activity.shape[0] - number_of_statistics_rows
     return summary_sensor_activity, number_of_timestamps
@@ -238,7 +238,7 @@ def export_to_xlsx(summary_sensor_activity, log_file_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Description of your script.')
     parser.add_argument('csv_log', type=str, help='Path to the input csv log file.')
-    parser.add_argument('app_events', type=str, help='Path to the input app events json file.')
+    parser.add_argument('user_events', type=str, help='Path to the input user events json file.')
     parser.add_argument("--json_file", default='<script_dir_path>/dict.json',
                         help="Path to the JSON file with parsing conditions. Default: <script_dir_path>/dict.json")
     parser.add_argument('--verbosity', choices=['normal', 'verbose', 'debug'], default='normal', help='Set the verbosity level.')
@@ -250,20 +250,20 @@ if __name__ == '__main__':
     log_file_path = args.csv_log
     json_file_path = args.json_file
     json_file_path = json_file_path.replace('<script_dir_path>', (os.path.abspath(os.path.dirname(__file__))))
-    app_events_path = args.app_events
+    user_events_path = args.user_events
 
     # Check Paths
     if not os.path.exists(log_file_path):
         raise FileNotFoundError(f"Log file {log_file_path} does not exist.")
     if not os.path.exists(json_file_path):
         raise FileNotFoundError(f"JSON file {json_file_path} does not exist.")
-    if not os.path.exists(app_events_path):
-        raise FileNotFoundError(f"App events file {app_events_path} does not exist.")
+    if not os.path.exists(user_events_path):
+        raise FileNotFoundError(f"User events file {user_events_path} does not exist.")
 
     if verbosity > 0:
         print(f"Log file path: {log_file_path}")
         print(f"JSON file path: {json_file_path}")
-        print(f"App events file path: {app_events_path}")
+        print(f"User events file path: {user_events_path}")
 
     # Load the CSV log file and parse the 'Time' and 'Message' columns
     logs_df = pd.read_csv(log_file_path)
@@ -280,11 +280,11 @@ if __name__ == '__main__':
     # Extract sensor events from the CSV file using the parsing conditions from the JSON file
     sensor_events, colors, sensor_names = helpers.extract_sensor_events(logs_df, json_file_path)
 
-    # Convert app_events to pd.DataFrame ['Time', 'event'] and cleanup
-    app_events = pd.read_json(app_events_path)
-    app_events_df = app_events_to_df(app_events.to_dict(orient='records'), experiment_start_time_td)
+    # Convert user_events to pd.DataFrame ['Time', 'event'] and cleanup
+    user_events = pd.read_json(user_events_path)
+    user_events_df = user_events_to_df(user_events.to_dict(orient='records'), experiment_start_time_td)
     if verbosity > 0:
-        print(f"App events DataFrame:\n{app_events_df}")
+        print(f"User events DataFrame:\n{user_events_df}")
 
     # Convert sensor events to pd.DataFrame ['Time', 'Sensor', 'Type'] and cleanup
     sensor_events_df = sensors_events_to_df(sensor_events)
@@ -292,15 +292,15 @@ if __name__ == '__main__':
         print(f"Sensor events DataFrame:\n{sensor_events_df}")
 
     # Concatenate the two arrays and sort by timestamp
-    combined_sensor_app_events = pd.concat([sensor_events_df, app_events_df], ignore_index=True)
-    combined_sensor_app_events.sort_values(by='Time', inplace=True)
-    combined_sensor_app_events.reset_index(drop=True, inplace=True)
+    combined_sensor_user_events = pd.concat([sensor_events_df, user_events_df], ignore_index=True)
+    combined_sensor_user_events.sort_values(by='Time', inplace=True)
+    combined_sensor_user_events.reset_index(drop=True, inplace=True)
     if verbosity > 0:
-        print(f"Combined sensor and app events DataFrame:\n{combined_sensor_app_events}")
+        print(f"Combined sensor and user events DataFrame:\n{combined_sensor_user_events}")
 
     # Extract sensor activity for each sensor
     summary_sensor_activity = extract_sensor_app_activity(sensor_events, sensor_names, logs_df,
-                                                          app_events=app_events_df.to_dict(orient='records'))
+                                                          user_events=user_events_df.to_dict(orient='records'))
 
     # Delete rows that have the same exact events (both sensor and app) to avoid duplicates. Keep the one with the less timestamp
     summary_sensor_activity = delete_duplicates(summary_sensor_activity)

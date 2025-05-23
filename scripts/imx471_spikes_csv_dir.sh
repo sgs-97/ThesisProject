@@ -4,7 +4,7 @@
 
 function show_help() {
     echo "Description:"
-    echo "  Run preprocess and analyze logs python scripts on the specified directory containing log and annotation (laps) data."
+    echo "  Run graph.py on the specified directory containing log and annotation (laps) data after being preprocessed."
     echo
     echo "Usage: path/to/$(basename $0) [args] [options]" # Keep as it is
     echo
@@ -12,6 +12,7 @@ function show_help() {
     echo "  <dir>              Directory of log and annotation (laps) data"
     echo
     echo "Options:"
+    echo "  --show_in_browser  Open the generated graph in a web browser" # Keep as it is
     echo "  -h, --help         Show this help message and exit" # Keep as it is
     echo
 }
@@ -22,9 +23,18 @@ function main() {
         print_error "Directory argument is required."
         exit 1
     fi
+    # Check if the --show_in_browser option is provided
+    local show_in_browser=''
+    for arg in "$@"; do
+        case $arg in
+            --show_in_browser)
+                show_in_browser="--show_in_browser"
+                ;;
+        esac
+    done
 
     # Add your main script logic here
-    echo "Processing directory: $dir"
+    echo "Generating imx471 spikes csv file for directory: $dir"
 
     # Check path of dir
     if [[ ! -d "$dir" ]]; then
@@ -32,10 +42,20 @@ function main() {
         exit 1
     fi
 
+    # If preprocessing output is missing exit
+    if ! ls "$dir"/adb_log*.csv 1> /dev/null 2>&1; then
+        ls -l "$dir"/adb_log*.csv
+        print_error "adb log not found in dir '$dir'. First run preprocess_dir.sh"
+        exit 1
+    fi
+    if ! ls "$dir"/*.json 1> /dev/null 2>&1; then
+        print_error "user_events json not found in dir '$dir'. First run preprocess_dir.sh"
+        exit 1
+    fi
+
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    python3 $SCRIPT_DIR/preprocess_dir.sh "$dir"
-    python3 $SCRIPT_DIR/analyze_dir.sh "$dir"
+    python3 $SCRIPT_DIR/../analyze/imx471_spikes.py "$dir"/adb_log*.csv
 
 }
 

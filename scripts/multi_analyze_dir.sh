@@ -42,7 +42,7 @@ function main() {
           continue
       fi
       if ! ls "$sub_dir"/*.json 1> /dev/null 2>&1; then
-          print_error "app events json not found in dir '$sub_dir'. Continuing to next directory."
+          print_error "user events json not found in dir '$sub_dir'. Continuing to next directory."
           continue
       fi
       $SCRIPT_DIR/analyze_dir.sh "$sub_dir"

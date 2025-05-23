@@ -5,6 +5,7 @@ import json
 import plotly.io as pio
 import os
 import helpers
+import imx471_spikes
 
 def plot_additional_components(fig, additional_components, graph_start_time):
     graph_start_time_td = pd.Timedelta(hours=graph_start_time.hour, minutes=graph_start_time.minute, seconds=graph_start_time.second, milliseconds=graph_start_time.microsecond // 1000)
@@ -89,9 +90,9 @@ def plot_additional_components(fig, additional_components, graph_start_time):
             )
 
 # TODO: Add titles (+tab titles) and description for readability of graphs
-def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, app_events=None, show_in_browser=False):
-    if app_events is None:
-        app_events = []
+def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, user_events=None, show_in_browser=False):
+    if user_events is None:
+        user_events = []
     # Plotting with Plotly
     fig = go.Figure()
 
@@ -163,12 +164,12 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
     graph_start_time = df['Time'].min() + timer_lag
     graph_end_time = df['Time'].max()
 
-    for item in app_events:
+    for item in user_events:
         if 'label' in item and item['label'].lower() == 'device sleep':
             graph_end_time = pd.to_datetime(item['time'], format='%H:%M:%S.%f') + pd.Timedelta(hours=graph_start_time.hour, minutes=graph_start_time.minute, seconds=graph_start_time.second,
                          milliseconds=graph_start_time.microsecond // 1000)
 
-    plot_additional_components(fig, app_events, graph_start_time)
+    plot_additional_components(fig, user_events, graph_start_time)
 
     title = plotly_graph_file.lower().split('experiments')[-1] if 'experiments1' in plotly_graph_file.lower() else '/'.join(os.path.relpath(plotly_graph_file).split('/')[-4:-1])
 
@@ -188,45 +189,52 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate sensor activity graph from CSV.")
-    parser.add_argument("csv_file", help="Path to the input CSV file")
-    parser.add_argument("--json_file", default='<script_dir_path>/dict.json', help="Path to the JSON file with parsing conditions. Default: <script_dir_path>/dict.json")
-    parser.add_argument("--app_events", default='[]', help="Path to the JSON file with app events. Default: []")
-    parser.add_argument("--output_html", default='<csv_file_dir>/sensor_activity_graph.html', help="Path to save the output graph. Default: <csv_file_dir>/sensor_activity_graph.html")
+    parser.add_argument("logfile", help="Path to the input log file (CSV)")
+    parser.add_argument("--dict_file", default='<script_dir_path>/dict.json', help="Path to the dictionary file with parsing conditions (JSON). Default: <script_dir_path>/dict.json")
+    parser.add_argument("--user_events", default='[]', help="Path to the user events file (JSON). Default: []")
+    parser.add_argument("--output", default='<logfile_dir>/sensor_activity_graph.html', help="Path to save the output graph. Default: <logfile_dir>/sensor_activity_graph.html")
+    parser.add_argument('--include_imx471_spikes_csv', action='store_true', help='Include IMX471 spikes CSV in the output. Default: False')
     parser.add_argument("--show_in_browser", action='store_true', help="Skip showing the figure in the browser. Default: False")
-
     args = parser.parse_args()
-
-    csv_file_path = os.path.realpath(args.csv_file)
-    if not os.path.exists(csv_file_path):
-        raise FileNotFoundError(f"CSV file {csv_file_path} does not exist.")
-    json_file_path = args.json_file
-    json_file_path = json_file_path.replace('<script_dir_path>', (os.path.realpath(os.path.dirname(__file__))))
-    if not os.path.exists(json_file_path):
-        raise FileNotFoundError(f"JSON file {json_file_path} does not exist.")
-    plotly_graph_file = args.output_html
-    plotly_graph_file = plotly_graph_file.replace('<csv_file_dir>', (os.path.realpath(os.path.dirname(csv_file_path))))
+    
+    logfile_path = os.path.realpath(args.logfile)
+    if not os.path.exists(logfile_path):
+        raise FileNotFoundError(f"CSV file {logfile_path} does not exist.")
+    dict_file_path = args.dict_file
+    dict_file_path = dict_file_path.replace('<script_dir_path>', (os.path.realpath(os.path.dirname(__file__))))
+    if not os.path.exists(dict_file_path):
+        raise FileNotFoundError(f"JSON file {dict_file_path} does not exist.")
+    plotly_graph_file = args.output
+    plotly_graph_file = plotly_graph_file.replace('<logfile_dir>', (os.path.realpath(os.path.dirname(logfile_path))))
     plotly_graph_file = os.path.realpath(plotly_graph_file)
     if not os.path.exists(os.path.dirname(plotly_graph_file)):
         os.makedirs(os.path.dirname(plotly_graph_file), exist_ok=True)
-    app_events_path = args.app_events
-
-    # Load additional app events components
-    if not os.path.exists(app_events_path):
-        print(f"JSON file {app_events_path} does not exist. Continuing without app events.")
-        app_events = []
-    else:
-        with open(app_events_path, 'r') as json_file:
-            app_events = json.load(json_file)
-
+    user_events_path = args.user_events
     show_in_browser = args.show_in_browser
 
-    df_original = pd.read_csv(csv_file_path)
-    df = df_original[['Time', 'Message']].copy()
-    df['Time'] = df_original['Time']
-    df['Time'] = pd.to_datetime(df['Time'], format='%H:%M:%S.%f')
+    # Load additional user events components
+    if not os.path.exists(user_events_path):
+        print(f"JSON file {user_events_path} does not exist. Continuing without user events.")
+        user_events = []
+    else:
+        with open(user_events_path, 'r') as dict_file:
+            user_events = json.load(dict_file)
+
+    # Load adb log (CSV)
+    df = helpers.load_logfile_csv(logfile_path)
 
     # Extract sensor events from the CSV file using the parsing conditions from the JSON file
-    sensor_events, colors, sensor_names = helpers.extract_sensor_events(df, json_file_path)
+    sensor_events, colors, sensor_names = helpers.extract_sensor_events(df, dict_file_path)
 
-    plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, app_events=app_events, show_in_browser=show_in_browser)
+    plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, user_events=user_events, show_in_browser=show_in_browser)
     print(f"Graph has been generated and saved to {plotly_graph_file}")
+
+    if args.include_imx471_spikes_csv:
+        # Save the IMX471 spikes CSV file
+        imx471_spikes_csv = os.path.join(os.path.dirname(plotly_graph_file), 'imx471_spikes.csv')
+        non_overlapping_imx = imx471_spikes.get_imx_spikes(sensor_events)
+        with open(imx471_spikes_csv, 'w') as f:
+            f.write("start,end,duration,label\n")
+            for interval in non_overlapping_imx:
+                f.write(f"{interval['start']},{interval['end']},{interval['duration'].total_seconds()},{interval['label']}\n)")
+        print(f"IMX471 spikes CSV has been saved to {imx471_spikes_csv}")

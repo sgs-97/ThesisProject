@@ -43,7 +43,7 @@ function main() {
               continue
           fi
           if ! ls "$sub_dir"/*.txt 1> /dev/null 2>&1; then
-              print_error "app events txt file not found in dir '$sub_dir'. Continuing to next directory."
+              print_error "user events txt file not found in dir '$sub_dir'. Continuing to next directory."
               continue
           fi
          $SCRIPT_DIR/preprocess_dir.sh "$sub_dir"

@@ -4,12 +4,12 @@
 
 function show_help() {
     echo "Description:"
-    echo "  Run preprocess and graphing python scripts on the specified directory containing log and annotation (laps) data."
+    echo "  Run graph_dir on all subdirectories of a given directory."
     echo
     echo "Usage: path/to/$(basename $0) [args] [options]" # Keep as it is
     echo
     echo "Arguments:"
-    echo "  <dir>              Directory of log and annotation (laps) data"
+    echo "  <dir>              Directory containing subdirectories to be graphed"
     echo
     echo "Options:"
     echo "  -h, --help         Show this help message and exit" # Keep as it is
@@ -23,19 +23,33 @@ function main() {
         exit 1
     fi
 
-    # Add your main script logic here
-    echo "Processing directory: $dir"
-
     # Check path of dir
     if [[ ! -d "$dir" ]]; then
         print_error "Directory '$dir' does not exist."
         exit 1
     fi
 
+    # Add your main script logic here
+    sub_dir_count=$(find "$dir" -mindepth 1 -maxdepth 1 -type d | wc -l)
+    echo "Graphing $sub_dir_count directories in $dir"
+    sleep 2
+
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    python3 $SCRIPT_DIR/preprocess_dir.sh "$dir"
-    python3 $SCRIPT_DIR/graph_dir.sh "$dir"
+
+
+    for sub_dir in "$dir"/*/; do
+        # If preprocessing output is missing continue
+        if ! ls "$sub_dir"/adb_log*.csv 1> /dev/null 2>&1; then
+            print_error "adb log not found in dir '$sub_dir'. Continuing to next directory."
+            continue
+        fi
+        if ! ls "$sub_dir"/*.json 1> /dev/null 2>&1; then
+            print_error "user events json not found in dir '$sub_dir'. Continuing to next directory."
+            continue
+        fi
+        $SCRIPT_DIR/imx471_spikes_csv_dir.sh "$sub_dir"
+    done
 
 }
 
@@ -107,6 +121,9 @@ function print_error() {
     local MESSAGE="$*"
     printf "\033[0;31m[\u2718] [ERROR][$(basename $0):${BASH_LINENO[0]}]: %s\033[0m\n" "$MESSAGE"
 }
+
+trap 'EXIT_CODE=$?; printf "\n\033[0;33m[!] [INTERRUPT][$(basename $0)] Script was interrupted! (Exit Code: $EXIT_CODE)\033[0m\n"; exit $EXIT_CODE' INT TERM
+trap '_on_exit $?' EXIT
 
 
 # Main script

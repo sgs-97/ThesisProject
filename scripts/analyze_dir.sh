@@ -38,13 +38,13 @@ function main() {
         exit 1
     fi
     if ! ls "$dir"/*.json 1> /dev/null 2>&1; then
-        print_error "app_events json not found in dir '$dir'. First run preprocess_dir.sh"
+        print_error "user_events json not found in dir '$dir'. First run preprocess_dir.sh"
         exit 1
     fi
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    python3 $SCRIPT_DIR/../activity_graphs/analyze_logs.py "$dir"/adb_log*.csv "$dir"/*.json
+    python3 $SCRIPT_DIR/../analyze/analyze_logs.py "$dir"/adb_log*.csv "$dir"/*.json
 
 }
 
