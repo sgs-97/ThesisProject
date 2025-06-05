@@ -25,7 +25,7 @@ def plotly_cdf(csv_file: str, duration_column: str, output_html: str, export_sta
     ))
 
     cdf_fig.update_layout(
-        title="Cumulative Distribution of Durations",
+        title="Cumulative Distribution of imx471 Spikes Durations",
         xaxis_title="Duration (seconds)",
         yaxis_title="CDF",
         yaxis=dict(range=[0, 1]),
@@ -94,7 +94,7 @@ def matplotlib_cdf(csv_file: str, duration_column: str, output_png: str, export_
 
     plt.figure(figsize=(10, 6))
     sns.lineplot(x=sorted_vals, y=cdf_vals, marker='o', color='blue')
-    plt.title("Cumulative Distribution of Durations")
+    plt.title("Cumulative Distribution of imx471 Spikes Durations")
     plt.xlabel("Duration (seconds)")
     plt.ylabel("CDF")
     plt.ylim(0, 1)
