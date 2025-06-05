@@ -28,7 +28,8 @@ def get_imx_spikes(sensor_events):
     return non_overlapping_imx
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Generate sensor activity graph from CSV.")
+    parser = argparse.ArgumentParser(description="Extract IMX471 spikes intervals from a CSV log file and save the results to a CSV file. "
+                                                 "This script extracts IMX471 activation intervals that do not overlap with Passthrough activation intervals and have a duration less than 1.8 seconds.")
     parser.add_argument("logfile", help="Path to the input log file (CSV)")
     parser.add_argument("--dict_file", default='<script_dir_path>/dict.json',
                         help="Path to the dictionary file with parsing conditions (JSON). Default: <script_dir_path>/dict.json")

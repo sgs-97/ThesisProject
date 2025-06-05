@@ -2,3 +2,5 @@ pandas
 plotly
 XlsxWriter
 openpyxl
+matplotlib
+seaborn
