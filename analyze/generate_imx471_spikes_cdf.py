@@ -5,14 +5,13 @@ import plotly.graph_objects as go
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import helpers
+from matplotlib.ticker import FuncFormatter
 
-def plotly_cdf(csv_file: str, duration_column: str, output_html: str, export_stats=True):
-    df = pd.read_csv(csv_file)
-    durations = df[duration_column].astype(float)
-
+def plotly_cdf(values, output_html: str, export_stats=True):
     # CDF data
-    sorted_vals = durations.sort_values()
-    cdf_vals = sorted_vals.rank(method="average", pct=True)
+    sorted_vals = np.sort(values)
+    cdf_vals = np.arange(1, len(sorted_vals) + 1) / len(sorted_vals)
 
     # Main CDF Plot
     cdf_fig = go.Figure()
@@ -34,14 +33,14 @@ def plotly_cdf(csv_file: str, duration_column: str, output_html: str, export_sta
     if export_stats:
         # Summary statistics
         stats = {
-            "mean": np.mean(durations),
-            "std": np.std(durations),
-            "min": np.min(durations),
-            "25%": np.percentile(durations, 25),
-            "50% (median)": np.median(durations),
-            "75%": np.percentile(durations, 75),
-            "max": np.max(durations),
-            "n_points": len(durations),
+            "mean": np.mean(values),
+            "std": np.std(values),
+            "min": np.min(values),
+            "25%": np.percentile(values, 25),
+            "50% (median)": np.median(values),
+            "75%": np.percentile(values, 75),
+            "max": np.max(values),
+            "n_points": len(values),
         }
 
         stats_table = go.Figure(data=[go.Table(
@@ -84,48 +83,112 @@ def plotly_cdf(csv_file: str, duration_column: str, output_html: str, export_sta
         cdf_fig.write_html(output_html)
         print(f"CDF saved to: {output_html}")
 
-def matplotlib_cdf(csv_file: str, duration_column: str, output_png: str, export_stats=False):
-    df = pd.read_csv(csv_file)
-    durations = df[duration_column].astype(float)
-
-    # CDF data
-    sorted_vals = np.sort(durations)
+def matplotlib_cdf(values: list, output_png: str, export_stats=False, stats_txt_path=None, title="CDF"):
+    # -------------------------
+    # Compute CDF & stats
+    # -------------------------
+    sorted_vals = np.sort(values)
     cdf_vals = np.arange(1, len(sorted_vals) + 1) / len(sorted_vals)
+    stats = {
+        "mean": np.mean(values),
+        "std": np.std(values),
+        "min": np.min(values),
+        "50% (median)": np.median(values),
+        "max": np.max(values),
+        "n_points": len(values),
+    }
 
-    plt.figure(figsize=(10, 6))
-    sns.lineplot(x=sorted_vals, y=cdf_vals, marker='o', color='blue')
-    plt.title("Cumulative Distribution of imx471 Spikes Durations")
-    plt.xlabel("Duration (seconds)")
-    plt.ylabel("CDF")
-    plt.ylim(0, 1)
+    # -----------------------------------------------------
+    # ACM-style figure setup
+    # Suitable for 2-column format (e.g., 3.4 inches wide)
+    # -----------------------------------------------------
+    plt.rcParams.update({
+        "font.size": 8,
+        "font.family": "serif",
+        "axes.labelsize": 8,
+        "axes.titlesize": 9,
+        "legend.fontsize": 7,
+        "xtick.labelsize": 7,
+        "ytick.labelsize": 7,
+        "pdf.fonttype": 42,  # Embed fonts
+        "ps.fonttype": 42
+    })
 
-    # Output
-    plt.savefig(output_png, bbox_inches='tight')
+    fig = plt.figure(figsize=(3.4, 2.2))  # Width x Height in inches (ACM 2-column)
+    ax = fig.add_subplot(1, 1, 1)
 
-    if export_stats:
-        # Add summary statistics as a text box below the graph
-        stats = {
-            "mean": np.mean(durations),
-            "std": np.std(durations),
-            "min": np.min(durations),
-            "25%": np.percentile(durations, 25),
-            "50% (median)": np.median(durations),
-            "75%": np.percentile(durations, 75),
-            "max": np.max(durations),
-            "n_points": len(durations),
+    # Plot the CDF line (black, thin line for paper)
+    ax.plot(sorted_vals, cdf_vals, color='blue', linewidth=1)
+
+    # -----------------------------------------------------
+    # Axis labels, title, grid and axis formatting
+    # -----------------------------------------------------
+    ax.set_title(title)
+    ax.set_xlabel("Duration (seconds)")
+    ax.set_ylabel("CDF")
+    # Set y-axis to cover full CDF range
+    ax.set_ylim(0, 1)
+
+    # Format x-axis with consistent float display
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.2f}s"))
+
+    # Grid and spine cleanup for cleaner look
+    ax.grid(True, linestyle='--', linewidth=0.4, alpha=0.6)
+    sns.despine(ax=ax)  # Removes top and right spines
+
+
+    # -----------------------------------------------------
+    # Optional: Add vertical line at median and corresponding text
+    # -----------------------------------------------------
+    median = stats["50% (median)"]
+    ax.axvline(median, color='gray', linestyle='--', linewidth=0.7, label=f"Median = {median:.2f}s")
+    # Place a text annotation near the top center
+    text_y = 0.5  # Adjust vertical position if needed
+    ax.text(
+        median + 0.1, text_y,
+        f"Median = {median:.2f}s",
+        ha='left', va='center',
+        fontsize=7, color='gray',
+        fontdict={
+            'weight': 'bold'
         }
-        stats_text = "\n".join([f"{k}: {v:.6f}" if isinstance(v, float) else f"{k}: {v}" for k, v in stats.items()])
-        # Add text box below the plot
-        plt.gcf().text(0.01, -0.15, stats_text, fontsize=12, va='top', ha='left', family='monospace')
-        plt.savefig(output_png, bbox_inches='tight')
-    plt.close()
+    )
+
+    # Save plot (initial save, before stats text)
+    plt.savefig(output_png, bbox_inches='tight', dpi=1200)
+
+    # -----------------------------------------------------
+    # Optional: Export stats text file if stats_txt_path is assigned with a value
+    # -----------------------------------------------------
+    if stats_txt_path is not None:
+        with open(stats_txt_path, 'w') as f:
+            for k, v in stats.items():
+                line = f"{k}: {v:.6f}" if isinstance(v, float) else f"{k}: {v}"
+                f.write(line + "\n")
+
+    # -----------------------------------------------------
+    # Optional: Add summary statistics as a caption-like text
+    # -----------------------------------------------------
+    if export_stats:
+        # Format stats into a neat string (fixed-point for floats)
+        stats_text = "\n".join(
+            [f"{k}: {v:.6f}" if isinstance(v, float) else f"{k}: {v}" for k, v in stats.items()]
+        )
+
+        # Add text box below plot area; adjust position as needed
+        fig.text(0.01, -0.15, stats_text, fontsize=7, va='top', ha='left', family='monospace')
+
+        # Re-save with the stats text included
+        plt.savefig(output_png, bbox_inches='tight', dpi=1200)
+
+    plt.close(fig)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate CDF graph from concatenated imx471 spikes CSV file into a plotly graph (output is HTML).")
     parser.add_argument("csv_file", help="Path to the input combined CSV.")
-    parser.add_argument("--column", default="duration", help="Name of the column to produce CDF for.")
+    parser.add_argument("variable_for_cdf", choices=["duration", "frequency"], help="The variable to use for the CDF. (Choices: duration, frequency)")
     parser.add_argument("--export_stats", action='store_true', help="Add summary statistics to the graph.")
-    parser.add_argument("--graphing_tool", default="plotly", choices=["plotly", "matplotlib"],)
+    parser.add_argument("--graphing_tool", default="matplotlib", choices=["plotly", "matplotlib"],)
     args = parser.parse_args()
 
     csv_file = os.path.realpath(args.csv_file)
@@ -134,16 +197,30 @@ if __name__ == "__main__":
     if not os.path.exists(csv_file):
         raise FileNotFoundError(f"CSV file {csv_file} does not exist.")
 
-    column = args.column
-    if column not in ["duration", "start", "end"]:
-        raise ValueError("Column must be one of: duration, start, end.")
-
+    variable_for_cdf = args.variable_for_cdf
     export_stats = args.export_stats
     graphing_tool = args.graphing_tool
 
-    if graphing_tool == "matplotlib":
-        output_png = os.path.dirname(csv_file) + "/imx471_spikes_cdf.png"
-        matplotlib_cdf(args.csv_file, column, output_png, export_stats=export_stats)
-    else:
-        output_html = os.path.dirname(csv_file) + "/imx471_spikes_cdf.html"
-        plotly_cdf(args.csv_file, column, output_html, export_stats=export_stats)
+    # Load df
+    df = pd.read_csv(csv_file)
+
+    if variable_for_cdf == "duration": # there is a duration column so we directly utilize it to calculate the cdf
+        durations = df["duration"].astype(float)
+
+        output_stats_file = os.path.dirname(csv_file) + "/imx471_spikes_duration_cdf_stats.txt"
+        if graphing_tool == "matplotlib":
+            output_png = os.path.dirname(csv_file) + "/imx471_spikes_cdf.png"
+            matplotlib_cdf(durations, output_png, export_stats=export_stats, stats_txt_path=output_stats_file, title="CDF of imx471 Spikes Durations")
+        else:
+            output_html = os.path.dirname(csv_file) + "/imx471_spikes_cdf.html"
+            plotly_cdf(durations, output_html, export_stats=export_stats)
+    elif variable_for_cdf == "frequency": # The frequency has to be calculated asfrom the "starts". However since this is a concatenated csv we have to check for the source_file_column to be the same each time we add a value to the total
+        output_stats_file = os.path.dirname(csv_file) + "/imx471_spikes_frequency_cdf_stats.txt"
+        intervals = helpers.df_to_intervals(df)
+        periods = helpers.get_intervals_periods(intervals, duration_between_starts_filter=[0, 25])
+        if graphing_tool == "matplotlib":
+            output_png = os.path.dirname(csv_file) + "/imx471_spikes_frequency.png"
+            matplotlib_cdf(periods, output_png, export_stats=export_stats, stats_txt_path=output_stats_file, title="CDF of imx471 Spikes Periods (Δt between activations)")
+        else:
+            output_html = os.path.dirname(csv_file) + "/imx471_spikes_frequency.html"
+            plotly_cdf(periods, output_html, export_stats=export_stats)

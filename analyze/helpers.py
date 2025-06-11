@@ -1,4 +1,6 @@
 import json
+
+import numpy as np
 import pandas as pd
 
 def timedelta_pd(t1, t2, maintain_sign=False, format='%H:%M:%S.%f'):
@@ -130,6 +132,17 @@ def events_to_intervals(events: List[Dict], label: str) -> List[NamedInterval]:
             start_time = None
     return intervals
 
+def df_to_intervals(df: pd.DataFrame) -> List[NamedInterval]:
+    """
+    Convert a DataFrame to a list of NamedInterval dicts, adding the given label to each.
+    All columns are included as keys in the resulting dicts.
+    """
+    intervals = []
+    for _, row in df.iterrows():
+        interval = dict(row)
+        intervals.append(interval)
+    return intervals
+
 def remove_overlapping_intervals(
         base: List[NamedInterval],
         other: List[NamedInterval],
@@ -237,8 +250,7 @@ def subtract_intervals(base: List[NamedInterval], subtract: List[NamedInterval],
 def filter_intervals_by_duration(
         intervals: List[NamedInterval],
         min_duration: float = None,
-        max_duration: float = None
-) -> List[NamedInterval]:
+        max_duration: float = None) -> List[NamedInterval]:
     """
     Filter intervals by duration in seconds.
     :param intervals: List of intervals
@@ -253,6 +265,54 @@ def filter_intervals_by_duration(
                 (max_duration is None or seconds <= max_duration)):
             result.append(interval)
     return result
+
+def get_intervals_frequency(intervals: List[NamedInterval], duration_between_starts_filter: List = None) -> float:
+    """
+    Get the average frequency that a set of intervals have. If the intervals are not equally spread you essentially get the average time between the starts of intervals
+    :param intervals: List of intervals
+    :return: The frequency at which the intervals appear in Hz (times per second) – float
+    """
+    if not intervals:
+        return -1
+    if duration_between_starts_filter is None:
+        duration_between_starts_filter = [0, np.inf]
+    total_starts = 0
+    total_seconds = 0
+    for i in range(0, len(intervals) - 1):
+        if intervals[i+1]["source_file"] == intervals[i]["source_file"]:
+            start_datetime_1 = pd.to_timedelta(intervals[i]["start"])
+            start_datetime_2 = pd.to_timedelta(intervals[i+1]["start"])
+            duration_between_starts = start_datetime_2 - start_datetime_1
+            if (duration_between_starts.total_seconds() < duration_between_starts_filter[0] or duration_between_starts.total_seconds() > duration_between_starts_filter[1]):
+                print(f"{duration_between_starts.total_seconds()}, intervals i: {intervals[i]}, i+1 {intervals[i+1]}")
+                continue
+            total_starts += 1
+            total_seconds += duration_between_starts.total_seconds()
+
+    print(total_seconds/total_starts)
+    return total_starts / total_seconds
+
+def get_intervals_periods(intervals: List[NamedInterval], duration_between_starts_filter: List = None) -> List[float]:
+    """
+    Get the periods of the intervals as a list of timedeltas.
+    The period is the time between consecutive interval starts.
+    """
+    if not intervals:
+        return []
+    if duration_between_starts_filter is None:
+        duration_between_starts_filter = [0, np.inf]
+    periods = []
+    for i in range(0, len(intervals)-1):
+        if intervals[i+1]["source_file"] == intervals[i]["source_file"]:
+            start_datetime_1 = pd.to_timedelta(intervals[i]["start"])
+            start_datetime_2 = pd.to_timedelta(intervals[i+1]["start"])
+            duration_between_starts = start_datetime_2 - start_datetime_1
+            if (duration_between_starts.total_seconds() < duration_between_starts_filter[0] or duration_between_starts.total_seconds() > duration_between_starts_filter[1]):
+                print(f"{duration_between_starts.total_seconds()}, intervals i: {intervals[i]}, i+1 {intervals[i+1]}")
+                continue
+            periods.append(duration_between_starts.total_seconds())
+
+    return periods
 
 # ------------------------ XLSX FORMATTING ------------------------
 
