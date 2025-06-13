@@ -188,7 +188,7 @@ if __name__ == "__main__":
     parser.add_argument("csv_file", help="Path to the input combined CSV.")
     parser.add_argument("variable_for_cdf", choices=["duration", "frequency"], help="The variable to use for the CDF. (Choices: duration, frequency)")
     parser.add_argument("--export_stats", action='store_true', help="Add summary statistics to the graph.")
-    parser.add_argument("--graphing_tool", default="matplotlib", choices=["plotly", "matplotlib"],)
+    parser.add_argument("--graphing_tool", default="matplotlib", choices=["plotly", "matplotlib"], help="Choose the graphing tool to use for plotting the CDF. (Default: matplotlib)")
     args = parser.parse_args()
 
     csv_file = os.path.realpath(args.csv_file)
@@ -201,26 +201,26 @@ if __name__ == "__main__":
     export_stats = args.export_stats
     graphing_tool = args.graphing_tool
 
+    # Configure output file paths
+    extension = 'png'
+    if graphing_tool == "plotly":
+        extension = 'html'
+    output_file = os.path.dirname(csv_file) + f"/imx471_spikes_{variable_for_cdf}.{extension}"
+    output_stats_file = os.path.dirname(csv_file) + f"/imx471_spikes_{variable_for_cdf}_stats.txt"
+
     # Load df
     df = pd.read_csv(csv_file)
 
     if variable_for_cdf == "duration": # there is a duration column so we directly utilize it to calculate the cdf
         durations = df["duration"].astype(float)
-
-        output_stats_file = os.path.dirname(csv_file) + "/imx471_spikes_duration_cdf_stats.txt"
         if graphing_tool == "matplotlib":
-            output_png = os.path.dirname(csv_file) + "/imx471_spikes_cdf.png"
-            matplotlib_cdf(durations, output_png, export_stats=export_stats, stats_txt_path=output_stats_file, title="CDF of imx471 Spikes Durations")
+            matplotlib_cdf(durations, output_file, export_stats=export_stats, stats_txt_path=output_stats_file, title="CDF of imx471 Spikes Durations")
         else:
-            output_html = os.path.dirname(csv_file) + "/imx471_spikes_cdf.html"
-            plotly_cdf(durations, output_html, export_stats=export_stats)
+            plotly_cdf(durations, output_file, export_stats=export_stats)
     elif variable_for_cdf == "frequency": # The frequency has to be calculated asfrom the "starts". However since this is a concatenated csv we have to check for the source_file_column to be the same each time we add a value to the total
-        output_stats_file = os.path.dirname(csv_file) + "/imx471_spikes_frequency_cdf_stats.txt"
         intervals = helpers.df_to_intervals(df)
         periods = helpers.get_intervals_periods(intervals, duration_between_starts_filter=[0, 25])
         if graphing_tool == "matplotlib":
-            output_png = os.path.dirname(csv_file) + "/imx471_spikes_frequency.png"
-            matplotlib_cdf(periods, output_png, export_stats=export_stats, stats_txt_path=output_stats_file, title="CDF of imx471 Spikes Periods (Δt between activations)")
+            matplotlib_cdf(periods, output_file, export_stats=export_stats, stats_txt_path=output_stats_file, title="CDF of imx471 Spikes Periods (Δt between activations)")
         else:
-            output_html = os.path.dirname(csv_file) + "/imx471_spikes_frequency.html"
-            plotly_cdf(periods, output_html, export_stats=export_stats)
+            plotly_cdf(periods, output_file, export_stats=export_stats)
