@@ -90,7 +90,7 @@ def plot_additional_components(fig, additional_components, graph_start_time):
             )
 
 # TODO: Add titles (+tab titles) and description for readability of graphs
-def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, user_events=None, show_in_browser=False):
+def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, user_events=None, show_in_browser=False, add_video=False):
     if user_events is None:
         user_events = []
     # Plotting with Plotly
@@ -177,15 +177,91 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
         title=title,
         xaxis=dict(range=[graph_start_time - timer_lag, graph_end_time + timer_lag], title='Time'),
         yaxis_title='Sensor Activity (1=Active, 0=Inactive)',
-        yaxis=dict(range=[-0.1,1.1], tickvals=[0, 1], ticktext=['Inactive', 'Active'])
+        yaxis=dict(range=[-0.1,1.1], tickvals=[0, 1], ticktext=['Inactive', 'Active']),
+        height=800  # Set plot height
     )
+
+    custom_html = ''
+    if add_video:
+        graph_dir = os.path.dirname(plotly_graph_file)
+        video_path = None
+        if not os.path.exists(graph_dir):
+            os.makedirs(graph_dir, exist_ok=True)
+        def find_file(directory, extension): # Recursive function to find the first .mp4 file in the directory or its subdirectories
+            for entry in os.listdir(directory):
+                path = os.path.join(directory, entry)
+                if os.path.isdir(path):
+                    result = find_mp4_file(path)
+                    if result:
+                        return result
+                elif entry.endswith(extension):
+                    return path
+            return None
+
+        video_path = find_file(graph_dir, '.mp4')  # Change to '.mp4' if you want to find mp4 files
+        print(f"Video path found: {video_path}") if video_path else print("No video file found in the directory.")
+
+        if video_path:
+            # find laps file with ending .txt
+            custom_html = helpers.generate_video_html(video_path)
 
     # Show the plot
     if show_in_browser:
         fig.show()
 
-    # Save the figure as an HTML file
-    pio.write_html(fig, file=plotly_graph_file, auto_open=show_in_browser)
+    # Get standalone Plotly HTML with full layout
+    plot_html = fig.to_html(
+        full_html=False,
+        include_plotlyjs=True,
+        config={"responsive": True},
+    )
+
+    # Build final HTML
+    full_html = f"""<!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>{title}</title>
+      <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+      <style>
+        body {{
+          font-family: sans-serif;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          height: 100%;
+        }}
+        #plot-container {{
+          width: 90%;
+          height: 900px;
+          margin-top: 20px;
+        }}
+        #video-container {{
+          margin-top: 40px;
+          text-align: center;
+        }}
+      </style>
+    </head>
+    <body>
+
+    <!-- Plotly Graph -->
+    <div id="plot-container">
+    {plot_html}
+    </div>
+
+    <!-- Optional video section -->
+    {custom_html}
+
+    </body>
+    </html>
+    """
+
+    # 3. Write to file
+    with open(plotly_graph_file, "w", encoding="utf-8") as f:
+        f.write(full_html)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate sensor activity graph from CSV.")
@@ -195,6 +271,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", default='<logfile_dir>/sensor_activity_graph.html', help="Path to save the output graph. Default: <logfile_dir>/sensor_activity_graph.html")
     parser.add_argument('--include_imx471_spikes_csv', action='store_true', help='Include IMX471 spikes CSV in the output. Default: False')
     parser.add_argument("--show_in_browser", action='store_true', help="Skip showing the figure in the browser. Default: False")
+    parser.add_argument('--include_video', action='store_true', help='Include timestamped video in the output HTML (if found inside the directory where the graph is going to be placed). Default: False')
     args = parser.parse_args()
     
     logfile_path = os.path.realpath(args.logfile)
@@ -211,6 +288,7 @@ if __name__ == "__main__":
         os.makedirs(os.path.dirname(plotly_graph_file), exist_ok=True)
     user_events_path = args.user_events
     show_in_browser = args.show_in_browser
+    include_video = args.include_video
 
     # Load additional user events components
     if not os.path.exists(user_events_path):
@@ -226,7 +304,7 @@ if __name__ == "__main__":
     # Extract sensor events from the CSV file using the parsing conditions from the JSON file
     sensor_events, colors, sensor_names = helpers.extract_sensor_events(df, dict_file_path)
 
-    plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, user_events=user_events, show_in_browser=show_in_browser)
+    plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_file, user_events=user_events, show_in_browser=show_in_browser, add_video=include_video)
     print(f"Graph has been generated and saved to {plotly_graph_file}")
 
     if args.include_imx471_spikes_csv:

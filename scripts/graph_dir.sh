@@ -13,6 +13,7 @@ function show_help() {
     echo
     echo "Options:"
     echo "  --show_in_browser  Open the generated graph in a web browser" # Keep as it is
+    echo "  --include_video    Include timestamped video in the output HTML (if found inside the directory where the graph is going to be placed). Default: False"
     echo "  -h, --help         Show this help message and exit" # Keep as it is
     echo
 }
@@ -25,10 +26,14 @@ function main() {
     fi
     # Check if the --show_in_browser option is provided
     local show_in_browser=''
+    local include_video=''
     for arg in "$@"; do
         case $arg in
             --show_in_browser)
                 show_in_browser="--show_in_browser"
+                ;;
+            --include_video)
+                include_video="--include_video"
                 ;;
         esac
     done
@@ -55,7 +60,7 @@ function main() {
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    python3 $SCRIPT_DIR/../analyze/graph.py "$dir"/adb_log*.csv --user_events "$dir"/*.json $show_in_browser
+    python3 $SCRIPT_DIR/../analyze/graph.py "$dir"/adb_log*.csv --user_events "$dir"/*.json $show_in_browser $include_video
 
 }
 

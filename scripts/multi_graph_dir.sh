@@ -14,6 +14,7 @@ function show_help() {
     echo "Options:"
     echo "  --show_in_browser  Open the generated graph in a web browser" # Keep as it is
     echo "  --skip_imx471_spikes_csv  Skip generating IMX471 spikes CSV"
+    echo "  --include_video    Include timestamped video in the output HTML (if found inside the directory where the graph is going to be placed). Default: False"
     echo "  -h, --help         Show this help message and exit" # Keep as it is
     echo
 }
@@ -27,10 +28,14 @@ function main() {
     local include_imx471_spikes_csv="--include_imx471_spikes_csv"
     # Check if the --show_in_browser option is provided
     local show_in_browser=''
+    local include_video=''
     for arg in "$@"; do
         case $arg in
             --show_in_browser)
                 show_in_browser="--show_in_browser"
+                ;;
+            --include_video)
+                include_video="--include_video"
                 ;;
               --skip_imx471_spikes_csv)
                 include_imx471_spikes_csv=""
@@ -51,8 +56,6 @@ function main() {
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-
-
     for sub_dir in "$dir"/*/; do
         # If preprocessing output is missing continue
         if ! ls "$sub_dir"/adb_log*.csv 1> /dev/null 2>&1; then
@@ -63,7 +66,7 @@ function main() {
             print_error "user events json not found in dir '$sub_dir'. Continuing to next directory."
             continue
         fi
-        $SCRIPT_DIR/graph_dir.sh "$sub_dir" $show_in_browser $include_imx471_spikes_csv
+        $SCRIPT_DIR/graph_dir.sh "$sub_dir" $show_in_browser $include_imx471_spikes_csv $include_video
     done
 
 }

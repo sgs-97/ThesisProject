@@ -340,3 +340,75 @@ def xlsx_add_format(initial_format, additional_format):
     combined_format = initial_format.copy()
     combined_format.update(additional_format)
     return combined_format
+
+
+# ------------------------ Video-rendering utilities ------------------------
+import plotly.graph_objects as go
+
+def generate_video_html(video_path: str, button_action="alert('Nothing Happened')") -> str:
+    # HTML and JS injection
+    custom_html = f"""
+        <div style="text-align: center; margin-top: 30px;">
+          <input type="file" id="filePicker" accept="video/*"><br><br>
+          <button id="fileIOButton">Run File I/O</button><br><br>
+        
+          <video id="myVideo" width="720" height="480" controls>
+            Your browser does not support the video tag.
+          </video>
+          <p>Current Timestamp: <span id="timer">00:00:00.000</span></p>
+          <hr style="width: 100%; border: 1px solid #000;">
+          <div style="display: flex; justify-content: center; width: 100%; margin-top: 20px;">
+            <p id="event-log" style="margin: 30px;">00:00:00.000 - Start: Passthrough Visible</p>
+            <button id="copyEventLogButton" style="width: 120px;">Copy Lap</button>
+          </div>
+        </div>
+        
+        <script>
+        // --- Set initial video path from Python variable ---
+        const defaultVideoPath = "{video_path}";
+        const video = document.getElementById("myVideo");
+        video.src = defaultVideoPath;
+        video.load();
+        
+        // --- Update timestamp ---
+        video.addEventListener("timeupdate", function() {{
+          const t = video.currentTime;
+          const h = Math.floor(t / 3600);
+          const m = Math.floor((t % 3600) / 60);
+          const s = Math.floor(t % 60);
+          const ms = Math.floor((t % 1) * 1000);
+          document.getElementById("timer").innerText =
+            `${{String(h).padStart(2, '0')}}:${{String(m).padStart(2, '0')}}:${{String(s).padStart(2, '0')}}.${{String(ms).padStart(3, '0')}}`;
+          document.getElementById("event-log").innerText = document.getElementById("timer").innerText + ` - Start: Passthrough Visible`;
+        }});
+        
+        // --- Copy event log to clipboard ---
+        document.getElementById("copyEventLogButton").addEventListener("click", function() {{
+          const eventLog = document.getElementById("event-log").innerText;
+          navigator.clipboard.writeText(eventLog).then(function() {{
+            console.log("Copied to clipboard: ", text);
+          }}, function(err) {{
+            console.error("Could not copy text: ", err);
+            alert("Failed to copy event log to clipboard.");
+          }});
+        }});
+        
+        // --- File picker for new video ---
+        document.getElementById("filePicker").addEventListener("change", function(e) {{
+          const file = e.target.files[0];
+          if (file) {{
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            video.load();
+            video.play();
+          }}
+        }});
+        
+        // --- Placeholder for File I/O action ---
+        document.getElementById("fileIOButton").addEventListener("click", function() {{
+          {button_action}
+        }});
+        
+        </script>
+    """
+    return custom_html
