@@ -55,7 +55,7 @@ function main() {
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    python3 $SCRIPT_DIR/../analyze/imx471_spikes.py "$dir"/adb_log*.csv
+    python3 $SCRIPT_DIR/../analyze/extract_imx471_spikes.py "$dir"/adb_log*.csv
 
 }
 

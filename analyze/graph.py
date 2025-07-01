@@ -5,7 +5,7 @@ import json
 import plotly.io as pio
 import os
 import helpers
-import imx471_spikes
+import extract_imx471_spikes
 
 def plot_additional_components(fig, additional_components, graph_start_time):
     graph_start_time_td = pd.Timedelta(hours=graph_start_time.hour, minutes=graph_start_time.minute, seconds=graph_start_time.second, milliseconds=graph_start_time.microsecond // 1000)
@@ -191,7 +191,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
             for entry in os.listdir(directory):
                 path = os.path.join(directory, entry)
                 if os.path.isdir(path):
-                    result = find_mp4_file(path)
+                    result = find_file(path, '.mp4')
                     if result:
                         return result
                 elif entry.endswith(extension):
@@ -310,7 +310,7 @@ if __name__ == "__main__":
     if args.include_imx471_spikes_csv:
         # Save the IMX471 spikes CSV file
         imx471_spikes_csv = os.path.join(os.path.dirname(plotly_graph_file), 'imx471_spikes.csv')
-        non_overlapping_imx = imx471_spikes.get_imx_spikes(sensor_events)
+        non_overlapping_imx = extract_imx471_spikes.get_imx_spikes(sensor_events)
         with open(imx471_spikes_csv, 'w') as f:
             f.write("start,end,duration,label\n")
             for interval in non_overlapping_imx:

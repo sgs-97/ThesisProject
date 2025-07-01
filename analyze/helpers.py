@@ -21,6 +21,22 @@ def timedelta_pd(t1, t2, maintain_sign=False, format='%H:%M:%S.%f'):
     else:
         return abs(delta)
 
+def find_logfile_in_experiment_dir(experiment_dir, logfile_prefix='adb_log', logfile_suffix='.log'):
+    """
+    Find a log file in the given experiment directory.
+    :param experiment_dir: Path to the experiment directory.
+    :param logfile_prefix: Prefix of the log file (default: 'adb_log').
+    :param logfile_suffix: Suffix of the log file (default: '.log').
+    :return: Path to the log file if found, otherwise None.
+    """
+    import glob
+    logfile_pattern = f"{experiment_dir}/{logfile_prefix}*{logfile_suffix}"
+    logfiles = glob.glob(logfile_pattern)
+    if logfiles:
+        return logfiles[0]
+    else:
+        return None
+
 def load_logfile_csv(logfile_path, normalize_timestamps=False):
     """
     Load a CSV log file into a DataFrame.
