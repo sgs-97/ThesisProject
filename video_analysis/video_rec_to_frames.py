@@ -14,10 +14,14 @@ def extract_frames_from_video(input_video_fpath, start_time, end_time, output_di
         print(f"[\033[1;31mERROR\033[0m] Could not open video file: {input_video_fpath}")
         return
 
+    print(f"[{os.path.basename(__file__)}] Extracting timestamped frames")
+    print(f" - video: {input_video_fpath}")
     fps = cap.get(cv2.CAP_PROP_FPS)
     start_frame = int(start_time * fps)
     end_frame = int(end_time * fps) if end_time != float('inf') else int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
+    print(f" - fps: {fps}")
+    print(f" - start frame: {start_frame}")
+    print(f" - end frame: {end_frame}")
     current_frame = 0
     while True:
         ret, frame = cap.read()
@@ -25,19 +29,19 @@ def extract_frames_from_video(input_video_fpath, start_time, end_time, output_di
             break  # End of video
 
         if start_frame <= current_frame < end_frame:
-            frame_filename = os.path.join(output_dir, f"frame_{current_frame:04d}.jpg")
             # Calculate timestamp in seconds
-            timestamp_ms = int((current_frame / fps) * 1000)
+            timestamp_ns = int((current_frame / fps) * 1000000)
+            frame_filename = os.path.join(output_dir, f"{timestamp_ns}.jpg")
             font = cv2.FONT_HERSHEY_SIMPLEX
-            text = f"Time: {timestamp_ms}ms"
+            text = f"Time: {timestamp_ns}ns"
             cv2.putText(frame, text, (10, 30), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
             cv2.imwrite(frame_filename, frame)
             if verbosity >= 1:
                 print(f"[\033[1;34mINFO\033[0m] Extracted frame {current_frame} to {frame_filename}")
-
         current_frame += 1
 
     cap.release()
+    print(f"\033[32m[✓] Extraction successful (output directory: {output_dir})\033[0m")
 
 if __name__ == '__main__':
     script_name = os.path.basename(__file__)
@@ -84,8 +88,7 @@ if __name__ == '__main__':
 
     output_dir = os.path.join(input_video_dir, 'extracted_frames')
     extract_frames_from_video(input_video_fpath, start_time, end_time, output_dir, verbosity)
-    if verbosity >= 1:
-        print(f"[\033[1;34mINFO\033[0m] Frames extracted to: {output_dir}")
+
 
     if verbosity >= 1:
         print(f"[\033[1;32mEXIT\033[0m] {script_name} ended successfully!\033[0m")
