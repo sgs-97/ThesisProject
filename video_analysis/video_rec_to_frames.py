@@ -48,6 +48,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Break the video recording into frames in the desired timeframe.')
     parser.add_argument('input_video_fpath', type=str, help='Path to the input video file.')
+    parser.add_argument('--output_dir', type=str, default='', help='Directory to save extracted frames. Default: extracted_frames in the same directory as the input video.')
     parser.add_argument('--start_time', type=float, default=0.0, help='Start time in seconds for frame extraction (default: 0.0).')
     parser.add_argument('--end_time', type=float, default=None, help='End time in seconds for frame extraction (default: None, which means until the end of the video).')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose mode.')
@@ -86,9 +87,10 @@ if __name__ == '__main__':
     if verbosity >= 1:
         print(f"[\033[1;34mINFO\033[0m] Starting frame extraction from video: {input_video_fpath} from {start_time}s to {end_time}s.")
 
-    output_dir = os.path.join(input_video_dir, 'extracted_frames')
+    output_dir = args.output_dir
+    if not output_dir or not os.path.exists(output_dir):
+        output_dir = os.path.join(input_video_dir, 'extracted_frames')
     extract_frames_from_video(input_video_fpath, start_time, end_time, output_dir, verbosity)
-
 
     if verbosity >= 1:
         print(f"[\033[1;32mEXIT\033[0m] {script_name} ended successfully!\033[0m")

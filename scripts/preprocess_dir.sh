@@ -37,15 +37,15 @@ function main() {
         print_error "adb log not found in dir '$dir'."
         exit 1
     fi
-    if ! ls "$dir"/*.txt 1> /dev/null 2>&1; then
+    if ! ls "$dir"/laps.txt 1> /dev/null 2>&1; then
         print_error "user events txt file not found in dir '$dir'."
         exit 1
     fi
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    python3 $SCRIPT_DIR/../file_converters/log_to_csv.py "$dir"/*.log
-    python3 $SCRIPT_DIR/../file_converters/states_to_json.py "$dir"/*.txt
+    python3 $SCRIPT_DIR/../file_converters/log_to_csv.py "$dir"/adb_log_*.log
+    python3 $SCRIPT_DIR/../file_converters/states_to_json.py "$dir"/laps.txt
 
 }
 

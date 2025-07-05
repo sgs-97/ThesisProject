@@ -42,7 +42,7 @@ function main() {
               print_error "adb log not found in dir '$sub_dir'. Continuing to next directory."
               continue
           fi
-          if ! ls "$sub_dir"/*.txt 1> /dev/null 2>&1; then
+          if ! ls "$sub_dir"/laps.txt 1> /dev/null 2>&1; then
               print_error "user events txt file not found in dir '$sub_dir'. Continuing to next directory."
               continue
           fi

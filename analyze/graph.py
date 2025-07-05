@@ -159,9 +159,9 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
         ))
 
     # Time between clearing the logs and starting the timer (Experiment defect)
-    timer_lag = pd.Timedelta(seconds=1)
+    timer_lag = 0
     # Set title and labels
-    graph_start_time = df['Time'].min() + timer_lag
+    graph_start_time = df['Time'].min()
     graph_end_time = df['Time'].max()
 
     for item in user_events:
@@ -175,7 +175,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
 
     fig.update_layout(
         title=title,
-        xaxis=dict(range=[graph_start_time - timer_lag, graph_end_time + timer_lag], title='Time'),
+        xaxis=dict(range=[graph_start_time - timer_lag, graph_end_time], title='Time'),
         yaxis_title='Sensor Activity (1=Active, 0=Inactive)',
         yaxis=dict(range=[-0.1,1.1], tickvals=[0, 1], ticktext=['Inactive', 'Active']),
         height=800  # Set plot height

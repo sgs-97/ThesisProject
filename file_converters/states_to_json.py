@@ -127,7 +127,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Converts given states to JSON format. The input format is: \"state1 - time1\nstate2 - time2\n...\"')
     parser.add_argument('states', type=str, help='Path to the input states file.')
-    parser.add_argument('--json_output', default="<input>.json", type=str, help='Path to the output JSON file.')
+    parser.add_argument('--json_output', default="annotated_events.json", type=str, help='Path to the output JSON file.')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose mode.')
     args = parser.parse_args()
 

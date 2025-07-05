@@ -15,6 +15,7 @@ function show_help() {
     echo "  --show_in_browser  Open the generated graph in a web browser" # Keep as it is
     echo "  --skip_imx471_spikes_csv  Skip generating IMX471 spikes CSV"
     echo "  --include_video    Include timestamped video in the output HTML (if found inside the directory where the graph is going to be placed). Default: False"
+    echo "  --skip_hmd_bound   Skip HMD through boundary calculation of times and output CSV" # Keep as it is
     echo "  -h, --help         Show this help message and exit" # Keep as it is
     echo
 }
@@ -29,6 +30,7 @@ function main() {
     # Check if the --show_in_browser option is provided
     local show_in_browser=''
     local include_video=''
+    local skip_hmd_bound=''
     for arg in "$@"; do
         case $arg in
             --show_in_browser)
@@ -39,6 +41,9 @@ function main() {
                 ;;
               --skip_imx471_spikes_csv)
                 include_imx471_spikes_csv=""
+                ;;
+            --skip_hmd_bound)
+                skip_hmd_bound="--skip_hmd_bound"
                 ;;
         esac
     done
@@ -66,7 +71,7 @@ function main() {
             print_error "user events json not found in dir '$sub_dir'. Continuing to next directory."
             continue
         fi
-        $SCRIPT_DIR/graph_dir.sh "$sub_dir" $show_in_browser $include_imx471_spikes_csv $include_video
+        $SCRIPT_DIR/graph_dir.sh "$sub_dir" $show_in_browser $include_imx471_spikes_csv $include_video $skip_hmd_bound
     done
 
 }

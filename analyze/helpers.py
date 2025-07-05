@@ -2,12 +2,14 @@ import json
 
 import numpy as np
 import pandas as pd
+import datetime
+from tabulate import tabulate
 
 def timedelta_pd(t1, t2, maintain_sign=False, format='%H:%M:%S.%f'):
     """
     Calculate the time difference between two pandas timestamps.
-    :param t1: pd timestamp
-    :param t2: pd timestamp
+    :param t1: pd timestamp (format: '%H:%M:%S.%f'). Any years, months, days in the timestamp will be ignored.
+    :param t2: pd timestamp (format: '%H:%M:%S.%f'). Any years, months, days in the timestamp will be ignored.
     :return: Time difference as pd.Timedelta
     """
     if isinstance(t1, str):
@@ -15,11 +17,43 @@ def timedelta_pd(t1, t2, maintain_sign=False, format='%H:%M:%S.%f'):
     if isinstance(t2, str):
         t2 = pd.to_datetime(t2, format=format)
 
+    t1 = t1.replace(year=1970, month=1, day=1)
+    t2 = t2.replace(year=1970, month=1, day=1)
+
+    print(f"t1: {t1}, t2: {t2}, maintain_sign: {maintain_sign}")
     delta = t1 - t2
     if maintain_sign:
         return delta
     else:
         return abs(delta)
+
+def to_pd_datetime(value, format='%H:%M:%S.%3f'):
+    """
+    Convert a value to a pandas datetime object.
+    :param value: Value to convert (can be a string or pd.Timestamp).
+    :param format: Format of the string if it is a string (default: '%H:%M:%S.%3f').
+    :return: pd.Timestamp object.
+    """
+    if isinstance(value, pd.Timestamp):
+        return value
+    elif isinstance(value, str):
+        return pd.to_datetime(value, format=format)
+    elif isinstance(value, (int, float)):
+        # Assuming the value is a timestamp in seconds or milliseconds
+        if value < 1e10:
+            # If value is less than 10 billion, assume it's in seconds
+            return pd.to_datetime(value, unit='s')
+        else:
+            # If value is larger, assume it's in milliseconds
+            return pd.to_datetime(value, unit='ms')
+    elif isinstance(value, pd.Timedelta):
+        # If it's a timedelta, convert it to a timestamp
+        return pd.Timestamp(value)
+    elif isinstance(value, datetime.datetime):
+        # If it's a datetime object, convert it to a timestamp
+        return pd.Timestamp(value)
+    else:
+        raise ValueError(f"Unsupported type for conversion to pd.Timestamp: {type(value)}")
 
 def find_logfile_in_experiment_dir(experiment_dir, logfile_prefix='adb_log', logfile_suffix='.log'):
     """
@@ -428,3 +462,63 @@ def generate_video_html(video_path: str, button_action="alert('Nothing Happened'
         </script>
     """
     return custom_html
+
+
+# ------------------------ print formatting utilities ------------------------
+def print_info(message: str, verbosity: int = 1):
+    """
+    Print an info message if verbosity is set to 1 or higher.
+    :param message: Message to print.
+    :param verbosity: Verbosity level (default: 1).
+    """
+    if verbosity >= 1:
+        print(f"[\033[1;34mINFO\033[0m] {message}")
+
+def print_warning(message: str, verbosity: int = 1):
+    """
+    Print a warning message if verbosity is set to 1 or higher.
+    :param message: Message to print.
+    :param verbosity: Verbosity level (default: 1).
+    """
+    if verbosity >= 1:
+        print(f"[\033[1;33mWARNING\033[0m] {message}")
+
+def print_error(message: str, verbosity: int = 1):
+    """
+    Print an error message if verbosity is set to 1 or higher.
+    :param message: Message to print.
+    :param verbosity: Verbosity level (default: 1).
+    """
+    if verbosity >= 1:
+        print(f"[\033[1;31mERROR\033[0m] {message}")
+
+def print_debug(message: str, verbosity: int = 2):
+    """
+    Print a debug message if verbosity is set to 2.
+    :param message: Message to print.
+    :param verbosity: Verbosity level (default: 2).
+    """
+    if verbosity >= 2:
+        print(f"[\033[1;35mDEBUG\033[0m] {message}")
+
+def print_success(message: str, verbosity: int = 1):
+    """
+    Print a success message if verbosity is set to 1 or higher.
+    :param message: Message to print.
+    :param verbosity: Verbosity level (default: 1).
+    """
+    if verbosity >= 1:
+        print(f"\033[32m[✓] {message}\033[0m")
+
+def print_table(data: List, headers: List[str] = None, table_format: str = "grid", verbosity: int = 1):
+    """
+    Print a table from a list of dictionaries.
+    :param data: List of dictionaries to print.
+    :param headers: List of headers for the table (optional).
+    :param table_format: Format of the table (default: "grid").
+    :param verbosity: Verbosity level (default: 1).
+    """
+    if verbosity >= 1:
+        if headers is None:
+            headers = data[0].keys() if data else []
+        print(tabulate(data, headers=headers, tablefmt=table_format))

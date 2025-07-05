@@ -4,3 +4,7 @@ XlsxWriter
 openpyxl
 matplotlib
 seaborn
+opencv-python
+tabulate
+scikit-image
+scipy

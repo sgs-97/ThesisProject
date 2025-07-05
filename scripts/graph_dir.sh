@@ -12,9 +12,10 @@ function show_help() {
     echo "  <dir>              Directory of log and annotation (laps) data"
     echo
     echo "Options:"
-    echo "  --show_in_browser  Open the generated graph in a web browser" # Keep as it is
+    echo "  --show_in_browser  Open the generated graph in a web browser"
     echo "  --include_video    Include timestamped video in the output HTML (if found inside the directory where the graph is going to be placed). Default: False"
-    echo "  -h, --help         Show this help message and exit" # Keep as it is
+    εψηο "  --skip_hmd_bound   Skip HMD through boundary calculation of times and output CSV"
+    echo "  -h, --help         Show this help message and exit"
     echo
 }
 
@@ -27,6 +28,7 @@ function main() {
     # Check if the --show_in_browser option is provided
     local show_in_browser=''
     local include_video=''
+    local skip_hmd_bound=false
     for arg in "$@"; do
         case $arg in
             --show_in_browser)
@@ -34,6 +36,9 @@ function main() {
                 ;;
             --include_video)
                 include_video="--include_video"
+                ;;
+            --skip_hmd_bound)
+                skip_hmd_bound=true
                 ;;
         esac
     done
@@ -61,6 +66,11 @@ function main() {
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
     python3 $SCRIPT_DIR/../analyze/graph.py "$dir"/adb_log*.csv --user_events "$dir"/*.json $show_in_browser $include_video
+    if [[ ${skip_hmd_bound} == true ]]; then
+        echo "Skipping HMD through boundary calculation."
+    else
+        python3 $SCRIPT_DIR/../analyze/hmd_through_boundary.py "$dir" --output_file "$dir"/hmd_through_boundary.csv
+    fi
 
 }
 
