@@ -30,7 +30,7 @@ def extract_frames_from_video(input_video_fpath, start_time, end_time, output_di
 
         if start_frame <= current_frame < end_frame:
             # Calculate timestamp in seconds
-            timestamp_ns = int((current_frame / fps) * 1000000)
+            timestamp_ns = int((current_frame / fps) * 1e9)  # Convert to nanoseconds
             frame_filename = os.path.join(output_dir, f"{timestamp_ns}.jpg")
             font = cv2.FONT_HERSHEY_SIMPLEX
             text = f"Time: {timestamp_ns}ns"
