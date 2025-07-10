@@ -19,7 +19,7 @@ def lap_device_through_boundary(exp_dir):
     """
     Extracts the time when the device passes through the boundary from the laps file in the experiment directory.
     """
-    laps_fpath = os.path.join(exp_dir, f'{os.path.basename(exp_dir)}.txt')
+    laps_fpath = os.path.join(exp_dir, f'laps.txt')
     if not os.path.exists(laps_fpath):
         raise FileNotFoundError(f"The laps file '{laps_fpath}' does not exist.")
 
@@ -39,7 +39,7 @@ def lap_device_through_boundary(exp_dir):
                 except ValueError as e:
                     raise ValueError(f"Invalid time format in lap '{lap}': {e}")
 
-    raise ValueError("No device through boundary lap found.")
+    return pd.Timedelta(0)  # Return zero timedelta if no lap found
 
 def lap_start_rec_time(exp_dir):
     """
@@ -139,6 +139,9 @@ if __name__ == '__main__':
 
     # Find device through boundary lap
     lap_hmd_through_boundary = lap_device_through_boundary(experiment_dir)
+    if lap_hmd_through_boundary == pd.Timedelta(0):
+        print("No device through boundary lap found. Exiting.")
+        exit(0)
 
     # calculate the lap hmd through boundary, hmd through boundary pt activation start and stop times
     hmd_through_boundary_pt_activation_start, hmd_through_boundary_pt_activation_stop = calculate_hmd_through_boundary_times(

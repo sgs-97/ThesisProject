@@ -159,7 +159,7 @@ def plot_sensor_events(sensor_events, colors, sensor_names, df, plotly_graph_fil
         ))
 
     # Time between clearing the logs and starting the timer (Experiment defect)
-    timer_lag = 0
+    timer_lag = pd.Timedelta(seconds=0)
     # Set title and labels
     graph_start_time = df['Time'].min()
     graph_end_time = df['Time'].max()
