@@ -127,7 +127,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Converts given states to JSON format. The input format is: \"state1 - time1\nstate2 - time2\n...\"')
     parser.add_argument('states', type=str, help='Path to the input states file.')
-    parser.add_argument('--json_output', default="annotated_events.json", type=str, help='Path to the output JSON file.')
+    parser.add_argument('--json_output', default="<input_dir>/annotated_events.json", type=str, help='Path to the output JSON file. Default: <input_dir>/annotated_events.json')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose mode.')
     args = parser.parse_args()
 
@@ -139,6 +139,9 @@ if __name__ == '__main__':
     if not os.path.exists(states_file_path):
         raise FileNotFoundError(f"States file {states_file_path} does not exist.")
     json_output_path = args.json_output.replace("<input>", os.path.splitext(states_file_path)[0])
+    json_output_path = json_output_path.replace("<input_dir>", os.path.dirname(states_file_path))
+    if not os.path.exists(os.path.dirname(json_output_path)):
+        raise FileNotFoundError(f"Output directory {os.path.dirname(json_output_path)} does not exist.")
 
     # Check Paths
 
