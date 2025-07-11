@@ -40,7 +40,7 @@ def get_hmd_activation_times(exp_dir, dict_file_path, verbosity=0):
     abs_start_time = pd.Timestamp(df['Time'].min())
     # Get start rec time
     def lap_start_rec_time(exp_dir):
-        events_json_fpath = os.path.join(exp_dir, f'{os.path.basename(exp_dir)}.json')
+        events_json_fpath = os.path.join(exp_dir, f'annotated_events.json')
         with open(events_json_fpath, 'r') as f:
             import json
             events_data = json.load(f)

@@ -33,7 +33,8 @@ def extract_frames_from_video(input_video_fpath, start_time, end_time, output_di
             timestamp_ns = int((current_frame / fps) * 1e9)  # Convert to nanoseconds
             frame_filename = os.path.join(output_dir, f"{timestamp_ns}.jpg")
             font = cv2.FONT_HERSHEY_SIMPLEX
-            text = f"Time: {timestamp_ns}ns"
+            frame_index = current_frame - start_frame
+            text = f"Time: {timestamp_ns}ns - Frame: {frame_index}"
             cv2.putText(frame, text, (10, 30), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
             cv2.imwrite(frame_filename, frame)
             if verbosity >= 1:

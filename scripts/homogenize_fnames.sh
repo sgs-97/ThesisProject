@@ -135,6 +135,51 @@ function main() {
       print_success "Found laps files in dir '$dir': $(ls "$dir"/laps.txt)"
     fi
 
+    # Same thing with annotated_events.json
+    if ! ls "$dir"/annotated_events.json 1> /dev/null 2>&1; then
+        print_error "user events 'annotated_events.json' file not found in dir '$dir'. Searching for annotated events files to use as a fallback...\n"
+        # Checking if there are any json files in the directory to use as a fallback. User selection is required.
+        if ! ls "$dir"/*.json 1> /dev/null 2>&1; then
+            print_error "No json (annotated events) files found in dir '$dir'."
+            exit 65 # Exit with code 65 to indicate no annotated events files renamed
+        else
+          if [[ "$skip_asking" == true ]]; then
+              FILE=$(ls "$dir"/*.json | head -n 1) # Get the first json file
+              cp "$FILE" "$dir/annotated_events.json"
+              echo "Using annotated events file: $FILE"
+          else
+            FILES=()
+            while IFS= read -r -d '' file; do
+                FILES+=("$file")
+            done < <(find "$dir" -maxdepth 1 -type f -name "*.json" -print0)
+            if [[ ${#FILES[@]} -eq 0 ]]; then
+                print_error "No json (annotated events) files found in dir '$dir'."
+                exit 65 # Exit with code 65 to indicate no annotated events files renamed
+            fi
+          if [[ ${#FILES[@]} -eq 1 ]]; then
+              printf -- "Found 1 annotated events file: %s\n" "${FILES[0]}. Using it as annotated_events.json.\n"
+              cp "${FILES[0]}" "$dir/annotated_events.json"
+          else
+              print_error "Found ${#FILES[@]} json files in dir '$dir':"
+              for (( i=0; i<${#FILES[@]}; i++ )); do
+                  printf -- " $i %s\n" "${FILES[i]}"
+              done
+              printf -- "Select number of the file to use for annotated events (0-%d): " $(( ${#FILES[@]} - 1 ))
+              read -r file_index
+              if [[ "$file_index" =~ ^[0-9]+$ ]] && (( file_index >= 0 && file_index < ${#FILES[@]} )); then
+                  cp "${FILES[file_index]}" "$dir/annotated_events.json"
+                  echo "Using annotated events file: ${FILES[file_index]}"
+              else
+                  print_error "Invalid selection. Exiting."
+                  exit 65 # Exit with code 65 to indicate no annotated events files renamed
+              fi
+            fi
+          fi
+        fi
+    else
+      print_success "Found annotated events files in dir '$dir': $(ls "$dir"/annotated_events.json)"
+    fi
+
     print_success "Homogenization completed successfully (dir: $dir)."
 
 }
