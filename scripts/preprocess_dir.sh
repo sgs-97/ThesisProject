@@ -12,7 +12,9 @@ function show_help() {
     echo "  <dir>              Directory of log and annotation (laps) data"
     echo
     echo "Options:"
+    echo "  --skip_on_exist   Skip asking for files if they already exist in the directory"
     echo "  -h, --help         Show this help message and exit" # Keep as it is
+    echo "  -v, --verbose    Enable verbose output"
     echo
 }
 
@@ -22,6 +24,30 @@ function main() {
         print_error "Directory argument is required."
         exit 1
     fi
+
+    # Iterate args
+    shift # Remove the first argument (directory)
+    skip_on_exist=false # Default to not skipping when files exist
+    VERBOSE_LITERAL="" # Default verbose mode
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -v|--verbose)
+                VERBOSE_LITERAL="--verbose"
+                ;;
+            --skip_on_exist)
+                skip_on_exist=true # Set a flag to skip asking for files
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                exit 1
+                ;;
+        esac
+        shift # Remove the processed argument
+    done
 
     # Add your main script logic here
     echo "Processing directory: $dir"
@@ -40,7 +66,7 @@ function main() {
                 print_error "No log files found in dir '$dir'."
                 exit 63 # Exit with code 63 to indicate no log files renamed
             else
-              if [[ "$skip_asking" == true ]]; then
+              if [[ "${skip_asking:-false}" == true ]]; then
                   FILE=$(ls "$dir"/*.log | head -n 1) # Get the first log file
                   cp "$FILE" "$dir/adb_log_0.log"
                   echo "Using log file: $FILE"
@@ -124,8 +150,21 @@ function main() {
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    python3 $SCRIPT_DIR/../file_converters/log_to_csv.py "$dir"/adb_log_*.log
-    python3 $SCRIPT_DIR/../file_converters/states_to_json.py "$dir"/laps.txt
+    if compgen -G "$dir"/adb_log_*.csv > /dev/null; then
+    adb_csv_files=("$dir"/adb_log_*.csv)
+    else
+        adb_csv_files=()
+    fi
+    if [[ "${#adb_csv_files[@]}" -eq 0 && $skip_on_exist == true ]]; then
+      python3 "$SCRIPT_DIR"/../file_converters/log_to_csv.py "$dir"/adb_log_*.log
+    else
+      print_info "Skipping log_to_csv conversion as CSV files already exist in '$dir'."
+    fi
+    if [[ -f "$dir"/annotated_events.json && $skip_on_exist == true ]]; then
+      print_info "Skipping laps_to_csv conversion as laps.csv already exists in '$dir'."
+    else
+      python3 "$SCRIPT_DIR"/../file_converters/states_to_json.py "$dir"/laps.txt "$dir"/adb_log_*.csv $VERBOSE_LITERAL
+    fi
 
 }
 
@@ -201,6 +240,11 @@ function print_error() {
 function print_success() {
     local MESSAGE="$*"
     printf -- "\033[0;32m[\u2714] [$(basename $0):${BASH_LINENO[0]}]: %s\033[0m\n" "$MESSAGE"
+}
+
+function print_info() {
+    local MESSAGE="$*"
+    printf -- "\033[0;34m[i] [$(basename $0):${BASH_LINENO[0]}]: %s\033[0m\n" "$MESSAGE"
 }
 
 trap 'EXIT_CODE=$?; printf -- "\n\033[0;33m[!] [INTERRUPT][$(basename $0)] Script was interrupted! (Exit Code: $EXIT_CODE)\033[0m\n"; exit $EXIT_CODE' INT TERM

@@ -29,7 +29,7 @@ def lap_device_through_boundary(exp_dir):
             raise ValueError(f"The laps file '{laps_fpath}' is empty.")
 
         for lap in laps_data:
-            if 'device through boundary' in lap.lower():
+            if 'device' in lap.lower() and 'through' in lap.lower() and 'boundary' in lap.lower():
                 lap_parts = lap.strip().split(' - ')
                 if len(lap_parts) < 2:
                     raise ValueError(f"Invalid lap format in '{laps_fpath}': {lap}")

@@ -9,7 +9,7 @@ import helpers
 if __name__ == '__main__':
     script_name = os.path.basename(__file__)
 
-    parser = argparse.ArgumentParser(description='Extract passthrough activations from an experiment directory.')
+    parser = argparse.ArgumentParser(description='Extract imx471 activations from an experiment directory.')
     parser.add_argument('experiment_dir', type=str, help='Path to the input dir containing experiment data.')
     parser.add_argument("--dict_file", default='<script_dir_path>/dict.json', help="Path to the dictionary file with parsing conditions (JSON). Default: <script_dir_path>/dict.json")
     # parser.add_argument('output', type=str, help='Path to the output file.')
@@ -65,13 +65,13 @@ if __name__ == '__main__':
 
     activations_intervals = {}
     #Output csv file with activation intervals
-    output_csv_fpath = os.path.join(experiment_dir, 'passthrough_activations_intervals.csv')
+    output_csv_fpath = os.path.join(experiment_dir, 'imx471_activations_intervals.csv')
     with open(output_csv_fpath, 'w') as f:
         f.write("sensor_name,type,time,rel_time_to_start,rel_time_to_start_rec\n")
 
-        # Get passthrough, imx471, Passthrough, IMX471 activation intervals
+        # Get imx471 activation intervals
         for sensor_name, _ in sensor_events.items():
-            if sensor_name in ['passthrough', 'Passthrough']:
+            if 'imx471' in sensor_name.lower():
                 if verbosity >= 1:
                     print(f"[\033[1;34mINFO\033[0m] Extracting activation intervals for sensor: {sensor_name}")
                 sensors_events_list = sensor_events[sensor_name]

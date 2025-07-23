@@ -20,7 +20,6 @@ def timedelta_pd(t1, t2, maintain_sign=False, format='%H:%M:%S.%f'):
     t1 = t1.replace(year=1970, month=1, day=1)
     t2 = t2.replace(year=1970, month=1, day=1)
 
-    print(f"t1: {t1}, t2: {t2}, maintain_sign: {maintain_sign}")
     delta = t1 - t2
     if maintain_sign:
         return delta
@@ -54,6 +53,24 @@ def to_pd_datetime(value, format='%H:%M:%S.%3f'):
         return pd.Timestamp(value)
     else:
         raise ValueError(f"Unsupported type for conversion to pd.Timestamp: {type(value)}")
+
+def pd_timedelta_to_timestring(td):
+    """
+    Convert a pandas Timedelta to a string in the specified format.
+    :param td: pd.Timedelta object.
+    :param format: Format string (default: '%H:%M:%S.%f').
+    :return: Formatted string representation of the timedelta.
+    """
+    if not isinstance(td, pd.Timedelta):
+        raise ValueError("Input must be a pandas Timedelta object.")
+
+    total_seconds = td.total_seconds()
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+
+    formatted_time = f"{int(hours):02}:{int(minutes):02}:{seconds:.3f}"
+
+    return formatted_time
 
 def find_logfile_in_experiment_dir(experiment_dir, logfile_prefix='adb_log', logfile_suffix='.log'):
     """

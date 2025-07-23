@@ -2,21 +2,25 @@ import argparse
 import os
 import pandas as pd
 
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'analyze'))
+import helpers
+
 # Function to convert states file to JSON format
-def convert_states_to_json(states_file_path, json_output_path):
+def convert_states_to_json(log_csv, states_fpath):
     dict = []
     x_start = 0  # Placeholder for the start x value, if needed
     x_stop = 0  # Placeholder for the stop x value, if needed
     x_mount = 0  # Placeholder for the mount x value, if needed
     x_unmount = 0  # Placeholder for the unmount x value, if needed
     x_idle = 0  # Placeholder for the idle x value, if needed
-    with open(states_file_path, 'r') as states_file:
+    with open(states_fpath, 'r') as states_file:
         for line in states_file:
             dict.append({})  # Create a new dictionary for each line
             if line.strip():  # Ignore empty lines
                 time, state = line.strip().split(' - ')
                 if pd.to_datetime(time, format='%H:%M:%S.%f', errors='coerce') is pd.NaT:
-                    raise ValueError(f"Invalid time format: {time} in line \'{line}\',\nfile: {states_file_path}")
+                    raise ValueError(f"Invalid time format: {time} in line \'{line}\',\nfile: {states_fpath}")
                 dict[len(dict)-1]["type"] = "line"
                 dict[len(dict)-1]["orientation"] = "vertical"  # Assuming vertical orientation since all events will be vertical lines
                 dict[len(dict)-1]["time"] = str(time)
@@ -74,7 +78,7 @@ def convert_states_to_json(states_file_path, json_output_path):
                 "t1": x_idle.strftime('%H:%M:%S.%f'),
                 "y0": 0.93,
                 "y1": 1.03,
-                "label": "Device Idle",
+                "label": "Device Idle (lap)",
                 "fillcolor": "gray",
                 "opacity": 0.2,
                 "line_width": 1
@@ -84,7 +88,7 @@ def convert_states_to_json(states_file_path, json_output_path):
                 "type": "annotation",
                 "t": (x_mount + (x_idle-x_mount)/2).strftime('%H:%M:%S.%f'),
                 "y": 1.0,
-                "text": "Device Idle",
+                "text": "Device Idle (lap)",
                 "showarrow": False,
                 "size": 12,
                 "color": "gray"
@@ -97,7 +101,7 @@ def convert_states_to_json(states_file_path, json_output_path):
                 "t1": x_unmount.strftime('%H:%M:%S.%f'),
                 "y0": -0.03,
                 "y1": 1.03,
-                "label": "Device Mounted",
+                "label": "Device Mounted (lap)",
                 "fillcolor": "green",
                 "opacity": 0.1,
                 "line_width": 1
@@ -108,16 +112,47 @@ def convert_states_to_json(states_file_path, json_output_path):
                 "t": (x_mount + (x_unmount-x_mount)/2).strftime('%H:%M:%S.%f'),  # Center the annotation
                 "y": 0.02,  # Adjust y position to avoid overlap with the rect
                 # "yshift": -10,
-                "text": "Device Mounted",
+                "text": "Device Mounted (lap)",
                 "showarrow": False,
                 "size": 12,
                 "color": "green"
             })
 
+    with open(log_csv, 'r') as log_file:
+        log_df = pd.read_csv(log_file)
+        if 'Time' not in log_df.columns or 'Message' not in log_df.columns:
+            raise ValueError("Log CSV file must contain 'Time' and 'Message' columns.")
 
-    with open(json_output_path, 'w') as json_file:
-        import json
-        json.dump(dict, json_file, indent=4)
+        start_time = pd.to_datetime(log_df['Time'].min(), format='%H:%M:%S.%f', errors='coerce')
+
+        for index, row in log_df.iterrows():
+            time = pd.to_datetime(row['Time'], format='%H:%M:%S.%f', errors='coerce')
+            event = row['Message']
+            if time is pd.NaT:
+                raise ValueError(f"Invalid time format: {time} in line \'{row}\',\nfile: {log_csv}")
+            formatted_time = helpers.pd_timedelta_to_timestring(helpers.timedelta_pd(time, start_time));
+            if 'shellapp' in event.lower() and 'going to sleep' in event.lower():
+                # If the event is "going to sleep", keep it as a vertical line
+
+                dict.append({
+                    "type": "line",
+                    "orientation": "vertical",
+                    "time": formatted_time,
+                    "label": 'Device Sleep (log)',
+                    "linetype": "solid",
+                    "color": "black"
+                })
+            if 'shellapp' in event.lower() and 'hmd mount state changed' in event.lower() and 'unmounted' in event.lower():
+                # If the event is "HMD Mount State Changed - unmounted", keep it as a vertical line
+                dict.append({
+                    "type": "line",
+                    "orientation": "vertical",
+                    "time": formatted_time,
+                    "label": 'Device Unmount (log)',
+                    "linetype": "solid",
+                    "color": "red"
+                })
+
 
     return dict
 
@@ -127,6 +162,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Converts given states to JSON format. The input format is: \"state1 - time1\nstate2 - time2\n...\"')
     parser.add_argument('states', type=str, help='Path to the input states file.')
+    parser.add_argument('log_csv', type=str, help='Path to the log CSV file. This is used to extract the start and stop times for the app running period.')
     parser.add_argument('--json_output', default="<input_dir>/annotated_events.json", type=str, help='Path to the output JSON file. Default: <input_dir>/annotated_events.json')
     parser.add_argument('--verbose', action='store_true', help='Enable verbose mode.')
     args = parser.parse_args()
@@ -143,13 +179,22 @@ if __name__ == '__main__':
     if not os.path.exists(os.path.dirname(json_output_path)):
         raise FileNotFoundError(f"Output directory {os.path.dirname(json_output_path)} does not exist.")
 
+    log_csv_path = os.path.abspath(args.log_csv)
+    if not os.path.exists(log_csv_path):
+        raise FileNotFoundError(f"Log CSV file {log_csv_path} does not exist.")
+
     # Check Paths
 
     if args.verbose:
         print(f"States file path: {args.states}")
+        print(f"Log CSV file path: {log_csv_path}")
         print(f"Output JSON file path: {json_output_path}")
 
-    convert_states_to_json(states_file_path, json_output_path)
+    dictionary = convert_states_to_json(log_csv_path, states_file_path)
+
+    with open(json_output_path, 'w') as json_file:
+        import json
+        json.dump(dictionary, json_file, indent=4)
 
     if args.verbose:
         print("Processing completed.")

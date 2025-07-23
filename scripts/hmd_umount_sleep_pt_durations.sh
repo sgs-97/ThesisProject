@@ -4,7 +4,7 @@
 
 function show_help() {
     echo "Description:"
-    echo "  Run graph.py on the specified directory containing log and annotation (laps) data after being preprocessed."
+    echo "  Run hmd_umount_sleep_pt_durations.py on the specified directory containing log and annotation (laps) data after being preprocessed."
     echo
     echo "Usage: path/to/$(basename $0) [args] [options]" # Keep as it is
     echo
@@ -12,11 +12,7 @@ function show_help() {
     echo "  <dir>              Directory of log and annotation (laps) data"
     echo
     echo "Options:"
-    echo "  --show_in_browser  Open the generated graph in a web browser"
-    echo "  --include_video    Include timestamped video in the output HTML (if found inside the directory where the graph is going to be placed). Default: False"
-    εψηο "  --skip_hmd_bound   Skip HMD through boundary calculation of times and output CSV"
-    echo "  --skip_on_exist    Skip generating files that already exist in the subdirectory"
-    echo "  -h, --help         Show this help message and exit"
+    echo "  -h, --help         Show this help message and exit" # Keep as it is
     echo
 }
 
@@ -26,30 +22,9 @@ function main() {
         print_error "Directory argument is required."
         exit 1
     fi
-    # Check if the --show_in_browser option is provided
-    local show_in_browser=''
-    local include_video=''
-    local skip_on_exist=false
-    local skip_hmd_bound=false
-    for arg in "$@"; do
-        case $arg in
-            --show_in_browser)
-                show_in_browser="--show_in_browser"
-                ;;
-            --include_video)
-                include_video="--include_video"
-                ;;
-            --skip_hmd_bound)
-                skip_hmd_bound=true
-                ;;
-            --skip_on_exist)
-                skip_on_exist=true
-                ;;
-        esac
-    done
 
     # Add your main script logic here
-    echo "Processing directory: $dir"
+    echo "Generating HMD umount sleep durations for directory: $dir"
 
     # Check path of dir
     if [[ ! -d "$dir" ]]; then
@@ -64,41 +39,17 @@ function main() {
         exit 1
     fi
     if ! ls "$dir"/annotated_events.json 1> /dev/null 2>&1; then
-        print_error "user_events json not found in dir '$dir'. First run preprocess_dir.sh"
-        exit 1
-    fi
+            print_error "user_events json not found in dir '$dir'. First run preprocess_dir.sh"
+            exit 1
+        fi
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    # Check if the directory contains HTML files and skip if skip_on_exist is true
-    if compgen -G "$dir"/*.html > /dev/null; then
-        html_files=("$dir"/*.html)
-        else
-        html_files=()
+    if ! ls "$dir"/passthrough_activations_intervals.csv 1> /dev/null 2>&1; then
+        print_warning "passthrough_activations_intervals.csv not found in dir '$dir'. Running extract_passthrough_activations.py"
+        python3 $SCRIPT_DIR/../analyze/extract_passthrough_activations.py "$dir"
     fi
-    if [[ ${#html_files[@]} -gt 0 && ${skip_on_exist} == true ]]; then
-        echo "HTML files already exist in the directory. Skipping graph generation."
-    else
-      python3 $SCRIPT_DIR/../analyze/graph.py "$dir"/adb_log*.csv --user_events "$dir"/annotated_events.json $show_in_browser $include_video
-    fi
-
-    # Check if the directory contains CSV files and skip if skip_on_exist is true
-    if [[ -f "$dir"/passthrough_activations_intervals.csv && ${skip_on_exist} == true ]]; then
-      echo "Passthrough activations CSV already exists in the directory. Skipping passthrough activations extraction."
-    else
-      python3 $SCRIPT_DIR/../analyze/extract_passthrough_activations.py "$dir"
-    fi
-
-    # Check if the directory contains HMD through boundary CSV and skip if skip_on_exist is true
-    if [[ -f "$dir"/hmd_through_boundary.csv && ${skip_on_exist} == true ]]; then
-        echo "HMD through boundary CSV already exists in the directory. Skipping HMD through boundary calculation."
-    else
-      if [[ ${skip_hmd_bound} == true ]]; then
-          echo "Skipping HMD through boundary calculation."
-      else
-          python3 $SCRIPT_DIR/../analyze/hmd_through_boundary.py "$dir" --output_file "$dir"/hmd_through_boundary.csv
-      fi
-    fi
+    python3 $SCRIPT_DIR/../analyze/hmd_umount_sleep_pt_durations.py "$dir"
 
 }
 

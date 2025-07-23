@@ -37,14 +37,14 @@ function main() {
         print_error "adb log not found in dir '$dir'. First run preprocess_dir.sh"
         exit 1
     fi
-    if ! ls "$dir"/*.json 1> /dev/null 2>&1; then
+    if ! ls "$dir"/annotated_events.json 1> /dev/null 2>&1; then
         print_error "user_events json not found in dir '$dir'. First run preprocess_dir.sh"
         exit 1
     fi
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    python3 $SCRIPT_DIR/../analyze/analyze_logs.py "$dir"/adb_log*.csv "$dir"/*.json
+    python3 $SCRIPT_DIR/../analyze/analyze_logs.py "$dir"/adb_log*.csv "$dir"/annotated_events.json
 
 }
 
@@ -115,6 +115,11 @@ function _on_exit() {
 function print_error() {
     local MESSAGE="$*"
     printf -- "\033[0;31m[\u2718] [ERROR][$(basename $0):${BASH_LINENO[0]}]: %s\033[0m\n" "$MESSAGE"
+}
+
+function print_warning() {
+    local MESSAGE="$*"
+    printf -- "\033[0;33m[\u26A0] [WARNING][$(basename $0):${BASH_LINENO[0]}]: %s\033[0m\n" "$MESSAGE"
 }
 
 trap 'EXIT_CODE=$?; printf -- "\n\033[0;33m[!] [INTERRUPT][$(basename $0)] Script was interrupted! (Exit Code: $EXIT_CODE)\033[0m\n"; exit $EXIT_CODE' INT TERM

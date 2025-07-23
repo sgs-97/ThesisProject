@@ -12,12 +12,14 @@ function show_help() {
     echo "  <dir>              Directory containing subdirectories to be preprocessed"
     echo
     echo "Options:"
+    echo "  --skip_on_exist    Skip generating files that already exist in the subdirectory"
     echo "  -h, --help         Show this help message and exit" # Keep as it is
     echo
 }
 
 function main() {
     local dir="$1"
+    shift # Remove the first argument (directory) from the list
     if [[ -z "$dir" ]]; then
         print_error "Directory argument is required."
         exit 1
@@ -28,6 +30,25 @@ function main() {
         print_error "Directory '$dir' does not exist."
         exit 1
     fi
+
+    SKIP_ON_EXIST="" # Default value for skip_on_exist
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --skip_on_exist)
+                SKIP_ON_EXIST="--skip_on_exist"
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
 
     # Add your main script logic here
     sub_dir_count=$(find "$dir" -mindepth 1 -maxdepth 1 -type d | wc -l)
@@ -46,7 +67,7 @@ function main() {
               print_error "user events txt file not found in dir '$sub_dir'. Continuing to next directory."
               continue
           fi
-         $SCRIPT_DIR/preprocess_dir.sh "$sub_dir"
+         $SCRIPT_DIR/preprocess_dir.sh "$sub_dir" $SKIP_ON_EXIST
     done
 
 }
@@ -118,6 +139,11 @@ function _on_exit() {
 function print_error() {
     local MESSAGE="$*"
     printf -- "\033[0;31m[\u2718] [ERROR][$(basename $0):${BASH_LINENO[0]}]: %s\033[0m\n" "$MESSAGE"
+}
+
+function print_warning() {
+    local MESSAGE="$*"
+    printf -- "\033[0;33m[\u26A0] [WARNING][$(basename $0):${BASH_LINENO[0]}]: %s\033[0m\n" "$MESSAGE"
 }
 
 trap 'EXIT_CODE=$?; printf -- "\n\033[0;33m[!] [INTERRUPT][$(basename $0)] Script was interrupted! (Exit Code: $EXIT_CODE)\033[0m\n"; exit $EXIT_CODE' INT TERM

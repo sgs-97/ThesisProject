@@ -4,7 +4,7 @@
 
 function show_help() {
     echo "Description:"
-    echo "  Run graph_dir on all subdirectories of a given directory."
+    echo "  (Wrapper) Run multi_hmd_umount_sleep_pt_durations.sh on the specified directory containing subdirectories with log and annotation (laps) data after being preprocessed."
     echo
     echo "Usage: path/to/$(basename $0) [args] [options]" # Keep as it is
     echo
@@ -12,11 +12,6 @@ function show_help() {
     echo "  <dir>              Directory containing subdirectories to be graphed"
     echo
     echo "Options:"
-    echo "  --show_in_browser  Open the generated graph in a web browser" # Keep as it is
-    echo "  --skip_imx471_spikes_csv  Skip generating IMX471 spikes CSV"
-    echo "  --include_video    Include timestamped video in the output HTML (if found inside the directory where the graph is going to be placed). Default: False"
-    echo "  --skip_hmd_bound   Skip HMD through boundary calculation of times and output CSV" # Keep as it is
-    echo "  --skip_on_exist  Skip generating files that already exist in the subdirectory" # Keep as it is
     echo "  -h, --help         Show this help message and exit" # Keep as it is
     echo
 }
@@ -27,31 +22,6 @@ function main() {
         print_error "Directory argument is required."
         exit 1
     fi
-    local include_imx471_spikes_csv="--include_imx471_spikes_csv"
-    # Check if the --show_in_browser option is provided
-    local show_in_browser=''
-    local include_video=''
-    local skip_hmd_bound=''
-    local skip_on_exist=""
-    for arg in "$@"; do
-        case $arg in
-            --show_in_browser)
-                show_in_browser="--show_in_browser"
-                ;;
-            --include_video)
-                include_video="--include_video"
-                ;;
-              --skip_imx471_spikes_csv)
-                include_imx471_spikes_csv=""
-                ;;
-            --skip_hmd_bound)
-                skip_hmd_bound="--skip_hmd_bound"
-                ;;
-            --skip_on_exist)
-                skip_on_exist="--skip_on_exist"
-                ;;
-        esac
-    done
 
     # Check path of dir
     if [[ ! -d "$dir" ]]; then
@@ -66,6 +36,8 @@ function main() {
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
+
+
     for sub_dir in "$dir"/*/; do
         # If preprocessing output is missing continue
         if ! ls "$sub_dir"/adb_log*.csv 1> /dev/null 2>&1; then
@@ -76,7 +48,7 @@ function main() {
             print_error "user events json not found in dir '$sub_dir'. Continuing to next directory."
             continue
         fi
-        $SCRIPT_DIR/graph_dir.sh "$sub_dir" $show_in_browser $include_imx471_spikes_csv $include_video $skip_hmd_bound $skip_on_exist
+        $SCRIPT_DIR/hmd_umount_sleep_pt_durations.sh "$sub_dir"
     done
 
 }

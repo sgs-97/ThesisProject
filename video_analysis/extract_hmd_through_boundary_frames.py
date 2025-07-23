@@ -94,7 +94,7 @@ def find_video_file(exp_dir):
 def main():
     parser = argparse.ArgumentParser(description='Extract frames from video around HMD passthrough activation (with margin).')
     parser.add_argument('experiment_dir', type=str, help='Path to the experiment directory.')
-    parser.add_argument('--time_margin', type=float, default=0.5, help='Margin (in seconds) to add before/after activation interval.')
+    parser.add_argument('--time_margin', type=float, default=1, help='Margin (in seconds) to add before/after activation interval.')
     parser.add_argument('--output_dir', type=str, default='', help='Directory to save extracted frames. Default: extracted_frames in experiment dir.')
     parser.add_argument('--dict_file', default='<script_dir_path>/../analyze/dict.json', help='Path to dict.json for event parsing.')
     parser.add_argument('--picker', action='store_true', help='Open visual frame picker after extraction.')
@@ -127,7 +127,7 @@ def main():
     start_time = max(0.0, start_time - margin)
     end_time = end_time + margin
     if verbosity >= 1:
-        print(f"[INFO] Activation interval: {start_time:.3f}s to {end_time:.3f}s (margin {margin}s)")
+        print(f"[\033[1;34mINFO\033[0m] Activation interval: {start_time:.3f}s to {end_time:.3f}s (margin {margin}s)")
     # Find video file
     video_file = find_video_file(exp_dir)
     if not video_file:

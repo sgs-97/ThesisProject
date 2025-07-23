@@ -19,12 +19,58 @@
 4. For multiple directories
    1. **Preprocess** all directories with the following command:
    ```
-   script/multi_preprocess_dir.sh /path/to/parent_dir
+   scripts/multi_preprocess_dir.sh /path/to/parent_dir
    ```
    2. **Generate graphs** for all directories with the following command:
    ```
    scripts/multi_graph_dir.sh /path/to/parent_dir
    ```
+
+5. After the above have been executed there have been created files necessary to run scripts like:
+- `scripts/imx471_spikes_csv_dir.sh`
+- `scripts/hmd_umount_sleep_pt_durations.sh`
+- etc.
+    </br>And all their multi versions.
+
+## CDF extractions
+>To run the below preprocessing and graphing commands must have been executed first
+1. **hmd unmount & sleep to pt activation durations**: 
+   ```
+   scripts/hmd_umount_sleep_pt_durations.sh /path/to/experiment_dir
+   ```
+   or for multiple directories:
+   ```
+   scripts/multi_hmd_umount_sleep_pt_durations.sh /path/to/parent_dir
+   ```
+   ```
+   python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'hmd_umount_sleep_pt_durations.csv'
+   python3 ./analyze/generate_umount_sleep_pt_durations_cdf.py /path/to_super_parent_dir/hmd_umount_sleep_pt_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
+   ```
+2. **hmd umount & sleep to imx471 activation durations**: 
+   ```
+   scripts/hmd_umount_sleep_imx471_durations.sh /path/to/experiment_dir
+   ```
+   or for multiple directories:
+   ```
+   scripts/multi_hmd_umount_sleep_imx471_durations.sh /path/to/parent_dir
+   ```
+   ```
+   python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'hmd_umount_sleep_imx471_durations.csv'
+   python3 ./analyze/generate_umount_sleep_imx471_durations_cdf.py /path/to_super_parent_dir/hmd_umount_sleep_imx471_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
+   ```
+3. **imx471 spikes**: 
+   ```
+    scripts/imx471_spikes_csv_dir.sh /path/to/experiment_dir
+    ```
+    or for multiple directories:
+    ```
+    scripts/multi_imx471_spikes_csv_dir.sh /path/to/parent_dir
+    ```
+    ```
+    python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'imx471_spikes.csv'
+    python3 ./analyze/generate_imx471_spikes_cdf.py /path/to_super_parent_dir/imx471_spikes_combined.csv all [--graphing_tool <matplotlib|plotly>]
+    ```
+   
 
 ## Commands for `adb`
 - **Clear the logs**

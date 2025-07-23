@@ -44,7 +44,7 @@ function main() {
             print_error "adb log not found in dir '$sub_dir'. Continuing to next directory."
             continue
         fi
-        if ! ls "$sub_dir"/*.json 1> /dev/null 2>&1; then
+        if ! ls "$sub_dir"/annotated_events.json 1> /dev/null 2>&1; then
             print_error "user events json not found in dir '$sub_dir'. Continuing to next directory."
             continue
         fi
@@ -120,6 +120,11 @@ function _on_exit() {
 function print_error() {
     local MESSAGE="$*"
     printf -- "\033[0;31m[\u2718] [ERROR][$(basename $0):${BASH_LINENO[0]}]: %s\033[0m\n" "$MESSAGE"
+}
+
+function print_warning() {
+    local MESSAGE="$*"
+    printf -- "\033[0;33m[\u26A0] [WARNING][$(basename $0):${BASH_LINENO[0]}]: %s\033[0m\n" "$MESSAGE"
 }
 
 trap 'EXIT_CODE=$?; printf -- "\n\033[0;33m[!] [INTERRUPT][$(basename $0)] Script was interrupted! (Exit Code: $EXIT_CODE)\033[0m\n"; exit $EXIT_CODE' INT TERM
