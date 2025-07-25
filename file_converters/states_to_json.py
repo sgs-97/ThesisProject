@@ -125,23 +125,65 @@ def convert_states_to_json(log_csv, states_fpath):
 
         start_time = pd.to_datetime(log_df['Time'].min(), format='%H:%M:%S.%f', errors='coerce')
 
+        app_start_found = False
+        screen_rec_start_found = False
         for index, row in log_df.iterrows():
             time = pd.to_datetime(row['Time'], format='%H:%M:%S.%f', errors='coerce')
             event = row['Message']
             if time is pd.NaT:
                 raise ValueError(f"Invalid time format: {time} in line \'{row}\',\nfile: {log_csv}")
             formatted_time = helpers.pd_timedelta_to_timestring(helpers.timedelta_pd(time, start_time));
-            if 'shellapp' in event.lower() and 'going to sleep' in event.lower():
-                # If the event is "going to sleep", keep it as a vertical line
 
+            # App Start
+            if 'activitymanager' in event.lower() and 'start proc' in event.lower() and 'for next-activity' in event.lower() and app_start_found is False:
+                # If the event is "ActivityTaskManager start", keep it as a vertical line
+                app_start_found = True
                 dict.append({
                     "type": "line",
                     "orientation": "vertical",
                     "time": formatted_time,
-                    "label": 'Device Sleep (log)',
+                    "label": 'App Start (log)' + event.split('for next-activity')[-1].strip().split('/')[0],
                     "linetype": "solid",
-                    "color": "black"
+                    "color": "green"
                 })
+
+            # App Stop
+            if 'activitymanager' in event.lower() and 'process' in event.lower() and 'has died: cch+5' in event.lower():
+                # If the event is "ActivityManager process has died", keep it as a vertical line
+                dict.append({
+                    "type": "line",
+                    "orientation": "vertical",
+                    "time": formatted_time,
+                    "label": 'App Stop (log)',
+                    "linetype": "solid",
+                    "color": "red"
+                })
+            # Recording Start. Below is not necessarily correct.
+            # if 'ActivityManager: Starting FGS'.lower() in event.lower() and 'callerApp=ProcessRecord'.lower() in event.lower() and 'com.oculus.metacam' in event.lower() and screen_rec_start_found is False:
+            #     # If the event is "ActivityManager: Starting FGS", keep it as a vertical line
+            #     screen_rec_start_found = True
+            #     dict.append({
+            #         "type": "line",
+            #         "orientation": "vertical",
+            #         "time": formatted_time,
+            #         "label": 'Start Screen Recording (log)',
+            #         "linetype": "solid",
+            #         "color": "green"
+            #     })
+
+            # Recording Stop
+            if 'stop screen recording' in event.lower():
+                # If the event is "Stop Screen Recording", keep it as a vertical line
+                dict.append({
+                    "type": "line",
+                    "orientation": "vertical",
+                    "time": formatted_time,
+                    "label": 'Stop Screen Recording (log)',
+                    "linetype": "solid",
+                    "color": "red"
+                })
+
+            # Device Unmount
             if 'shellapp' in event.lower() and 'hmd mount state changed' in event.lower() and 'unmounted' in event.lower():
                 # If the event is "HMD Mount State Changed - unmounted", keep it as a vertical line
                 dict.append({
@@ -152,6 +194,20 @@ def convert_states_to_json(log_csv, states_fpath):
                     "linetype": "solid",
                     "color": "red"
                 })
+
+            # Device Sleep
+            if 'shellapp' in event.lower() and 'going to sleep' in event.lower():
+                # If the event is "going to sleep", keep it as a vertical line
+                dict.append({
+                    "type": "line",
+                    "orientation": "vertical",
+                    "time": formatted_time,
+                    "label": 'Device Sleep (log)',
+                    "linetype": "solid",
+                    "color": "black"
+                })
+
+
 
 
     return dict

@@ -44,7 +44,7 @@
    ```
    ```
    python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'hmd_umount_sleep_pt_durations.csv'
-   python3 ./analyze/generate_umount_sleep_pt_durations_cdf.py /path/to_super_parent_dir/hmd_umount_sleep_pt_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
+   python3 ./analyze/cdfs/hmd_umount_sleep_pt_durations_cdf.py /path/to_super_parent_dir/hmd_umount_sleep_pt_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
    ```
 2. **hmd umount & sleep to imx471 activation durations**: 
    ```
@@ -56,9 +56,21 @@
    ```
    ```
    python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'hmd_umount_sleep_imx471_durations.csv'
-   python3 ./analyze/generate_umount_sleep_imx471_durations_cdf.py /path/to_super_parent_dir/hmd_umount_sleep_imx471_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
+   python3 ./analyze/cdfs/hmd_umount_sleep_imx471_durations_cdf.py /path/to_super_parent_dir/hmd_umount_sleep_imx471_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
    ```
-3. **imx471 spikes**: 
+3. **hmd umount to sleep duration**:
+   ```
+    scripts/hmd_umount_to_sleep_durations.sh /path/to/experiment_dir
+    ```
+    or for multiple directories:
+    ```
+    scripts/multi_hmd_umount_to_sleep_durations.sh /path/to/parent_dir
+    ```
+    ```
+    python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'hmd_umount_to_sleep_durations.csv'
+    python3 ./analyze/cdfs/hmd_umount_to_sleep_durations_cdf.py /path/to_super_parent_dir/hmd_umount_to_sleep_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
+    ```
+4**imx471 spikes**: 
    ```
     scripts/imx471_spikes_csv_dir.sh /path/to/experiment_dir
     ```
@@ -68,7 +80,7 @@
     ```
     ```
     python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'imx471_spikes.csv'
-    python3 ./analyze/generate_imx471_spikes_cdf.py /path/to_super_parent_dir/imx471_spikes_combined.csv all [--graphing_tool <matplotlib|plotly>]
+    python3 ./analyze/cdfs/imx471_spikes_cdf.py /path/to_super_parent_dir/imx471_spikes_combined.csv all [--graphing_tool <matplotlib|plotly>]
     ```
    
 

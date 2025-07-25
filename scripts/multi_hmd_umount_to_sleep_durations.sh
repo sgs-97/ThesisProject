@@ -4,12 +4,12 @@
 
 function show_help() {
     echo "Description:"
-    echo "  Run hmd_umount_sleep_pt_durations.py on the specified directory containing log and annotation (laps) data after being preprocessed."
+    echo "  (Wrapper) Run hmd_umount_to_sleep_durations.sh on the specified directory containing subdirectories with log and annotation (laps) data after being preprocessed."
     echo
     echo "Usage: path/to/$(basename $0) [args] [options]" # Keep as it is
     echo
     echo "Arguments:"
-    echo "  <dir>              Directory of log and annotation (laps) data"
+    echo "  <dir>              Directory containing subdirectories to be graphed"
     echo
     echo "Options:"
     echo "  -h, --help         Show this help message and exit" # Keep as it is
@@ -23,33 +23,33 @@ function main() {
         exit 1
     fi
 
-    # Add your main script logic here
-    echo "Generating HMD umount sleep durations for directory: $dir"
-
     # Check path of dir
     if [[ ! -d "$dir" ]]; then
         print_error "Directory '$dir' does not exist."
         exit 1
     fi
 
-    # If preprocessing output is missing exit
-    if ! ls "$dir"/adb_log*.csv 1> /dev/null 2>&1; then
-        ls -l "$dir"/adb_log*.csv
-        print_error "adb log not found in dir '$dir'. First run preprocess_dir.sh"
-        exit 1
-    fi
-    if ! ls "$dir"/annotated_events.json 1> /dev/null 2>&1; then
-        print_error "user_events json not found in dir '$dir'. First run preprocess_dir.sh"
-        exit 1
-    fi
+    # Add your main script logic here
+    sub_dir_count=$(find "$dir" -mindepth 1 -maxdepth 1 -type d | wc -l)
+    echo "Graphing $sub_dir_count directories in $dir"
+    sleep 2
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    if ! ls "$dir"/passthrough_activations_intervals.csv 1> /dev/null 2>&1; then
-        print_warning "passthrough_activations_intervals.csv not found in dir '$dir'. Running extract_passthrough_activations.py"
-        python3 "$SCRIPT_DIR"/../analyze/extract_passthrough_activations.py "$dir"
-    fi
-    python3 "$SCRIPT_DIR"/../analyze/hmd_umount_sleep_pt_durations.py "$dir"
+
+
+    for sub_dir in "$dir"/*/; do
+        # If preprocessing output is missing continue
+        if ! ls "$sub_dir"/adb_log*.csv 1> /dev/null 2>&1; then
+            print_error "adb log not found in dir '$sub_dir'. Continuing to next directory."
+            continue
+        fi
+        if ! ls "$sub_dir"/annotated_events.json 1> /dev/null 2>&1; then
+            print_error "user events json not found in dir '$sub_dir'. Continuing to next directory."
+            continue
+        fi
+        $SCRIPT_DIR/hmd_umount_to_sleep_durations.sh "$sub_dir"
+    done
 
 }
 

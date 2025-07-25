@@ -30,23 +30,23 @@ def get_hmd_umount_sleep_times(events_json):
     """
     Extracts HMD unmount and sleep times from the annotated events JSON.
     """
-    hmd_umount_times = None
-    hmd_sleep_times = []
+    hmd_umount_time = None
+    hmd_sleep_time = []
 
     for event in events_json:
         if 'label' not in event:
             continue
         if 'device unmount (log)' in event['label'].lower():
-            hmd_umount_times = pd.to_datetime(event['time'], format='%H:%M:%S.%f', errors='coerce')
+            hmd_umount_time = pd.to_datetime(event['time'], format='%H:%M:%S.%f', errors='coerce')
         elif 'device sleep (log)' in event['label'].lower():
-            hmd_sleep_times = pd.to_datetime(event['time'], format='%H:%M:%S.%f', errors='coerce')
+            hmd_sleep_time = pd.to_datetime(event['time'], format='%H:%M:%S.%f', errors='coerce')
 
-    if hmd_umount_times is None:
+    if hmd_umount_time is None:
         raise ValueError("No HMD unmount times found in the events JSON file.")
-    if not hmd_sleep_times:
+    if not hmd_sleep_time:
         raise ValueError("No HMD sleep times found in the events JSON file.")
 
-    return hmd_umount_times, hmd_sleep_times
+    return hmd_umount_time, hmd_sleep_time
 
 def get_imx471_last_start_stop_times(imx471_activations_intervals):
     """
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     states_json = read_annotated_events_json(exp_dir)
     imx471_activations_intervals = read_imx471_activations_intervals_file(exp_dir)
 
-    hmd_umount_times, hmd_sleep_times = get_hmd_umount_sleep_times(states_json)
+    hmd_umount_time, hmd_sleep_time = get_hmd_umount_sleep_times(states_json)
     imx471_start_time, imx471_stop_time = get_imx471_last_start_stop_times(imx471_activations_intervals)
 
     # imx471_stop_time - imx471_start_time must be less than 2 seconds to be conidered a qualifying before sleep spike
@@ -111,13 +111,13 @@ if __name__ == '__main__':
         exit(0)
 
     if verbosity >= 1:
-        print(f"[\033[1;34mINFO\033[0m] HMD Unmount Times: {hmd_umount_times}")
-        print(f"[\033[1;34mINFO\033[0m] HMD Sleep Times: {hmd_sleep_times}")
+        print(f"[\033[1;34mINFO\033[0m] HMD Unmount Times: {hmd_umount_time}")
+        print(f"[\033[1;34mINFO\033[0m] HMD Sleep Times: {hmd_sleep_time}")
         print(f"[\033[1;34mINFO\033[0m] imx471 Start Time: {imx471_start_time}")
         print(f"[\033[1;34mINFO\033[0m] imx471 Stop Time: {imx471_stop_time}")
 
-    umount_imx471_start_duration = abs(pd.Timestamp(imx471_start_time) - pd.Timestamp(hmd_umount_times)).total_seconds() if hmd_umount_times else None
-    imx471_stop_sleep_duration = abs(pd.Timestamp(imx471_stop_time) - pd.Timestamp(hmd_sleep_times)).total_seconds() if hmd_sleep_times else None
+    umount_imx471_start_duration = abs(pd.Timestamp(imx471_start_time) - pd.Timestamp(hmd_umount_time)).total_seconds() if hmd_umount_time else None
+    imx471_stop_sleep_duration = abs(pd.Timestamp(imx471_stop_time) - pd.Timestamp(hmd_sleep_time)).total_seconds() if hmd_sleep_time else None
 
     # Report oddly large durations
     if umount_imx471_start_duration is not None and umount_imx471_start_duration > 10:

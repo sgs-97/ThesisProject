@@ -4,7 +4,7 @@
 
 function show_help() {
     echo "Description:"
-    echo "  Run hmd_umount_sleep_pt_durations.py on the specified directory containing log and annotation (laps) data after being preprocessed."
+    echo "  Run hmd_umount_to_sleep_durations.py on the specified directory containing log and annotation (laps) data after being preprocessed."
     echo
     echo "Usage: path/to/$(basename $0) [args] [options]" # Keep as it is
     echo
@@ -24,7 +24,7 @@ function main() {
     fi
 
     # Add your main script logic here
-    echo "Generating HMD umount sleep durations for directory: $dir"
+    echo "Generating HMD umount to sleep durations for directory: $dir"
 
     # Check path of dir
     if [[ ! -d "$dir" ]]; then
@@ -45,11 +45,7 @@ function main() {
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    if ! ls "$dir"/passthrough_activations_intervals.csv 1> /dev/null 2>&1; then
-        print_warning "passthrough_activations_intervals.csv not found in dir '$dir'. Running extract_passthrough_activations.py"
-        python3 "$SCRIPT_DIR"/../analyze/extract_passthrough_activations.py "$dir"
-    fi
-    python3 "$SCRIPT_DIR"/../analyze/hmd_umount_sleep_pt_durations.py "$dir"
+    python3 "$SCRIPT_DIR"/../analyze/hmd_umount_to_sleep_durations.py "$dir"
 
 }
 

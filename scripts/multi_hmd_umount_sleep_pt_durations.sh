@@ -4,7 +4,7 @@
 
 function show_help() {
     echo "Description:"
-    echo "  (Wrapper) Run multi_hmd_umount_sleep_pt_durations.sh on the specified directory containing subdirectories with log and annotation (laps) data after being preprocessed."
+    echo "  (Wrapper) Run hmd_umount_sleep_pt_durations.sh on the specified directory containing subdirectories with log and annotation (laps) data after being preprocessed."
     echo
     echo "Usage: path/to/$(basename $0) [args] [options]" # Keep as it is
     echo
