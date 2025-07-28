@@ -150,15 +150,11 @@ function main() {
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    if compgen -G "$dir"/adb_log_*.csv > /dev/null; then
-    adb_csv_files=("$dir"/adb_log_*.csv)
-    else
-        adb_csv_files=()
-    fi
-    if [[ "${#adb_csv_files[@]}" -eq 0 && $skip_on_exist == true ]]; then
-      python3 "$SCRIPT_DIR"/../file_converters/log_to_csv.py "$dir"/adb_log_*.log
-    else
+    no_adb_log_csv_files=$(find "$dir" -maxdepth 1 -type f -name "adb_log_*.csv" | wc -l)
+    if [[ $no_adb_log_csv_files != 0 ]] && [[ $skip_on_exist == true ]]; then
       print_info "Skipping log_to_csv conversion as CSV files already exist in '$dir'."
+    else
+      python3 "$SCRIPT_DIR"/../file_converters/log_to_csv.py "$dir"/adb_log_*.log
     fi
     if [[ -f "$dir"/annotated_events.json && $skip_on_exist == true ]]; then
       print_info "Skipping laps_to_csv conversion as laps.csv already exists in '$dir'."

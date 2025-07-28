@@ -70,14 +70,10 @@ function main() {
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
+    no_html_files=$(find "$dir" -maxdepth 1 -type f -name "*.html" | wc -l)
     # Check if the directory contains HTML files and skip if skip_on_exist is true
-    if compgen -G "$dir"/*.html > /dev/null; then
-        html_files=("$dir"/*.html)
-        else
-        html_files=()
-    fi
-    if [[ ${#html_files[@]} -gt 0 && ${skip_on_exist} == true ]]; then
-        echo "HTML files already exist in the directory. Skipping graph generation."
+    if [[ $no_html_files != 0 ]] && [[ $skip_on_exist == true ]]; then
+      echo "HTML files already exist in the directory. Skipping graph generation."
     else
       python3 $SCRIPT_DIR/../analyze/graph.py "$dir"/adb_log*.csv --user_events "$dir"/annotated_events.json $show_in_browser $include_video
     fi

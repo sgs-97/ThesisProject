@@ -54,6 +54,23 @@ def to_pd_datetime(value, format='%H:%M:%S.%3f'):
     else:
         raise ValueError(f"Unsupported type for conversion to pd.Timestamp: {type(value)}")
 
+def add_timestamps(t1, t2, format='%H:%M:%S.%f'):
+    """
+    Add two times of day together, ignoring date.
+    :param t1: Base time (pd.Timestamp, pd.Timedelta, or str).
+    :param t2: Timedelta (pd.Timestamp, pd.Timedelta, or str).
+    :param format: Format of the string if it is a string (default: '%H:%M:%S.%f').
+    :return: pd.Timestamp object representing the sum of the two times.
+    """
+    t1 = pd.to_datetime(t1, format=format)
+    t2 = timedelta_pd(t2, pd.Timestamp(t2.year, t2.month, t2.day, 0, 0, 0), maintain_sign=True, format=format)
+
+    result = t1 + t2
+
+    return pd.Timestamp(result)
+
+
+
 def pd_timedelta_to_timestring(td):
     """
     Convert a pandas Timedelta to a string in the specified format.

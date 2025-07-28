@@ -126,7 +126,7 @@ def convert_states_to_json(log_csv, states_fpath):
         start_time = pd.to_datetime(log_df['Time'].min(), format='%H:%M:%S.%f', errors='coerce')
 
         app_start_found = False
-        screen_rec_start_found = False
+        app_stop_dict = {}
         for index, row in log_df.iterrows():
             time = pd.to_datetime(row['Time'], format='%H:%M:%S.%f', errors='coerce')
             event = row['Message']
@@ -135,14 +135,14 @@ def convert_states_to_json(log_csv, states_fpath):
             formatted_time = helpers.pd_timedelta_to_timestring(helpers.timedelta_pd(time, start_time));
 
             # App Start
-            if 'activitymanager' in event.lower() and 'start proc' in event.lower() and 'for next-activity' in event.lower() and app_start_found is False:
+            if 'activitymanager' in event.lower() and 'start proc' in event.lower() and ('for next-activity' in event.lower() or 'for top-activity' in event.lower()) and app_start_found is False:
                 # If the event is "ActivityTaskManager start", keep it as a vertical line
                 app_start_found = True
                 dict.append({
                     "type": "line",
                     "orientation": "vertical",
                     "time": formatted_time,
-                    "label": 'App Start (log)' + event.split('for next-activity')[-1].strip().split('/')[0],
+                    "label": 'App Start (log): ' + event.split(':')[2].strip().split('/')[0],
                     "linetype": "solid",
                     "color": "green"
                 })
@@ -150,14 +150,14 @@ def convert_states_to_json(log_csv, states_fpath):
             # App Stop
             if 'activitymanager' in event.lower() and 'process' in event.lower() and 'has died: cch+5' in event.lower():
                 # If the event is "ActivityManager process has died", keep it as a vertical line
-                dict.append({
+                app_stop_dict = {
                     "type": "line",
                     "orientation": "vertical",
                     "time": formatted_time,
-                    "label": 'App Stop (log)',
+                    "label": 'App Stop (log): ' + event.strip().split('Process ')[-1].strip().split(' (pid')[0],
                     "linetype": "solid",
                     "color": "red"
-                })
+                }
             # Recording Start. Below is not necessarily correct.
             # if 'ActivityManager: Starting FGS'.lower() in event.lower() and 'callerApp=ProcessRecord'.lower() in event.lower() and 'com.oculus.metacam' in event.lower() and screen_rec_start_found is False:
             #     # If the event is "ActivityManager: Starting FGS", keep it as a vertical line
@@ -207,9 +207,33 @@ def convert_states_to_json(log_csv, states_fpath):
                     "color": "black"
                 })
 
+            # OVR Metrics Tool Start
+            if 'ActivityTaskManager: START'.lower() in event.lower() and 'com.oculus.ovrmonitormetricsservice' in event.lower():
+                # If the event is "ActivityTaskManager: START", keep it as a vertical line
+                dict.append({
+                    "type": "line",
+                    "orientation": "vertical",
+                    "time": formatted_time,
+                    "label": 'OVR Metrics Tool Start (log)',
+                    "linetype": "solid",
+                    "color": "blue"
+                })
 
+            # OVR Metrics Tool Start Writing to File
+            if 'MetricAggregator: Writing file to'.lower() in event.lower() and 'com.oculus.ovrmonitormetricsservice' in event.lower():
+                # If the event is "MetricAggregator: Writing file to", keep it as a vertical line
+                dict.append({
+                    "type": "line",
+                    "orientation": "vertical",
+                    "time": formatted_time,
+                    "label": 'OVR Metrics Start Write',
+                    "linetype": "solid",
+                    "color": "blue"
+                })
 
-
+    # Add app_stop_dict to the dictionary if it was found. This is done because I only want 1 app stop event and that is the last one in the log.
+    if app_stop_dict:
+        dict.append(app_stop_dict)
     return dict
 
 if __name__ == '__main__':

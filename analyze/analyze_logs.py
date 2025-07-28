@@ -1,10 +1,10 @@
 import argparse
 import os
-from functools import reduce
 
-import xlsxwriter
 import pandas as pd
+
 import helpers
+
 
 def sensors_events_to_df(sensor_events):
     """
@@ -182,8 +182,8 @@ def add_statistics_rows(summary_sensor_activity) -> (pd.DataFrame, int):
 def export_to_xlsx(summary_sensor_activity, log_file_path):
     """
     Export DataFrame to an xlsx file.
-    :param df: DataFrame to export.
-    :param output_path: Path to the output xlsx file.
+    :param summary_sensor_activity: DataFrame to export.
+    :param log_file_path: Path to the log file to determine the output path.
     """
     # Export to xlsx at the same path as the input file
     output_xlsx_path = os.path.join(os.path.dirname(log_file_path), 'summary.xlsx')

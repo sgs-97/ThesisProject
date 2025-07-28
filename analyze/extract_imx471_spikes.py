@@ -1,8 +1,8 @@
 import argparse
 import os
+
 import helpers
-import json
-import timeit
+
 
 def get_imx_spikes(sensor_events):
     """
@@ -28,6 +28,7 @@ def get_imx_spikes(sensor_events):
     return non_overlapping_imx
 
 if __name__ == '__main__':
+    script_name = os.path.basename(__file__)
     parser = argparse.ArgumentParser(description="Extract IMX471 spikes intervals from a CSV log file and save the results to a CSV file. "
                                                  "This script extracts IMX471 activation intervals that do not overlap with Passthrough activation intervals and have a duration less than 1.8 seconds.")
     parser.add_argument("logfile", help="Path to the input log file (CSV)")

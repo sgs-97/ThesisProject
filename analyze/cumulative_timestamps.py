@@ -1,6 +1,5 @@
 import argparse
 import os
-import sys
 from datetime import timedelta
 
 def parse_time(time_str):
