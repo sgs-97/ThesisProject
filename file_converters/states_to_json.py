@@ -16,8 +16,8 @@ def convert_states_to_json(log_csv, states_fpath):
     x_idle = 0  # Placeholder for the idle x value, if needed
     with open(states_fpath, 'r') as states_file:
         for line in states_file:
-            dict.append({})  # Create a new dictionary for each line
             if line.strip():  # Ignore empty lines
+                dict.append({})  # Create a new dictionary for each line
                 time, state = line.strip().split(' - ')
                 if pd.to_datetime(time, format='%H:%M:%S.%f', errors='coerce') is pd.NaT:
                     raise ValueError(f"Invalid time format: {time} in line \'{line}\',\nfile: {states_fpath}")
