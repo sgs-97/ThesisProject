@@ -1,4 +1,6 @@
 import argparse
+
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -296,6 +298,55 @@ def ovr_metrics_fig(ovr_metrics_csv, ovr_monitor_start_write, fig=None):
         name='GPU Freq (MHz)',
         line=dict(color='teal')
     ))
+    fig.add_trace(go.Scatter(
+        x=df['Time Stamp'],
+        y=df['cpu_utilization_percentage'],
+        mode='lines+markers',
+        name='CPU Utilization (%)',
+        line=dict(color='purple')
+    ))
+    fig.add_trace(go.Scatter(
+        x=df['Time Stamp'],
+        y=df['gpu_utilization_percentage'],
+        mode='lines+markers',
+        name='GPU Utilization (%)',
+        line=dict(color='orange')
+    ))
+
+    # Stats for OVR metrics only for first 60 seconds (60 ticks)
+    cpu_utilization_mean = df['cpu_utilization_percentage'][:60].mean()
+    fig.add_trace(go.Scatter(
+        x=np.array([df['Time Stamp'][0], df['Time Stamp'].iloc[-1]]),
+        y=np.array(list([cpu_utilization_mean] * 2)),
+        mode='lines',
+        name=f'CPU Utilization Mean: {cpu_utilization_mean:.2f}%',
+        line=dict(color='purple', dash='solid')
+    ))
+
+    gpu_utilization_mean = df['gpu_utilization_percentage'][:60].mean()
+    fig.add_trace(go.Scatter(
+        x=np.array([df['Time Stamp'][0], df['Time Stamp'].iloc[-1]]),
+        y=np.array(list([gpu_utilization_mean] * 2)),
+        mode='lines',
+        name=f'GPU Utilization Mean: {gpu_utilization_mean:.2f}%',
+        line=dict(color='orange', dash='solid')
+    ))
+
+    power_wattage_mean = df['power_wattage'][:60].mean()
+    fig.add_trace(go.Scatter(
+        x=np.array([df['Time Stamp'][0], df['Time Stamp'].iloc[-1]]),
+        y= np.array(list([power_wattage_mean] * 2)),
+        mode='lines',
+        name=f'Power Wattage Mean: {power_wattage_mean:.2f}W',
+        line=dict(color='magenta', dash='solid')
+    ))
+
+    print(f"OVR Metrics Stats:\n"
+            f"CPU Utilization Mean: {cpu_utilization_mean:.2f}%\n"
+            f"GPU Utilization Mean: {gpu_utilization_mean:.2f}%\n"
+            f"Power Wattage Mean: {power_wattage_mean:.2f}W")
+
+
     return fig
 
 if __name__ == "__main__":

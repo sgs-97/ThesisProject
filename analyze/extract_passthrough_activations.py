@@ -49,6 +49,7 @@ if __name__ == '__main__':
     if not os.path.exists(events_json_fpath):
         print(f"[\033[1;31mERROR\033[0m] The events JSON file '{events_json_fpath}' does not exist.")
         exit(1)
+    start_rec_time = pd.Timedelta(0)  # Default to zero if no start rec time is found
     with open(events_json_fpath, 'r') as f:
         events_data = json.load(f)
         for event in events_data:
