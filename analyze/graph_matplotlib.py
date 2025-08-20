@@ -2,10 +2,24 @@ import argparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib
 import json
 import os
 import helpers
 import extract_imx471_spikes
+
+# Use Overleaf/LaTeX font everywhere
+matplotlib.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.serif": ["Computer Modern Roman"],
+    "font.size": 24,
+    "axes.titlesize": 24,
+    "axes.labelsize": 24,
+    "xtick.labelsize": 24,
+    "ytick.labelsize": 24,
+    "legend.fontsize": 24,
+})
 
 def plot_additional_components(ax, additional_components, graph_start_time):
     def sanitize_linetype(linetype):
@@ -77,7 +91,8 @@ def plot_additional_components(ax, additional_components, graph_start_time):
                         textcoords='offset points', arrowprops=dict(arrowstyle='->'), color=component.get('color', 'black'))
 
 def sensor_events_fig(sensor_events, colors, sensor_names, df, exclude_attributes=None):
-    fig, ax = plt.subplots(figsize=(16, 8))
+    # Change aspect ratio: make width smaller, e.g. 10x8 instead of 16x8
+    fig, ax = plt.subplots(figsize=(12, 8), dpi=600)
     time0 = df['Time'].min()
     # Left y-axis for sensor activity
     for i, sensor_name in enumerate(sensor_names):
@@ -129,11 +144,19 @@ def sensor_events_fig(sensor_events, colors, sensor_names, df, exclude_attribute
         plot_df = pd.DataFrame(plot_data)
         ax.plot(plot_df['Time'], plot_df['Y'], label=sensor_name, color=colors[i % len(colors)])
 
-    ax.set_ylabel('Sensor Activity (1=Active, 0=Inactive)')
+    ax.set_ylabel(r'\textbf{Sensor Activity}', fontsize=24)
     ax.set_yticks([0, 1])
-    ax.set_yticklabels(['Inactive', 'Active'])
-    ax.legend(loc='upper left')
-    ax.set_xlabel('Time (seconds)')
+    ax.set_yticklabels([r'Inactive', r'Active'], fontsize=24)
+    ax.legend(loc='upper left', fontsize=24, title_fontsize=24, frameon=True)
+    for text in ax.get_legend().get_texts():
+        text.set_fontweight('bold')
+        text.set_fontsize(24)
+    ax.set_xlabel(r'\textbf{Time (seconds)}', fontsize=24)
+
+    # Set x-axis ticks to increment by 5 seconds explicitly
+    t_max = (df['Time'].max() - time0).total_seconds()
+    ax.set_xticks(np.arange(0, t_max + 10, 10))
+
     return fig, ax
 
 def ovr_metrics_fig(ovr_metrics_csv, ovr_monitor_start_write, ax=None, exclude_attributes=None, time0=None):
@@ -153,24 +176,40 @@ def ovr_metrics_fig(ovr_metrics_csv, ovr_monitor_start_write, ax=None, exclude_a
         'cpu_utilization_percentage': ('CPU Utilization (%)', 'purple'),
         'gpu_utilization_percentage': ('GPU Utilization (%)', 'orange')
     }
+    min_y, max_y = float('inf'), float('-inf')
     for col, (label, color) in metrics.items():
         if exclude_attributes and col in exclude_attributes:
             continue
         ax2.plot(df['TimeNorm'], df[col], label=label, color=color)
+        min_y = min(min_y, df[col].min())
+        max_y = max(max_y, df[col].max())
 
-    # Means for first 60 ticks
-    if 'cpu_utilization_percentage' in df and ((not 'cpu_utilization_percentage' in exclude_attributes) and (not 'cpu_utilization_percentage_mean' in exclude_attributes)):
+    # Show mean number at left side of the graph subtracted by the length of the text itself
+
+    t_pos = df['TimeNorm'].min()
+    mean_number_position_on_xaxis = t_pos - 12  # 3% further to the right
+    if 'cpu_utilization_percentage' in df and (not 'cpu_utilization_percentage' in exclude_attributes and not 'cpu_utilization_percentage_mean' in exclude_attributes):
         cpu_utilization_mean = df['cpu_utilization_percentage'][:60].mean()
-        ax2.axhline(cpu_utilization_mean, color='purple', linestyle='--', label=f'CPU Util Mean: {cpu_utilization_mean:.2f}%')
-    if 'gpu_utilization_percentage' in df and ((not 'gpu_utilization_percentage' in exclude_attributes) and (not 'gpu_utilization_percentage_mean' in exclude_attributes)):
+        ax2.axhline(cpu_utilization_mean, color='purple', linestyle='--')
+        ax2.text(mean_number_position_on_xaxis, cpu_utilization_mean, f'{cpu_utilization_mean:.2f}%', color='purple',
+                 va='bottom', ha='left', fontsize=24, fontweight='bold')
+    if 'gpu_utilization_percentage' in df and (not 'gpu_utilization_percentage' in exclude_attributes and not 'gpu_utilization_percentage_mean' in exclude_attributes):
         gpu_utilization_mean = df['gpu_utilization_percentage'][:60].mean()
-        ax2.axhline(gpu_utilization_mean, color='orange', linestyle='--', label=f'GPU Util Mean: {gpu_utilization_mean:.2f}%')
-    if 'power_wattage' in df and ((not 'power_wattage' in exclude_attributes) and (not 'power_wattage_mean' in exclude_attributes)):
+        ax2.axhline(gpu_utilization_mean, color='orange', linestyle='--')
+        ax2.text(mean_number_position_on_xaxis, gpu_utilization_mean, f'{gpu_utilization_mean:.2f}%', color='orange',
+                 va='bottom', ha='left', fontsize=24, fontweight='bold')
+    if 'power_wattage' in df and (not 'power_wattage' in exclude_attributes and not 'power_wattage_mean' in exclude_attributes):
         power_wattage_mean = df['power_wattage'][:60].mean()
-        ax2.axhline(power_wattage_mean, color='magenta', linestyle='--', label=f'Power Watt Mean: {power_wattage_mean:.2f}W')
+        ax2.axhline(power_wattage_mean, color='magenta', linestyle='--')
+        ax2.text(mean_number_position_on_xaxis, power_wattage_mean, f'{power_wattage_mean:.2f}W', color='magenta',
+                 va='bottom', ha='left', fontsize=24, fontweight='bold')
 
-    ax2.set_ylabel('OVR Metrics')
-    ax2.legend(loc='upper right')
+    ax2.set_ylabel(r'\textbf{OVR Metrics}', fontsize=24)
+    ax2.legend(loc='upper right', fontsize=24, title_fontsize=24, frameon=True)
+    ax2.set_yticks(np.arange(np.floor(min_y/1000)*1000, np.ceil(max_y/1000)*1000, 1000 if (max_y-min_y)/5 > 0 else 1))
+    for text in ax2.get_legend().get_texts():
+        text.set_fontweight('bold')
+        text.set_fontsize(24)
     return ax2
 
 if __name__ == "__main__":
@@ -186,6 +225,7 @@ if __name__ == "__main__":
     parser.add_argument("--show_in_browser", action='store_true', help="Show the figure in the browser. Default: False")
     parser.add_argument('--include_video', action='store_true', help='Include timestamped video in the output HTML (if found inside the directory where the graph is going to be placed). Default: False')
     parser.add_argument('--exclude_attributes', type=str, default='Camera 4, Camera 5, cpu_utilization_percentage, gpu_utilization_percentage', help='Comma-separated list of attributes to show on the graph. Default: empty list -> plots all')
+    parser.add_argument('--title', type=str, default='', help='Title of the graph. Default: empty string -> uses logfile name')
     args = parser.parse_args()
 
     logfile_path = os.path.realpath(args.logfile)
@@ -259,16 +299,18 @@ if __name__ == "__main__":
                 milliseconds=time0.microsecond // 1000
             ) - time0).total_seconds()
     # plot_additional_components(ax, user_events, graph_start_time)
-    title = (
-        output_file.lower().split('experiments')[-1]
-        if 'experiments1' in output_file.lower()
-        else '/'.join(os.path.relpath(output_file).split('/')[-4:-1])
-    )
-    ax.set_title(title)
+    # Title: split by slash and add spaces, only last three parts
+    title = args.title
+    if not title:
+        title_parts = os.path.relpath(output_file).split('/')[-4:-1]
+        title = r'\textbf{' + ' '.join([part.replace('_', r'\_') for part in title_parts if part]) + '}'
+    else:
+        title = r'\textbf{' + title.replace('_', r'\_') + '}'
+    ax.set_title(title, fontsize=24)
     ax.set_xlim([graph_start_time - timer_lag, graph_end_time])
 
     plt.tight_layout()
-    plt.savefig(output_file)
+    plt.savefig(output_file, dpi=600)
     if show_in_browser:
         plt.show()
 

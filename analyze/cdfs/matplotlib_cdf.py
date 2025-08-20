@@ -6,10 +6,24 @@ import pandas as pd
 import argparse
 import os
 
+# Use Overleaf/LaTeX font everywhere and set global font size to 24
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.serif": ["Computer Modern Roman"],
+    "font.size": 24,
+    "axes.labelsize": 24,
+    "axes.titlesize": 24,
+    "legend.fontsize": 24,
+    "xtick.labelsize": 24,
+    "ytick.labelsize": 24,
+    "pdf.fonttype": 42,
+    "ps.fonttype": 42
+})
+
 def matplotlib_cdf(values, output_png: str, export_stats=False, stats_txt_path=None, title="CDF", xaxis_label="Value", yaxis_label="CDF"):
     sorted_vals = np.sort(values)
-    cdf_vals = np.arange(1, len(sorted_vals) + 1) / len(sorted_vals
-    )
+    cdf_vals = np.arange(1, len(sorted_vals) + 1) / len(sorted_vals)
     stats = {
         "mean": np.mean(values),
         "std": np.std(values),
@@ -19,24 +33,12 @@ def matplotlib_cdf(values, output_png: str, export_stats=False, stats_txt_path=N
         "n_points": len(values),
     }
 
-    plt.rcParams.update({
-        "font.size": 8,
-        "font.family": "serif",
-        "axes.labelsize": 8,
-        "axes.titlesize": 9,
-        "legend.fontsize": 7,
-        "xtick.labelsize": 7,
-        "ytick.labelsize": 7,
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42
-    })
-
-    fig = plt.figure(figsize=(3.4, 2.2))
+    fig = plt.figure(figsize=(16, 10), dpi=600)
     ax = fig.add_subplot(1, 1, 1)
     ax.plot(sorted_vals, cdf_vals, color='blue', linewidth=1)
-    ax.set_title(title)
-    ax.set_xlabel(xaxis_label)
-    ax.set_ylabel(yaxis_label)
+    ax.set_title(r'\textbf{' + title.replace('_', r'\_') + '}')
+    ax.set_xlabel(r'\textbf{' + xaxis_label.replace('_', r'\_') + '}')
+    ax.set_ylabel(r'\textbf{' + yaxis_label.replace('_', r'\_') + '}')
     ax.set_ylim(0, 1)
     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.2f}"))
     ax.grid(True, linestyle='--', linewidth=0.4, alpha=0.6)
@@ -47,13 +49,12 @@ def matplotlib_cdf(values, output_png: str, export_stats=False, stats_txt_path=N
     text_y = 0.5
     ax.text(
         median + 0.1, text_y,
-        f"Median = {median:.2f}",
+        r'\textbf{Median = ' + f"{median:.2f}" + '}',
         ha='left', va='center',
-        fontsize=7, color='gray',
-        fontdict={'weight': 'bold'}
+        fontsize=24, color='gray'
     )
 
-    plt.savefig(output_png, bbox_inches='tight', dpi=1200)
+    plt.savefig(output_png, bbox_inches='tight', dpi=600)
     print(f"CDF saved to: {output_png}")
 
     if stats_txt_path is not None:
@@ -66,8 +67,8 @@ def matplotlib_cdf(values, output_png: str, export_stats=False, stats_txt_path=N
         stats_text = "\n".join(
             [f"{k}: {v:.2f}" if isinstance(v, float) else f"{k}: {v}" for k, v in stats.items()]
         )
-        fig.text(0.01, -0.15, stats_text, fontsize=7, va='top', ha='left', family='monospace')
-        plt.savefig(output_png, bbox_inches='tight', dpi=1200)
+        fig.text(0.01, -0.15, stats_text, fontsize=24, va='top', ha='left', family='monospace')
+        plt.savefig(output_png, bbox_inches='tight', dpi=600)
         print(f"Stats text saved to: {stats_txt_path}")
 
     plt.close(fig)
@@ -99,4 +100,3 @@ if __name__ == "__main__":
         xaxis_label=args.xaxis_label,
         yaxis_label=args.yaxis_label
     )
-
