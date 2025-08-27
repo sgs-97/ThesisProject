@@ -368,7 +368,7 @@ def get_intervals_frequency(intervals: List[NamedInterval], duration_between_sta
             start_datetime_2 = pd.to_timedelta(intervals[i+1]["start"])
             duration_between_starts = start_datetime_2 - start_datetime_1
             if (duration_between_starts.total_seconds() < duration_between_starts_filter[0] or duration_between_starts.total_seconds() > duration_between_starts_filter[1]):
-                print(f"{duration_between_starts.total_seconds()}, intervals i: {intervals[i]}, i+1 {intervals[i+1]}")
+                # print(f"{duration_between_starts.total_seconds()}, intervals i: {intervals[i]}, i+1 {intervals[i+1]}")
                 continue
             total_starts += 1
             total_seconds += duration_between_starts.total_seconds()
@@ -392,7 +392,7 @@ def get_intervals_periods(intervals: List[NamedInterval], duration_between_start
             start_datetime_2 = pd.to_timedelta(intervals[i+1]["start"])
             duration_between_starts = start_datetime_2 - start_datetime_1
             if (duration_between_starts.total_seconds() < duration_between_starts_filter[0] or duration_between_starts.total_seconds() > duration_between_starts_filter[1]):
-                print(f"{duration_between_starts.total_seconds()}, intervals i: {intervals[i]}, i+1 {intervals[i+1]}")
+                # print(f"{duration_between_starts.total_seconds()}, intervals i: {intervals[i]}, i+1 {intervals[i+1]}")
                 continue
             periods.append(duration_between_starts.total_seconds())
 

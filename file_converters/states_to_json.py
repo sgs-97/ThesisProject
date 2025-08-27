@@ -29,24 +29,24 @@ def convert_states_to_json(log_csv, states_fpath):
                 if state.lower() == "start":
                     dict[len(dict)-1]["color"] = "green"
                 elif state.lower() == "mount":  # Assuming "mount" indicates the start of a mounted period
-                    dict[len(dict)-1]["color"] = "green"
+                    dict[len(dict)-1]["color"] = "blue"
                     x_mount = pd.Timestamp(time)  # Update mount x value
                 elif state.lower() == "idle":
                     dict[len(dict)-1]["color"] = "gray"
                     x_idle = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update idle x value
                 elif state.lower() == "open app": # Assuming "open app" indicates the start of an app period
-                    dict[len(dict)-1]["color"] = "green"
+                    dict[len(dict)-1]["color"] = "cyan"
                     x_start = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update start x value
                 elif state.lower() == "quit app": # Assuming "quit app" indicates the end of an app period
-                    dict[len(dict)-1]["color"] = "red"
+                    dict[len(dict)-1]["color"] = "green"
                     x_stop = pd.to_datetime(time, format='%H:%M:%S.%f')
                 elif "unmount" == state.lower():  # Assuming "unmount" indicates the end of a mounted period
-                    dict[len(dict)-1]["color"] = "red"
+                    dict[len(dict)-1]["color"] = "blue"
                     x_unmount = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update unmount x value
                 elif "device sleep" in state.lower():
-                    dict[len(dict)-1]["color"] = "red"
+                    dict[len(dict)-1]["color"] = "black"
                 else:
-                    dict[len(dict)-1]["color"] = "blue"  # Default color for app states
+                    dict[len(dict)-1]["color"] = "gray"  # Default color for app states
 
         if x_start and x_stop:
             dict.append({
@@ -142,7 +142,8 @@ def convert_states_to_json(log_csv, states_fpath):
                     "type": "line",
                     "orientation": "vertical",
                     "time": formatted_time,
-                    "label": 'App Start (log): ' + event.split(':')[2].strip().split('/')[0],
+                    "label": 'App Start (log)',
+                    # "label": 'App Start (log): ' + event.split(':')[2].strip().split('/')[0],
                     "linetype": "solid",
                     "color": "green"
                 })
@@ -154,9 +155,10 @@ def convert_states_to_json(log_csv, states_fpath):
                     "type": "line",
                     "orientation": "vertical",
                     "time": formatted_time,
-                    "label": 'App Stop (log): ' + event.strip().split('Process ')[-1].strip().split(' (pid')[0],
+                    "label": 'App Stop (log)',
+                    # "label": 'App Stop (log): ' + event.strip().split('Process ')[-1].strip().split(' (pid')[0],
                     "linetype": "solid",
-                    "color": "red"
+                    "color": "green"
                 }
             # Recording Start. Below is not necessarily correct.
             # if 'ActivityManager: Starting FGS'.lower() in event.lower() and 'callerApp=ProcessRecord'.lower() in event.lower() and 'com.oculus.metacam' in event.lower() and screen_rec_start_found is False:
@@ -192,7 +194,7 @@ def convert_states_to_json(log_csv, states_fpath):
                     "time": formatted_time,
                     "label": 'Device Unmount (log)',
                     "linetype": "solid",
-                    "color": "red"
+                    "color": "blue"
                 })
 
             # Device Sleep
@@ -216,7 +218,7 @@ def convert_states_to_json(log_csv, states_fpath):
                     "time": formatted_time,
                     "label": 'OVR Metrics Tool Start (log)',
                     "linetype": "solid",
-                    "color": "blue"
+                    "color": "orange"
                 })
 
             # OVR Metrics Tool Start Writing to File
@@ -228,7 +230,7 @@ def convert_states_to_json(log_csv, states_fpath):
                     "time": formatted_time,
                     "label": 'OVR Metrics Start Write',
                     "linetype": "solid",
-                    "color": "blue"
+                    "color": "orange"
                 })
 
     # Add app_stop_dict to the dictionary if it was found. This is done because I only want 1 app stop event and that is the last one in the log.

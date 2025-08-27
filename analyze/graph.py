@@ -77,10 +77,11 @@ def plot_additional_components(fig, additional_components, graph_start_time):
                 showlegend=True if 'label' in component else False
             )
         elif component['type'] == 'annotation':
+            x=component['time'] if 'time' in component else component['t']
             fig.add_annotation(
-                x=pd.to_datetime(component['t'], format='%H:%M:%S.%f') + graph_start_time_td,
+                x=pd.to_datetime(x, format='%H:%M:%S.%f') + graph_start_time_td,
                 y=component['y'],
-                yshift=component['yshift'] if 'yshift' in component else 0,
+                yshift=float(component['yshift']) if 'yshift' in component else 0,
                 text=component['text'],
                 showarrow=component['showarrow'] if 'showarrow' in component else True,
                 arrowhead=2,
@@ -217,7 +218,7 @@ def html_page_with_components(plotly_graph_file, fig, title, custom_html):
     with open(plotly_graph_file, "w", encoding="utf-8") as f:
         f.write(full_html)
 
-def ovr_metrics_fig(ovr_metrics_csv, ovr_monitor_start_write, fig=None):
+def ovr_metrics_fig(ovr_metrics_csv, ovr_monitor_start_write, fig=None, skip_means=False):
     if not os.path.exists(ovr_metrics_csv):
         print(f"OVR metrics CSV file {ovr_metrics_csv} does not exist.")
         return None
@@ -314,37 +315,38 @@ def ovr_metrics_fig(ovr_metrics_csv, ovr_monitor_start_write, fig=None):
     ))
 
     # Stats for OVR metrics only for first 60 seconds (60 ticks)
-    cpu_utilization_mean = df['cpu_utilization_percentage'][:60].mean()
-    fig.add_trace(go.Scatter(
-        x=np.array([df['Time Stamp'][0], df['Time Stamp'].iloc[-1]]),
-        y=np.array(list([cpu_utilization_mean] * 2)),
-        mode='lines',
-        name=f'CPU Utilization Mean: {cpu_utilization_mean:.2f}%',
-        line=dict(color='purple', dash='solid')
-    ))
+    if not skip_means:
+        cpu_utilization_mean = df['cpu_utilization_percentage'][:60].mean()
+        fig.add_trace(go.Scatter(
+            x=np.array([df['Time Stamp'][0], df['Time Stamp'].iloc[-1]]),
+            y=np.array(list([cpu_utilization_mean] * 2)),
+            mode='lines',
+            name=f'CPU Utilization Mean: {cpu_utilization_mean:.2f}%',
+            line=dict(color='purple', dash='solid')
+        ))
 
-    gpu_utilization_mean = df['gpu_utilization_percentage'][:60].mean()
-    fig.add_trace(go.Scatter(
-        x=np.array([df['Time Stamp'][0], df['Time Stamp'].iloc[-1]]),
-        y=np.array(list([gpu_utilization_mean] * 2)),
-        mode='lines',
-        name=f'GPU Utilization Mean: {gpu_utilization_mean:.2f}%',
-        line=dict(color='orange', dash='solid')
-    ))
+        gpu_utilization_mean = df['gpu_utilization_percentage'][:60].mean()
+        fig.add_trace(go.Scatter(
+            x=np.array([df['Time Stamp'][0], df['Time Stamp'].iloc[-1]]),
+            y=np.array(list([gpu_utilization_mean] * 2)),
+            mode='lines',
+            name=f'GPU Utilization Mean: {gpu_utilization_mean:.2f}%',
+            line=dict(color='orange', dash='solid')
+        ))
 
-    power_wattage_mean = df['power_wattage'][:60].mean()
-    fig.add_trace(go.Scatter(
-        x=np.array([df['Time Stamp'][0], df['Time Stamp'].iloc[-1]]),
-        y= np.array(list([power_wattage_mean] * 2)),
-        mode='lines',
-        name=f'Power Wattage Mean: {power_wattage_mean:.2f}W',
-        line=dict(color='magenta', dash='solid')
-    ))
+        power_wattage_mean = df['power_wattage'][:60].mean()
+        fig.add_trace(go.Scatter(
+            x=np.array([df['Time Stamp'][0], df['Time Stamp'].iloc[-1]]),
+            y= np.array(list([power_wattage_mean] * 2)),
+            mode='lines',
+            name=f'Power Wattage Mean: {power_wattage_mean:.2f}W',
+            line=dict(color='magenta', dash='solid')
+        ))
 
-    print(f"OVR Metrics Stats:\n"
-            f"CPU Utilization Mean: {cpu_utilization_mean:.2f}%\n"
-            f"GPU Utilization Mean: {gpu_utilization_mean:.2f}%\n"
-            f"Power Wattage Mean: {power_wattage_mean:.2f}W")
+        print(f"OVR Metrics Stats:\n"
+                f"CPU Utilization Mean: {cpu_utilization_mean:.2f}%\n"
+                f"GPU Utilization Mean: {gpu_utilization_mean:.2f}%\n"
+                f"Power Wattage Mean: {power_wattage_mean:.2f}W")
 
 
     return fig
@@ -354,6 +356,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate sensor activity graph from CSV.")
     parser.add_argument("logfile", help="Path to the input log file (CSV)")
     parser.add_argument("--skip_ovr_metrics", action='store_true', help="Enable plotting OVR metrics. Default: False")
+    parser.add_argument("--skip_ovr_means", action='store_true', help="Skip showing mean values for OVR metrics. Default: False")
     parser.add_argument("--ovr_metrics_csv", default='<exp_dir_path>/ovr_metrics.csv', help="Path to the OVR metrics CSV file. Default: <script_dir_path>/ovr_metrics.csv")
     parser.add_argument("--dict_file", default='<script_dir_path>/dict.json', help="Path to the dictionary file with parsing conditions (JSON). Default: <script_dir_path>/dict.json")
     parser.add_argument("--user_events", default='[]', help="Path to the user events file (JSON). Default: []")
@@ -370,7 +373,7 @@ if __name__ == "__main__":
     plot_ovr_metrics_enabled = not args.skip_ovr_metrics
 
     ovr_metrics_csv = args.ovr_metrics_csv.replace('<exp_dir_path>', (os.path.realpath(os.path.dirname(logfile_path))))
-    if not os.path.exists(ovr_metrics_csv):
+    if not os.path.exists(ovr_metrics_csv) and plot_ovr_metrics_enabled:
         print(f"[{script_name}] \033[1;33mWARNING\033[0m: OVR metrics CSV file {ovr_metrics_csv} does not exist. Skipping OVR metrics plotting.")
         plot_ovr_metrics_enabled = False
 
@@ -422,7 +425,7 @@ if __name__ == "__main__":
         for item in user_events:
             if 'label' in item and item['label'].lower() == 'ovr metrics start write':
                 ovr_monitor_start_write = helpers.add_timestamps(df['Time'].min(), pd.to_datetime(item['time'], format='%H:%M:%S.%f'))
-        ovr_fig = ovr_metrics_fig(ovr_metrics_csv, ovr_monitor_start_write)
+        ovr_fig = ovr_metrics_fig(ovr_metrics_csv, ovr_monitor_start_write, skip_means=args.skip_ovr_means)
         if ovr_fig:
             for trace in ovr_fig.data:
                 fig.add_trace(trace, secondary_y=True)
@@ -441,12 +444,12 @@ if __name__ == "__main__":
     timer_lag = pd.Timedelta(seconds=0)
     graph_start_time = df['Time'].min()
     graph_end_time = df['Time'].max()
-    for item in user_events:
-        if 'label' in item and 'device sleep' in item['label'].lower():
-            graph_end_time = pd.to_datetime(item['time'], format='%H:%M:%S.%f') + pd.Timedelta(
-                hours=graph_start_time.hour, minutes=graph_start_time.minute, seconds=graph_start_time.second,
-                milliseconds=graph_start_time.microsecond // 1000
-            )
+    # for item in user_events:
+        # if 'label' in item and 'device sleep' in item['label'].lower():
+        #     graph_end_time = pd.to_datetime(item['time'], format='%H:%M:%S.%f') + pd.Timedelta(
+        #         hours=graph_start_time.hour, minutes=graph_start_time.minute, seconds=graph_start_time.second,
+        #         milliseconds=graph_start_time.microsecond // 1000
+        #     )
     plot_additional_components(fig, user_events, graph_start_time)
     title = (
         plotly_graph_file.lower().split('experiments')[-1]

@@ -10,7 +10,7 @@
   {
     "label": "Camera 1",
     "key": "Camera1",
-    "color": "red",
+    "color": "darkred",
     "count": 1,
     "interval_start_strings": ["Camera 1 StartCamera"],
     "interval_stop_strings": ["Camera 1 StopCamera"]
@@ -61,7 +61,7 @@
   {
     "label": "ColorCamera 1",
     "key": "ColorCamera1",
-    "color": "red",
+    "color": "darkred",
     "count": 1,
     "interval_start_strings": ["ColorCamera 1", "starting"],
     "interval_stop_strings": ["ColorCamera 1", "Stop"]
@@ -101,7 +101,7 @@
    {
        "label": "ColorCamera 0(E/D)",
        "key": "ColorCamera0",
-       "color": "red",
+       "color": "darkred",
        "count": 1,
        "interval_start_strings": ["ColorCamera 0", "enabling"],
        "interval_stop_strings": ["ColorCamera 0", "disabling"]
@@ -165,7 +165,7 @@
   {
     "label": "ov7251 0x4",
     "key": "ov7251_0x4",
-    "color": "red",
+    "color": "darkred",
     "count": 1,
     "interval_start_strings": ["Start ov7251 streaming 0x4"],
     "interval_stop_strings": ["Stop ov7251 streaming 0x4"]
@@ -213,7 +213,7 @@
   {
     "label": "ov6211 0x100",
     "key": "ov6211_0x100",
-    "color": "red",
+    "color": "darkred",
     "count": 1,
     "interval_start_strings": ["Start ov6211 streaming 0x100"],
     "interval_stop_strings": ["Stop ov6211 streaming 0x100"]
@@ -251,7 +251,7 @@
     "interval_stop_strings": ["[passthrough]]", "stop","completed"]
   },
   {
-    "label": "IMX471",
+    "label": "RGB Cameras",
     "key": "IMX471",
     "color": "green",
     "count": 2,
@@ -269,7 +269,7 @@
   {
     "label": "OV7251",
     "key": "OV7251",
-    "color": "red",
+    "color": "darkred",
     "count": 2,
     "interval_start_strings": ["ov7251", "CAM_START_DEV"],
     "interval_stop_strings": ["ov7251", "CAM_STOP_DEV"]
