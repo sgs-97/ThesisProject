@@ -36,9 +36,9 @@ def get_hmd_umount_sleep_times(events_json):
     for event in events_json:
         if 'label' not in event:
             continue
-        if 'device unmount (log)' in event['label'].lower():
+        if 'device unmount (log)' in event['label'].lower() and event['type'] == 'line':
             hmd_umount_time = pd.to_datetime(event['time'], format='%H:%M:%S.%f', errors='coerce')
-        elif 'device sleep (log)' in event['label'].lower():
+        elif 'device sleep (log)' in event['label'].lower() and event['type'] == 'line':
             hmd_sleep_time = pd.to_datetime(event['time'], format='%H:%M:%S.%f', errors='coerce')
 
     if hmd_umount_time is None:
@@ -56,17 +56,21 @@ def get_pt_last_start_stop_times(pt_activations_intervals):
     df = pt_activations_intervals.copy()
     start_rows = df[df['type'].str.lower().str.contains('start')]
     if start_rows.empty:
-        raise ValueError("No start rows found in the passthrough activations intervals file.")
+        print("[\033[1;33mWARNING\033[0m] No start rows found in the passthrough activations intervals file")
+        return None, None
     stop_rows = df[df['type'].str.lower().str.contains('stop')]
     if stop_rows.empty:
-        raise ValueError("No stop rows found in the passthrough activations intervals file.")
+        print("[\033[1;33mWARNING\033[0m] No stop rows found in the passthrough activations intervals file")
+        return None, None
 
     pt_start_time = pd.to_datetime(start_rows['rel_time_to_start'].max(), format='%H:%M:%S.%f', errors='coerce') if not start_rows.empty else None
     if pt_start_time is pd.NaT:
-        raise ValueError(f"Invalid passthrough activation start rel_time_to_start found in the intervals file: {pt_activations_intervals['rel_time_to_start'].values}")
+        print(f"[\033[1;33mWARNING\033[0m] Invalid passthrough activation start rel_time_to_start found in the intervals file: {pt_activations_intervals['rel_time_to_start'].values}")
+        return None, None
     pt_stop_time = pd.to_datetime(stop_rows['rel_time_to_start'].max(), format='%H:%M:%S.%f', errors='coerce') if not stop_rows.empty else None
     if pt_stop_time is pd.NaT:
-        raise ValueError(f"Invalid passthrough activation stop rel_time_to_start found in the intervals file: {pt_activations_intervals['rel_time_to_start'].values}")
+        print(f"[\033[1;33mWARNING\033[0m] Invalid passthrough activation stop rel_time_to_start found in the intervals file: {pt_activations_intervals['rel_time_to_start'].values}")
+        return None, None
 
     return pt_start_time, pt_stop_time
 
@@ -104,6 +108,9 @@ if __name__ == '__main__':
 
     hmd_umount_time, hmd_sleep_time = get_hmd_umount_sleep_times(states_json)
     pt_start_time, pt_stop_time = get_pt_last_start_stop_times(pt_activations_intervals)
+    if pt_start_time is None or pt_stop_time is None:
+        print(f"[\033[1;33mWARNING\033[0m] Could not determine passthrough activation start/stop times for {os.path.basename(exp_dir)}. Skipping this experiment.")
+        exit(0)
 
     # pt_stop_time - pt_start_time must be less than 2 seconds to be conidered a qualifying before sleep spike
     if pt_stop_time - pt_start_time > pd.Timedelta(seconds=2):

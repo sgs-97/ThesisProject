@@ -25,9 +25,9 @@ def get_hmd_umount_sleep_times(events_json):
     for event in events_json:
         if 'label' not in event:
             continue
-        if 'device unmount (log)' in event['label'].lower():
+        if 'device unmount (log)' in event['label'].lower() and event['type'] == 'line':
             hmd_umount_time = pd.to_datetime(event['time'], format='%H:%M:%S.%f', errors='coerce')
-        elif 'device sleep (log)' in event['label'].lower():
+        elif 'device sleep (log)' in event['label'].lower() and event['type'] == 'line':
             hmd_sleep_time = pd.to_datetime(event['time'], format='%H:%M:%S.%f', errors='coerce')
 
     if hmd_umount_time is None:
@@ -73,17 +73,17 @@ if __name__ == '__main__':
         print(f"[\033[1;34mINFO\033[0m] HMD Unmount Times: {hmd_umount_time}")
         print(f"[\033[1;34mINFO\033[0m] HMD Sleep Times: {hmd_sleep_time}")
         
-    umount_to_sleep_duration = abs(pd.Timestamp(hmd_sleep_time) - pd.Timestamp(hmd_umount_time)).total_seconds() if (hmd_umount_time and hmd_sleep_time) else None
+    umount_to_sleep_durations = abs(pd.Timestamp(hmd_sleep_time) - pd.Timestamp(hmd_umount_time)).total_seconds() if (hmd_umount_time and hmd_sleep_time) else None
 
     # Report oddly large durations
-    if umount_to_sleep_duration is not None and umount_to_sleep_duration > 10:
-        print(f"[\033[1;31mWARNING\033[0m] Unmount to Passthrough Start Duration for: {os.path.dirname(exp_dir)}/{os.path.basename(exp_dir)} is unusually large: {umount_to_sleep_duration} seconds.")
+    if umount_to_sleep_durations is not None and umount_to_sleep_durations > 10:
+        print(f"[\033[1;31mWARNING\033[0m] Unmount to Passthrough Start Duration for: {os.path.dirname(exp_dir)}/{os.path.basename(exp_dir)} is unusually large: {umount_to_sleep_durations} seconds.")
     
     # Write to file (hmd_umount_sleep_pt_durations.csv)
 
     with open(output_file, 'w') as f:
-        f.write(f"umount_to_sleep_duration\n")
-        f.write(f"{umount_to_sleep_duration}\n")
+        f.write(f"umount_to_sleep_durations\n")
+        f.write(f"{umount_to_sleep_durations}\n")
 
     if verbosity >= 1:
         print(f"[\033[1;32mEXIT\033[0m] {script_name} ended successfully!\033[0m")

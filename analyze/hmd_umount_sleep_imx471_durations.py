@@ -36,9 +36,9 @@ def get_hmd_umount_sleep_times(events_json):
     for event in events_json:
         if 'label' not in event:
             continue
-        if 'device unmount (log)' in event['label'].lower():
+        if 'device unmount (log)' in event['label'].lower() and event['type'] == 'line':
             hmd_umount_time = pd.to_datetime(event['time'], format='%H:%M:%S.%f', errors='coerce')
-        elif 'device sleep (log)' in event['label'].lower():
+        elif 'device sleep (log)' in event['label'].lower() and event['type'] == 'line':
             hmd_sleep_time = pd.to_datetime(event['time'], format='%H:%M:%S.%f', errors='coerce')
 
     if hmd_umount_time is None:
