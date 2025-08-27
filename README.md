@@ -70,7 +70,32 @@
     python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'hmd_umount_to_sleep_durations.csv'
     python3 ./analyze/cdfs/hmd_umount_to_sleep_durations_cdf.py /path/to_super_parent_dir/hmd_umount_to_sleep_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
     ```
-4**imx471 spikes**: 
+4. **hmd umount lap to sleep lap duration**:
+   ```
+    scripts/hmd_umount_lap_to_sleep_lap_durations.sh /path/to/experiment_dir
+    ```
+    or for multiple directories:
+    ```
+    scripts/multi_hmd_umount_lap_to_sleep_lap_durations.sh /path/to/parent_dir
+    ```
+    ```
+    python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'hmd_umount_lap_to_sleep_lap_durations.csv'
+    python3 ./analyze/cdfs/hmd_umount_lap_to_sleep_lap_durations_cdf.py /path/to_super_parent_dir/hmd_umount_lap_to_sleep_lap_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
+    ```
+   ```
+5. **hmd umount log to lap duration**:
+   ```
+    scripts/hmd_umount_log_to_lap_durations.sh /path/to/experiment_dir
+    ```
+    or for multiple directories:
+    ```
+    scripts/multi_hmd_umount_log_to_lap_durations.sh /path/to/parent_dir
+    ```
+    ```
+    python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'hmd_umount_log_to_lap_durations.csv'
+    python3 ./analyze/cdfs/hmd_umount_log_to_lap_durations_cdf.py /path/to_super_parent_dir/hmd_umount_log_to_lap_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
+    ```
+6. **imx471 spikes**: 
    ```
     scripts/imx471_spikes_csv_dir.sh /path/to/experiment_dir
     ```
