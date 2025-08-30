@@ -57,6 +57,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         help=(
             "Comma-separated list of columns to average. "
             "Example: power_wattage,cpu_utilization_percentage,gpu_utilization_percentage"
+            "Use 'all' to include all columns except the timestamp column."
         ),
     )
     parser.add_argument(
@@ -116,7 +117,8 @@ def summarize_file(
             t = safe_float(row.get(ts_col))
             if t is None:
                 continue
-            if 0.0 <= t < time_window:
+            # If time_window is 0, include all rows
+            if time_window == 0 or (0.0 <= t < time_window):
                 rows_used += 1
                 for c in columns:
                     v = safe_float(row.get(c))
@@ -136,6 +138,43 @@ def ensure_parent_dir(path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
 
 
+def validate_and_get_columns(files: List[Path], args) -> Optional[List[str]]:
+    """
+    Checks that all files contain the required columns.
+    Returns the columns to use, or None if any file is missing columns.
+    """
+    # If --columns is 'all', get all columns except timestamp from the first file
+    if args.columns.strip().lower() == "all":
+        with files[0].open("r", encoding=args.encoding, newline="") as f:
+            reader = csv.DictReader(f, dialect=args.dialect)
+            header = reader.fieldnames or []
+            columns = [c for c in header if c != args.timestamp_column]
+    else:
+        columns = [c.strip() for c in args.columns.split(",") if c.strip()]
+
+    if not columns:
+        print("[ERROR] No columns specified for averaging.", file=sys.stderr)
+        return None
+
+    missing_files = []
+    required_columns = set(columns + [args.timestamp_column])
+    for fp in files:
+        with fp.open("r", encoding=args.encoding, newline="") as f:
+            reader = csv.DictReader(f, dialect=args.dialect)
+            header = reader.fieldnames or []
+            header_set = set(header)
+            missing = required_columns - header_set
+            if missing:
+                missing_files.append((fp, list(missing)))
+    if missing_files:
+        for fp, missing in missing_files:
+            print(f"[ERROR] {fp}: missing columns {missing}", file=sys.stderr)
+        print("[ERROR] Aborting due to missing columns in one or more files.", file=sys.stderr)
+        return None
+
+    return columns
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     args = parse_args(argv)
 
@@ -146,17 +185,18 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     output: Path = args.output if args.output else (root / "ovr_metrics_summary.csv")
     ensure_parent_dir(output)
-
-    columns = [c.strip() for c in args.columns.split(",") if c.strip()]
-    if not columns:
-        print("[ERROR] No columns specified for averaging.", file=sys.stderr)
-        return 1
-
     files = list(find_metric_files(root, args.filename))
     if not files:
         print(f"[WARN] No '{args.filename}' files found under: {root}", file=sys.stderr)
+        return 1
     else:
         print(f"[INFO] Found {len(files)} '{args.filename}' files under: {root}")
+
+    columns = validate_and_get_columns(files, args)
+    if columns is None:
+        return 1
+    else:
+        print(f"[INFO] Generating OVR Metrics summary for {len(files)} files with columns:\n  - " + "\n  - ".join(columns))
 
     # Prepare CSV header: file_path, n_rows, then one mean_* column per requested metric
     header = ["file_path", "n_rows"] + [f"mean_{c}" for c in columns]
@@ -178,7 +218,6 @@ def main(argv: Optional[List[str]] = None) -> int:
                 row = [str(fp.parent.relative_to(root)), n_rows] + [f"{means[c]:.2f}" for c in columns]
                 writer.writerow(row)
             except Exception as e:
-                # Write a row indicating failure with NaNs so issues are visible in the summary.
                 err_msg = f"[ERROR] {fp}: {e}"
                 print(err_msg, file=sys.stderr)
                 row = [str(fp.parent.relative_to(root)), 0] + [float("nan") for _ in columns]
