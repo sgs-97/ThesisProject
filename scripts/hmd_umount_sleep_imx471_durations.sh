@@ -45,10 +45,10 @@ function main() {
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-    if ! ls "$dir"/imx471_activations_intervals.csv 1> /dev/null 2>&1; then
-        print_warning "imx471_activations_intervals.csv not found in dir '$dir'. Running extract_imx471_activations.py"
-        python3 $SCRIPT_DIR/../analyze/extract_imx471_activations.py "$dir"
+    if [[ ! -s "$dir"/imx471_activations_intervals.csv ]]; then
+        print_warning "imx471_activations_intervals.csv not found or is empty in dir '$dir'. Running extract_imx471_activations.py"
     fi
+    python3 $SCRIPT_DIR/../analyze/extract_imx471_activations.py "$dir"
 
     python3 $SCRIPT_DIR/../analyze/hmd_umount_sleep_imx471_durations.py "$dir"
 

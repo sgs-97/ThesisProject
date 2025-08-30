@@ -251,7 +251,7 @@
     "interval_stop_strings": ["[passthrough]]", "stop","completed"]
   },
   {
-    "label": "RGB Cameras",
+    "label": "IMX471",
     "key": "IMX471",
     "color": "green",
     "count": 2,

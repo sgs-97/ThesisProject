@@ -109,12 +109,12 @@ if __name__ == '__main__':
     hmd_umount_time, hmd_sleep_time = get_hmd_umount_sleep_times(states_json)
     pt_start_time, pt_stop_time = get_pt_last_start_stop_times(pt_activations_intervals)
     if pt_start_time is None or pt_stop_time is None:
-        print(f"[\033[1;33mWARNING\033[0m] Could not determine passthrough activation start/stop times for {os.path.basename(exp_dir)}. Skipping this experiment.")
+        print(f"[\033[1;33mWARNING\033[0m] Could not determine passthrough activation start/stop times for {os.path.split(exp_dir)[-1]}. Skipping this experiment.")
         exit(0)
 
     # pt_stop_time - pt_start_time must be less than 2 seconds to be conidered a qualifying before sleep spike
     if pt_stop_time - pt_start_time > pd.Timedelta(seconds=2):
-        print(f"[\033[1;34mINFO\033[0m] Passthrough activation duration for {os.path.basename(exp_dir)} is too long: {pt_stop_time - pt_start_time}. Skipping this experiment.")
+        print(f"[\033[1;34mINFO\033[0m] Passthrough activation duration for {os.path.split(exp_dir)[-1]} is too long: {pt_stop_time - pt_start_time}. Skipping this experiment.")
         exit(0)
 
     if verbosity >= 1:

@@ -36,7 +36,9 @@ if __name__ == "__main__":
 
     out_dir = os.path.dirname(args.output) if args.output else os.path.dirname(os.path.realpath(args.csv_files[0]))
     matplolib_subdir = "analysis/cdfs/matplotlib/"
+    matplolib_subdir = ""
     plotly_subdir = "analysis/cdfs/plotly/"
+    plotly_subdir = ""
     matplotlib_extension = 'png'
     plotly_extension = 'html'
     stats_extension = 'txt'

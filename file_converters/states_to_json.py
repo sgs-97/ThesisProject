@@ -18,7 +18,9 @@ def convert_states_to_json(log_csv, states_fpath):
         for line in states_file:
             if line.strip():  # Ignore empty lines
                 dict.append({})  # Create a new dictionary for each line
+                line = line.replace('  - ',' - ').replace(' -  ',' - ')
                 time, state = line.strip().split(' - ')
+                time = time.replace(' ', '')
                 if pd.to_datetime(time, format='%H:%M:%S.%f', errors='coerce') is pd.NaT:
                     raise ValueError(f"Invalid time format: {time} in line \'{line}\',\nfile: {states_fpath}")
                 dict[len(dict)-1]["type"] = "line"
@@ -127,6 +129,7 @@ def convert_states_to_json(log_csv, states_fpath):
 
         app_start_found = False
         app_stop_dict = {}
+        device_sleep_dict = {}
         for index, row in log_df.iterrows():
             time = pd.to_datetime(row['Time'], format='%H:%M:%S.%f', errors='coerce')
             event = row['Message']
@@ -156,7 +159,6 @@ def convert_states_to_json(log_csv, states_fpath):
                     "orientation": "vertical",
                     "time": formatted_time,
                     "label": 'App Stop (log)',
-                    # "label": 'App Stop (log): ' + event.strip().split('Process ')[-1].strip().split(' (pid')[0],
                     "linetype": "solid",
                     "color": "green"
                 }
@@ -197,17 +199,29 @@ def convert_states_to_json(log_csv, states_fpath):
                     "color": "blue"
                 })
 
+
             # Device Sleep
             if 'shellapp' in event.lower() and 'going to sleep' in event.lower():
                 # If the event is "going to sleep", keep it as a vertical line
-                dict.append({
+                device_sleep_dict = {
                     "type": "line",
                     "orientation": "vertical",
                     "time": formatted_time,
                     "label": 'Device Sleep (log)',
                     "linetype": "solid",
                     "color": "black"
-                })
+                }
+            elif 'powermanagerservice' in event.lower() and 'going to sleep' in event.lower():
+                # If the event is "PowerManagerService: Going to sleep", keep it as a vertical line
+                device_sleep_dict = {
+                    "type": "line",
+                    "orientation": "vertical",
+                    "time": formatted_time,
+                    "label": 'Device Sleep (log)',
+                    "linetype": "solid",
+                    "color": "black"
+                }
+            # Add device_sleep_dict to the dictionary if it was found. This is done because I only want 1 device sleep event and that is the last one in the log.
 
             # OVR Metrics Tool Start
             if 'ActivityTaskManager: START'.lower() in event.lower() and 'com.oculus.ovrmonitormetricsservice' in event.lower():
@@ -236,6 +250,8 @@ def convert_states_to_json(log_csv, states_fpath):
     # Add app_stop_dict to the dictionary if it was found. This is done because I only want 1 app stop event and that is the last one in the log.
     if app_stop_dict:
         dict.append(app_stop_dict)
+    if device_sleep_dict:
+        dict.append(device_sleep_dict)
     return dict
 
 if __name__ == '__main__':

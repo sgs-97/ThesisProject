@@ -4,7 +4,8 @@
 
 function show_help() {
     echo "Description:"
-    echo "  Run hmd_umount_to_sleep_durations.py on the specified directory containing log and annotation (laps) data after being preprocessed."
+    echo "  Run hmd_
+    umount_to_sleep_durations.py on the specified directory containing log and annotation (laps) data after being preprocessed."
     echo
     echo "Usage: path/to/$(basename $0) [args] [options]" # Keep as it is
     echo

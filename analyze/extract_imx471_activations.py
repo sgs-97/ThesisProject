@@ -49,6 +49,7 @@ if __name__ == '__main__':
     if not os.path.exists(events_json_fpath):
         print(f"[\033[1;31mERROR\033[0m] The events JSON file '{events_json_fpath}' does not exist.")
         exit(1)
+    start_rec_time = None
     with open(events_json_fpath, 'r') as f:
         events_data = json.load(f)
         for event in events_data:
@@ -77,7 +78,10 @@ if __name__ == '__main__':
                 sensors_events_list = sensor_events[sensor_name]
                 for sensor_event in sensors_events_list:
                     rel_time_to_start = helpers.pd_timedelta_to_timestring(helpers.timedelta_pd(pd.Timestamp(sensor_event['Time']), abs_start_time))  # Convert to HH:MM:SS.ssssss format
-                    rel_time_to_start_rec = int((pd.Timestamp(sensor_event['Time']) - abs_start_time - start_rec_time).total_seconds()*1e9) # Convert to nanoseconds
+                    if start_rec_time:
+                        rel_time_to_start_rec = int((pd.Timestamp(sensor_event['Time']) - abs_start_time - start_rec_time).total_seconds()*1e9) # Convert to nanoseconds
+                    else:
+                        rel_time_to_start_rec = "-"
 
                     f.write(f"{sensor_name},{sensor_event['Type']},{sensor_event['Time']},{rel_time_to_start},{rel_time_to_start_rec}\n")
 

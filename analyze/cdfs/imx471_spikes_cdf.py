@@ -52,7 +52,7 @@ if __name__ == "__main__":
     # Use --output if provided, otherwise default
     matplotlib_output_file = args.output or os.path.join(out_dir, matplolib_subdir, f"{base_name}.{matplotlib_extension}")
     plotly_output_file = args.output or os.path.join(out_dir, plotly_subdir, f"{base_name}.{plotly_extension}")
-    output_stats_file = os.path.realpath(args.output).split('.')[0] + f'.{stats_extension}' or os.path.join(out_dir, matplolib_subdir, f"{base_name}_stats.{stats_extension}")
+    output_stats_file = args.output.split('.')[0] + f'.{stats_extension}' or os.path.join(out_dir, matplolib_subdir, f"{base_name}_stats.{stats_extension}")
 
     # Plot
     if args.graphing_tool == "matplotlib":
