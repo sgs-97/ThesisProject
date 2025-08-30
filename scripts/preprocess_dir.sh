@@ -151,7 +151,7 @@ function main() {
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
     no_adb_log_csv_files=$(find "$dir" -maxdepth 1 -type f -name "adb_log_*.csv" | wc -l)
-    if [[ $no_adb_log_csv_files != 0 ]] && [[ $skip_on_exist == true ]]; then
+    if [[ "$no_adb_log_csv_files" -ne 0 && "$skip_on_exist" == true ]]; then
       print_info "Skipping log_to_csv conversion as CSV files already exist in '$dir'."
     else
       python3 "$SCRIPT_DIR"/../file_converters/log_to_csv.py "$dir"/adb_log_*.log
