@@ -1,9 +1,14 @@
-import json
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 import datetime
 from tabulate import tabulate
+import stat
+from pathlib import Path
+from typing import Iterable, Tuple, Dict, Any, List, Optional
+from pathlib import Path
+import os
 
 def timedelta_pd(t1, t2, maintain_sign=False, format='%H:%M:%S.%f'):
     """
@@ -556,3 +561,331 @@ def print_table(data: List, headers: List[str] = None, table_format: str = "grid
         if headers is None:
             headers = data[0].keys() if data else []
         print(tabulate(data, headers=headers, tablefmt=table_format))
+
+# File i/o utilities
+def sanitize_path(path: str | os.PathLike) -> Path:
+    """Normalize a path string and reject dangerous characters."""
+    s = str(path)
+    if not s or "\x00" in s or any(ord(c) < 32 for c in s):
+        raise ValueError(f"Invalid path string: {s!r}")
+    return Path(s).absolute()
+
+def inside_base(p: Path, base_dir: str | os.PathLike) -> bool:
+    """Return True if p is inside base_dir (prevents path traversal)."""
+    base = Path(base_dir).resolve(strict=False)
+    try:
+        p.relative_to(base)
+        return True
+    except Exception:
+        return False
+
+def file_exists(path: str | os.PathLike, *, base_dir: str | os.PathLike | None = None,
+                allow_symlink: bool = False) -> bool:
+    """Sanitize → optional containment → existence → regular file (optionally reject symlinks)."""
+    p = sanitize_path(path)
+    if base_dir and not inside_base(p, base_dir):
+        return False
+    if not p.exists() or not p.is_file():
+        return False
+    if not allow_symlink and p.is_symlink():
+        return False
+    return True
+
+def dir_exists(path: str | os.PathLike, *, base_dir: str | os.PathLike | None = None,
+               allow_symlink: bool = False) -> bool:
+    """Sanitize → optional containment → existence → directory (optionally reject symlinks)."""
+    p = sanitize_path(path)
+    if base_dir and not inside_base(p, base_dir):
+        return False
+    if not p.exists() or not p.is_dir():
+        return False
+    if not allow_symlink and p.is_symlink():
+        return False
+    return True
+
+def ensure_file(
+        path: str | os.PathLike,
+        *,
+        base_dir: str | os.PathLike | None = None,
+        allow_symlink: bool = False,
+        create: bool = False
+) -> Path:
+    """
+    Ensure path is a valid, existing file.
+    Optionally create it if missing.
+    Raises ValueError / FileNotFoundError / IsADirectoryError if checks fail.
+    Returns a Path if valid.
+    """
+    p = sanitize_path(path)
+
+    if base_dir and not inside_base(p, base_dir):
+        raise ValueError(f"Path {p} escapes base directory {base_dir}")
+
+    if not p.exists():
+        if create:
+            # Create the file and its parent directories if needed
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.touch(exist_ok=True)
+        else:
+            raise FileNotFoundError(f"File does not exist: {p}")
+
+    if not p.is_file():
+        raise IsADirectoryError(f"Expected file, got directory: {p}")
+
+    if not allow_symlink and p.is_symlink():
+        raise ValueError(f"Symlinks not allowed: {p}")
+
+    return p
+
+def ensure_dir(
+        path: str | os.PathLike,
+        *,
+        base_dir: str | os.PathLike | None = None,
+        allow_symlink: bool = False,
+        create: bool = False
+) -> Path:
+    """
+    Ensure path is a valid, existing directory.
+    Optionally create it if missing.
+    Raises ValueError / FileNotFoundError / NotADirectoryError if checks fail.
+    Returns a Path if valid.
+    """
+    p = sanitize_path(path)
+
+    if base_dir and not inside_base(p, base_dir):
+        raise ValueError(f"Path {p} escapes base directory {base_dir}")
+
+    if p.exists():
+        if not p.is_dir():
+            raise NotADirectoryError(f"Expected directory, got file: {p}")
+        if not allow_symlink and p.is_symlink():
+            raise ValueError(f"Symlinks not allowed: {p}")
+    else:
+        if create:
+            p.mkdir(parents=True, exist_ok=True)
+        else:
+            raise FileNotFoundError(f"Directory does not exist: {p}")
+
+    return p
+
+def ensure_parent_dir(path: str | os.PathLike, *, base_dir: str | os.PathLike | None = None,
+                      allow_symlink: bool = False, create: bool = True) -> Path:
+    """Ensure the parent directory of path exists and is a valid directory."""
+    p = sanitize_path(path)
+    parent = p.parent
+    return ensure_dir(parent, base_dir=base_dir, allow_symlink=allow_symlink, create=create)
+
+def try_file(*args, **kwargs) -> Path | None:
+    """Return Path if ensure_file() succeeds, else None."""
+    try:
+        return ensure_file(*args, **kwargs)
+    except Exception:
+        return None
+
+def try_dir(*args, **kwargs) -> Path | None:
+    """Return Path if ensure_dir() succeeds, else None."""
+    try:
+        return ensure_dir(*args, **kwargs)
+    except Exception:
+        return None
+
+def validate_safe_path(
+        path: str | os.PathLike,
+        *,
+        # Containment / traversal
+        base_dir: str | os.PathLike | None = None,   # if set, path must stay inside this directory
+        allow_symlinks: bool = False,                # reject if the path or any parent is a symlink
+        follow_symlinks: bool = False,               # if True, resolve symlinks when comparing to base_dir
+        # Existence / type
+        require_exists: bool = True,                 # True: path must exist; False: parent must exist & be writable
+        must_be: str = "any",                        # "file" | "dir" | "any"
+        allow_special_files: bool = False,           # if False, disallow sockets, FIFOs, devices
+        allowed_exts: Optional[Iterable[str]] = None,# if set and must_be=="file", restrict suffixes (e.g., {".txt",".csv"})
+        # Permissions / ownership
+        require_read: bool = True,
+        require_write: bool = False,
+        require_exec: bool = False,
+        forbid_world_writable_dirs: bool = True,     # reject world-writable dirs without sticky bit in the path
+        required_uid: Optional[int] = None,          # if set, require path owner uid
+        required_gid: Optional[int] = None,          # if set, require path owner gid
+        # Size & name hygiene
+        max_size_bytes: Optional[int] = None,        # only checked for files when they exist
+        max_name_length: int = 255,                  # typical FS limit per component
+) -> Tuple[bool, Dict[str, Any]]:
+    """
+    Validate that `path` is a safe, valid, and (optionally) existing filesystem path.
+
+    Returns:
+        (ok, details) where ok is bool and details contains either "ok": True info or "error": str and "reasons": [..].
+
+    Safety covered:
+      - Null bytes / control chars in names; component length limits
+      - Optional base_dir containment to prevent path traversal
+      - Optional rejection of symlinks (on the path and its parents)
+      - Optional resolution of symlinks when enforcing containment
+      - Existence checks (path or parent)
+      - Type checks: file/dir; disallow special files unless allowed
+      - Permission checks: read/write/execute using os.access
+      - World-writable dir checks (reject if no sticky bit)
+      - Optional ownership (uid/gid) and max file size
+      - Optional extension whitelist for files
+    """
+    reasons: List[str] = []
+    p = Path(path)
+
+    # 0) Basic string hygiene
+    s = str(p)
+    if not s:
+        reasons.append("empty path string")
+    if "\x00" in s:
+        reasons.append("path contains NUL byte")
+    # Control chars that can cause issues in logs/terminals
+    if any(ord(ch) < 32 for ch in s):
+        reasons.append("path contains control characters")
+
+    # 1) Normalize base_dir (if any)
+    base = Path(base_dir).resolve() if base_dir else None
+
+    # 2) Resolve path for containment check (optionally following symlinks)
+    try:
+        if follow_symlinks:
+            resolved_for_containment = p.resolve(strict=False)
+        else:
+            # Absolute without resolving symlinks
+            resolved_for_containment = (p if p.is_absolute() else Path.cwd() / p)
+    except Exception as e:
+        reasons.append(f"failed to normalize path: {e!s}")
+        resolved_for_containment = p
+
+    # 3) Component sanity (length & special names)
+    for comp in resolved_for_containment.parts:
+        if comp in (".",):
+            continue
+        if comp in ("..",):
+            # not automatically unsafe, but indicates traversal intent
+            reasons.append("path contains '..' traversal")
+        if len(comp) > max_name_length:
+            reasons.append(f"path component too long (> {max_name_length}): {comp!r}")
+
+    # 4) Symlink policy: reject if path or any parent is a symlink
+    if not allow_symlinks:
+        cur = resolved_for_containment
+        try:
+            # Walk up to filesystem root (or base_dir if given)
+            stop_at = base if base else cur.anchor
+            for ancestor in [cur, *cur.parents]:
+                try:
+                    st = os.lstat(ancestor)
+                except FileNotFoundError:
+                    # If it doesn't exist yet, check the existing parents only
+                    continue
+                if stat.S_ISLNK(st.st_mode):
+                    reasons.append(f"symlink not allowed: {ancestor}")
+                if base and ancestor == base:
+                    break
+                if str(ancestor) == str(stop_at):
+                    break
+        except Exception as e:
+            reasons.append(f"failed while checking symlinks: {e!s}")
+
+    # 5) Containment: ensure path stays within base_dir
+    if base is not None:
+        try:
+            # Compare using .resolve() for base; for the candidate we already computed per follow_symlinks flag
+            resolved_for_containment.relative_to(base)
+        except Exception:
+            reasons.append(f"path escapes base_dir: {resolved_for_containment} !∈ {base}")
+
+    # 6) Existence and parent checks
+    exists = p.exists()
+    if require_exists and not exists:
+        reasons.append("path does not exist but require_exists=True")
+    if not require_exists:
+        parent = p.parent if p.parent != Path("") else Path(".")
+        if not parent.exists():
+            reasons.append(f"parent directory does not exist: {parent}")
+        elif not os.access(parent, os.W_OK):
+            reasons.append(f"parent directory not writable: {parent}")
+
+    # 7) Type checks
+    if exists:
+        try:
+            st = os.lstat(p)
+        except OSError as e:
+            reasons.append(f"failed to stat path: {e.strerror or e}")
+            st = None
+        if st is not None:
+            mode = st.st_mode
+            is_file = stat.S_ISREG(mode)
+            is_dir = stat.S_ISDIR(mode)
+            is_special = stat.S_ISSOCK(mode) or stat.S_ISFIFO(mode) or stat.S_ISCHR(mode) or stat.S_ISBLK(mode)
+
+            if must_be == "file" and not is_file:
+                reasons.append("path must be a regular file")
+            if must_be == "dir" and not is_dir:
+                reasons.append("path must be a directory")
+            if not allow_special_files and is_special:
+                reasons.append("special files (socket/FIFO/device) are not allowed")
+
+            # Ownership checks
+            if required_uid is not None and st.st_uid != required_uid:
+                reasons.append(f"owner uid mismatch: {st.st_uid} != {required_uid}")
+            if required_gid is not None and st.st_gid != required_gid:
+                reasons.append(f"group gid mismatch: {st.st_gid} != {required_gid}")
+
+            # Permission checks (use access so ACLs are respected)
+            if require_read and not os.access(p, os.R_OK):
+                reasons.append("no read permission")
+            if require_write and not os.access(p, os.W_OK):
+                reasons.append("no write permission")
+            if require_exec and not os.access(p, os.X_OK):
+                reasons.append("no execute permission")
+
+            # Extension whitelist
+            if allowed_exts and is_file:
+                suffix = p.suffix.lower()
+                allowed_norm = {e.lower() for e in allowed_exts}
+                if suffix not in allowed_norm:
+                    reasons.append(f"file extension {suffix!r} not in allowed set {sorted(allowed_norm)}")
+
+            # Size check
+            if max_size_bytes is not None and is_file:
+                try:
+                    size = p.stat().st_size
+                    if size > max_size_bytes:
+                        reasons.append(f"file too large: {size} B > {max_size_bytes} B")
+                except OSError as e:
+                    reasons.append(f"failed to get file size: {e.strerror or e}")
+
+    # 8) Directory world-writable checks (walk up to base_dir or root)
+    if forbid_world_writable_dirs:
+        target_dir = p if (exists and p.is_dir()) else p.parent
+        for d in [target_dir, *target_dir.parents]:
+            try:
+                st = os.lstat(d)
+            except FileNotFoundError:
+                continue
+            if stat.S_ISDIR(st.st_mode):
+                world_writable = bool(st.st_mode & stat.S_IWOTH)
+                sticky = bool(st.st_mode & stat.S_ISVTX)
+                if world_writable and not sticky:
+                    reasons.append(f"unsafe world-writable dir without sticky bit: {d}")
+            if base and d == base:
+                break
+
+    ok = len(reasons) == 0
+    details: Dict[str, Any] = {
+        "ok": ok,
+        "path": str(p),
+        "normalized": str(resolved_for_containment),
+    }
+    if ok:
+        return True, details
+    else:
+        details["error"] = "path validation failed"
+        details["reasons"] = reasons
+        return False, details
+
+def is_safe_path(path, **kwargs) -> bool:
+    ok, _ = validate_safe_path(path, **kwargs)
+    return ok
