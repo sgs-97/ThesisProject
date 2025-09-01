@@ -6,7 +6,6 @@ import matplotlib
 import json
 import os
 import helpers
-import extract_imx471_spikes
 
 # Use Overleaf/LaTeX font everywhere
 matplotlib.rcParams.update({
@@ -53,6 +52,7 @@ def plot_additional_components(ax, additional_components, graph_start_time, excl
                         milliseconds=timestamp.microsecond // 1000
                     ).total_seconds() - graph_start_time.total_seconds()
                     ax.plot([x, x], [0, 1], color=component.get('color', 'black'), linestyle=linetype, linewidth=component.get('width', 1), label=None)
+                    # ax.plot([x, x], [0, 1], color=component.get('color', 'black'), linestyle=linetype, linewidth=component.get('width', 1), label=component['label'])
                     # ax.plot([x, x], [0, 1], color=component.get('color', 'black'), linestyle=linetype, linewidth=component.get('width', 1), label=component.get('label', None))
                 elif component['orientation'] == 'horizontal':
                     y = component['time']
@@ -97,7 +97,7 @@ def plot_additional_components(ax, additional_components, graph_start_time, excl
             ).total_seconds() - graph_start_time.total_seconds()
             ax.annotate(
                 component['text'],
-                xy=(x-3.6, float(component['y'])),
+                xy=(x, float(component['y'])),
                 xytext=(float(component.get('xshift', 0)), float(component.get('yshift', 0))),
                 textcoords='offset points',
                 # arrowprops=dict(arrowstyle='->'),
@@ -234,57 +234,40 @@ if __name__ == "__main__":
     script_name = os.path.basename(__file__)
     parser = argparse.ArgumentParser(description="Generate sensor activity graph from CSV.")
     parser.add_argument("logfile", help="Path to the input log file (CSV)")
-    parser.add_argument("--skip_ovr_metrics", action='store_true', help="Enable plotting OVR metrics. Default: False")
-    parser.add_argument("--skip_ovr_means", action='store_true', help="Skip showing mean values for OVR metrics. Default: False")
-    parser.add_argument("--ovr_metrics_csv", default='<exp_dir_path>/ovr_metrics.csv', help="Path to the OVR metrics CSV file. Default: <script_dir_path>/ovr_metrics.csv")
-    parser.add_argument("--dict_file", default='<script_dir_path>/dict.json', help="Path to the dictionary file with parsing conditions (JSON). Default: <script_dir_path>/dict.json")
-    parser.add_argument("--user_events", default='<exp_dir_path>/annotated_events.json', help="Path to the user events file (JSON). Default: '<exp_dir_path>/annotated_events.json'")
+    parser.add_argument("--dict_file", default='SCRIPT_DIR/dict.json', help="Path to the dictionary file with parsing conditions (JSON). Default: SCRIPT_DIR/dict.json")
+    parser.add_argument("--user_events", default='EXP_DIR/annotated_events.json', help="Path to the user events file (JSON). Default: 'EXP_DIR/annotated_events.json'")
     parser.add_argument("--output", default='<logfile_dir>/sensor_activity_graph.png', help="Path to save the output graph. Default: <logfile_dir>/sensor_activity_graph.png")
-    parser.add_argument('--include_imx471_spikes_csv', action='store_true', help='Include IMX471 spikes CSV in the output. Default: False')
-    parser.add_argument("--show_in_browser", action='store_true', help="Show the figure in the browser. Default: False")
-    parser.add_argument('--include_video', action='store_true', help='Include timestamped video in the output HTML (if found inside the directory where the graph is going to be placed). Default: False')
+    parser.add_argument("--show_in_browser", action='store_true', help="Show the figure. Default: False")
+    parser.add_argument("--skip_ovr_metrics", action='store_true', help="Skip plotting OVR metrics. Default: False")
+    parser.add_argument("--skip_ovr_means", action='store_true', help="Skip showing mean values for OVR metrics. Default: False")
+    parser.add_argument("--ovr_metrics_csv", default='EXP_DIR/ovr_metrics.csv', help="Path to the OVR metrics CSV file. Default: SCRIPT_DIR/ovr_metrics.csv")
     parser.add_argument('--exclude_attributes', type=str, default='', help='Comma-separated list of attributes to show on the graph. Default: empty list -> plots all')
     parser.add_argument('--title', type=str, default='', help='Title of the graph. Default: empty string -> uses logfile name')
-    parser.add_argument('--remove_title', action='store_true', help='Remove title from the graph. Default: False')
     parser.add_argument('--from_ts', type=int, default=None, help='Start time in milliseconds for plotting. Default: None (start of log)')
     parser.add_argument('--to_ts', type=int, default=None, help='End time in milliseconds for plotting. Default: None (end of log)')
+    parser.add_argument('--remove_title', action='store_true', help='Remove title from the graph. Default: False')
+    parser.add_argument('--remove_legend', action='store_true', help='Remove the legend from the plot.')
+    parser.add_argument('--remove_yaxis_label', action='store_true', help='Remove the y-axis label from the plot.')
+    parser.add_argument('--remove_xaxis_label', action='store_true', help='Remove the x-axis label from the plot.')
     args = parser.parse_args()
 
-    logfile_path = os.path.realpath(args.logfile)
-    if not os.path.exists(logfile_path):
-        raise FileNotFoundError(f"CSV file {logfile_path} does not exist.")
+    logfile_path = helpers.ensure_file(args.logfile)
 
-    plot_ovr_metrics_enabled = not args.skip_ovr_metrics
+    dict_file_path = helpers.ensure_file(args.dict_file.replace('SCRIPT_DIR', (os.path.realpath(os.path.dirname(__file__)))))
+    output_file = helpers.ensure_dir(os.path.realpath(args.output.replace('<logfile_dir>', (os.path.realpath(os.path.dirname(logfile_path))))), create=True)
 
-    ovr_metrics_csv = args.ovr_metrics_csv.replace('<exp_dir_path>', (os.path.realpath(os.path.dirname(logfile_path))))
-    if not os.path.exists(ovr_metrics_csv) and plot_ovr_metrics_enabled:
-        print(f"[{script_name}] \033[1;33mWARNING\033[0m: OVR metrics CSV file {ovr_metrics_csv} does not exist. Skipping OVR metrics plotting.")
-        plot_ovr_metrics_enabled = False
-    skip_ovr_means = args.skip_ovr_means and plot_ovr_metrics_enabled
-
-    dict_file_path = args.dict_file.replace('<script_dir_path>', (os.path.realpath(os.path.dirname(__file__))))
-    if not os.path.exists(dict_file_path):
-        raise FileNotFoundError(f"JSON file {dict_file_path} does not exist.")
-
-    output_file = os.path.realpath(args.output.replace('<logfile_dir>', (os.path.realpath(os.path.dirname(logfile_path)))))
-    if not os.path.exists(os.path.dirname(output_file)):
-        os.makedirs(os.path.dirname(output_file), exist_ok=True)
-
-    user_events_path = args.user_events
-    user_events_path = user_events_path.replace('<exp_dir_path>', (os.path.realpath(os.path.dirname(logfile_path))))
-    show_in_browser = args.show_in_browser
-    include_video = args.include_video
+    show_figure = args.show_figure
     from_ts = args.from_ts
     to_ts = args.to_ts
 
     # Load additional user events components
+    user_events_path = helpers.try_file(args.user_events.replace('EXP_DIR', (os.path.realpath(os.path.dirname(logfile_path)))))
     user_events = []
-    if not os.path.exists(user_events_path):
-        print(f"[{script_name}] JSON file {user_events_path} does not exist. Continuing without user events.")
-        plot_ovr_metrics_enabled = False
-    else:
+    if user_events_path:
         with open(user_events_path, 'r') as dict_file:
             user_events = json.load(dict_file)
+    else:
+        plot_ovr_metrics_enabled = False
 
     # Load adb log (CSV)
     df = helpers.load_logfile_csv(logfile_path)
@@ -299,48 +282,44 @@ if __name__ == "__main__":
     fig, ax = sensor_events_fig(sensor_events, colors, sensor_names, df, exclude_attributes=exclude_attributes)
 
     # Plot OVR metrics if enabled
+    ovr_metrics_csv = helpers.try_file(args.ovr_metrics_csv.replace('EXP_DIR', (os.path.realpath(os.path.dirname(logfile_path)))))
+    if not ovr_metrics_csv:
+        print(f"[{script_name}] \033[1;33mWARNING\033[0m: OVR metrics CSV file {ovr_metrics_csv} does not exist. Skipping OVR metrics plotting.")
+    plot_ovr_metrics_enabled = not args.skip_ovr_metrics and ovr_metrics_csv is not None
     print(f"[{script_name}] Plot OVR Metrics Enabled: {plot_ovr_metrics_enabled}")
     ax2 = None
     if plot_ovr_metrics_enabled:
         ovr_monitor_start_write = df['Time'].min()
-        ovr_metrics_start_time_file = os.path.join(os.path.dirname(logfile_path), 'ovr_metrics_start_time.txt')
-        if os.path.exists(ovr_metrics_start_time_file):
+        ovr_metrics_start_time_file = helpers.try_file(os.path.join(os.path.dirname(logfile_path), 'ovr_metrics_start_time.txt'))
+        if ovr_metrics_start_time_file:
             with open(ovr_metrics_start_time_file, 'r') as f:
                 ovr_monitor_start_write = pd.to_datetime(f.read().strip(), format='%H:%M:%S.%f')
-        else:
+        else: # No real need because the data will be useless if not aligned. Keep for debugging purposes
             print(f"[{script_name}] \033[1;33mWARNING\033[0m: OVR metrics start time file {ovr_metrics_start_time_file} does not exist. Using default value.")
         for item in user_events:
             if 'label' in item and item['label'].lower() == 'ovr metrics start write':
                 ovr_monitor_start_write = helpers.add_timestamps(df['Time'].min(), pd.to_datetime(item['time'], format='%H:%M:%S.%f'))
-        ax2 = ovr_metrics_fig(ovr_metrics_csv, ovr_monitor_start_write, ax=ax, exclude_attributes=exclude_attributes, time0=time0, from_ts=args.from_ts, to_ts=args.to_ts, skip_means=skip_ovr_means)
+        ax2 = ovr_metrics_fig(ovr_metrics_csv, ovr_monitor_start_write, ax=ax, exclude_attributes=exclude_attributes, time0=time0, from_ts=args.from_ts, to_ts=args.to_ts, skip_means=args.skip_ovr_means)
 
     # Fig formatting and layout
     timer_lag = 0
     # Apply from_ts and to_ts filtering
+    graph_start_time = pd.Timedelta(milliseconds=0)
     if from_ts is not None:
-        from_time = time0 + pd.Timedelta(milliseconds=from_ts)
-    else:
-        from_time = time0
-    graph_start_time = (from_time - time0)
+        graph_start_time = pd.Timedelta(milliseconds=from_ts)
     if to_ts is not None:
         to_time = time0 + pd.Timedelta(milliseconds=to_ts)
         graph_end_time = pd.Timedelta(milliseconds=to_ts)
     else:
         to_time = df['Time'].max()
         graph_end_time = (to_time - time0)
-        # for item in user_events:
-        #     if 'label' in item and 'device sleep' in item['label'].lower():
-        #         graph_end_time = (pd.to_datetime(item['time'], format='%H:%M:%S.%f') + pd.Timedelta(
-        #             hours=time0.hour, minutes=time0.minute, seconds=time0.second,
-        #             milliseconds=time0.microsecond // 1000
-        #         ) - time0)
 
     ax.set_xlim(graph_start_time.total_seconds(), graph_end_time.total_seconds())
 
-    plot_additional_components(ax, user_events, graph_start_time, exclude_labels=exclude_attributes)
+    plot_additional_components(ax, user_events, pd.Timedelta(milliseconds=0), exclude_labels=exclude_attributes)
 
+    # Title and labels
     if not args.remove_title:
-        # Title: split by slash and add spaces, only last three parts
         title = args.title
         if not title:
             title_parts = os.path.relpath(output_file).split('/')[-4:-1]
@@ -348,13 +327,17 @@ if __name__ == "__main__":
         else:
             title = r'\textbf{' + title.replace('_', r'\_') + '}'
         ax.set_title(title, fontsize=24)
-
+    if args.remove_xaxis_label:
+        ax.set_xlabel("")
+    if args.remove_yaxis_label:
+        ax.set_ylabel("")
     # Unified legend for both axes
     handles1, labels1 = ax.get_legend_handles_labels()
     handles2, labels2 = (ax2.get_legend_handles_labels() if ax2 is not None else ([], []))
     handles = handles1 + handles2
     labels = labels1 + labels2
-    if handles and labels:
+
+    if not args.remove_legend and handles and labels:
         legend = ax.legend(handles, labels, loc='lower left', bbox_to_anchor=(0.0, 1.0), fontsize=24, frameon=True, ncol=2,  prop={'weight':'bold'})
         for text in legend.get_texts():
             text.set_fontweight('bold')
@@ -362,16 +345,7 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.savefig(output_file, dpi=600)
-    if show_in_browser:
+    if show_figure:
         plt.show()
 
     print(f"[{script_name}] Graph has been generated and saved to {output_file}")
-
-    if args.include_imx471_spikes_csv:
-        imx471_spikes_csv = os.path.join(os.path.dirname(output_file), 'imx471_spikes.csv')
-        non_overlapping_imx = extract_imx471_spikes.get_imx_spikes(sensor_events)
-        with open(imx471_spikes_csv, 'w') as f:
-            f.write("start,end,duration,label\n")
-            for interval in non_overlapping_imx:
-                f.write(f"{interval['start']},{interval['end']},{interval['duration'].total_seconds()},{interval['label']}\n")
-        print(f"[{script_name}] IMX471 spikes CSV has been saved to {imx471_spikes_csv}")

@@ -444,12 +444,12 @@ if __name__ == "__main__":
     timer_lag = pd.Timedelta(seconds=0)
     graph_start_time = df['Time'].min()
     graph_end_time = df['Time'].max()
-    # for item in user_events:
-        # if 'label' in item and 'device sleep' in item['label'].lower():
-        #     graph_end_time = pd.to_datetime(item['time'], format='%H:%M:%S.%f') + pd.Timedelta(
-        #         hours=graph_start_time.hour, minutes=graph_start_time.minute, seconds=graph_start_time.second,
-        #         milliseconds=graph_start_time.microsecond // 1000
-        #     )
+    for item in user_events:
+        if 'label' in item and 'device sleep' in item['label'].lower():
+            graph_end_time = pd.to_datetime(item['time'], format='%H:%M:%S.%f') + pd.Timedelta(
+                hours=graph_start_time.hour, minutes=graph_start_time.minute, seconds=graph_start_time.second,
+                milliseconds=graph_start_time.microsecond // 1000
+            )
     plot_additional_components(fig, user_events, graph_start_time)
     title = (
         plotly_graph_file.lower().split('experiments')[-1]

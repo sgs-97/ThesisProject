@@ -14,112 +14,6 @@ def convert_states_to_json(log_csv, states_fpath):
     x_mount = 0  # Placeholder for the mount x value, if needed
     x_unmount = 0  # Placeholder for the unmount x value, if needed
     x_idle = 0  # Placeholder for the idle x value, if needed
-    with open(states_fpath, 'r') as states_file:
-        for line in states_file:
-            if line.strip():  # Ignore empty lines
-                dict.append({})  # Create a new dictionary for each line
-                line = line.replace('  - ',' - ').replace(' -  ',' - ')
-                time, state = line.strip().split(' - ')
-                time = time.replace(' ', '')
-                if pd.to_datetime(time, format='%H:%M:%S.%f', errors='coerce') is pd.NaT:
-                    raise ValueError(f"Invalid time format: {time} in line \'{line}\',\nfile: {states_fpath}")
-                dict[len(dict)-1]["type"] = "line"
-                dict[len(dict)-1]["orientation"] = "vertical"  # Assuming vertical orientation since all events will be vertical lines
-                dict[len(dict)-1]["time"] = str(time)
-                dict[len(dict)-1]["label"] = str(state)
-                dict[len(dict)-1]["linetype"] = "dash"
-                if state.lower() == "start":
-                    dict[len(dict)-1]["color"] = "green"
-                elif state.lower() == "mount":  # Assuming "mount" indicates the start of a mounted period
-                    dict[len(dict)-1]["color"] = "blue"
-                    x_mount = pd.Timestamp(time)  # Update mount x value
-                elif state.lower() == "idle":
-                    dict[len(dict)-1]["color"] = "gray"
-                    x_idle = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update idle x value
-                elif state.lower() == "open app": # Assuming "open app" indicates the start of an app period
-                    dict[len(dict)-1]["color"] = "cyan"
-                    x_start = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update start x value
-                elif state.lower() == "quit app": # Assuming "quit app" indicates the end of an app period
-                    dict[len(dict)-1]["color"] = "green"
-                    x_stop = pd.to_datetime(time, format='%H:%M:%S.%f')
-                elif "unmount" == state.lower():  # Assuming "unmount" indicates the end of a mounted period
-                    dict[len(dict)-1]["color"] = "blue"
-                    x_unmount = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update unmount x value
-                elif "device sleep" in state.lower():
-                    dict[len(dict)-1]["color"] = "black"
-                else:
-                    dict[len(dict)-1]["color"] = "gray"  # Default color for app states
-
-        if x_start and x_stop:
-            dict.append({
-                "type": "rect",
-                "t0": x_start.strftime('%H:%M:%S.%f'),
-                "t1": x_stop.strftime('%H:%M:%S.%f'),
-                "y0": 0.93,
-                "y1": 1.03,
-                "label": "App Running",
-                "fillcolor": "blue",
-                "opacity": 0.2,
-                "line_width": 1  # No border
-            })
-            # Annotation for the app period
-            dict.append({
-                "type": "annotation",
-                "t": (x_start + (x_stop-x_start)/2).strftime('%H:%M:%S.%f'),
-                "y": 1.0,
-                "text": "App Running",
-                "showarrow": False,
-                "size": 12,
-                "color": "blue"
-            })
-        if x_mount and x_idle:
-            # Horizontal line from idle to unmount (Idle Period)
-            dict.append({
-                "type": "rect",
-                "t0": x_mount.strftime('%H:%M:%S.%f'),
-                "t1": x_idle.strftime('%H:%M:%S.%f'),
-                "y0": 0.93,
-                "y1": 1.03,
-                "label": "Device Idle (lap)",
-                "fillcolor": "gray",
-                "opacity": 0.2,
-                "line_width": 1
-            })
-            # Annotation for the idle period
-            dict.append({
-                "type": "annotation",
-                "t": (x_mount + (x_idle-x_mount)/2).strftime('%H:%M:%S.%f'),
-                "y": 1.0,
-                "text": "Device Idle (lap)",
-                "showarrow": False,
-                "size": 12,
-                "color": "gray"
-            })
-        if x_mount and x_unmount:
-            # Horizontal line from mount to unmount (Mounted Period)
-            dict.append({
-                "type": "rect",
-                "t0": x_mount.strftime('%H:%M:%S.%f'),
-                "t1": x_unmount.strftime('%H:%M:%S.%f'),
-                "y0": -0.03,
-                "y1": 1.03,
-                "label": "Device Mounted (lap)",
-                "fillcolor": "green",
-                "opacity": 0.1,
-                "line_width": 1
-            })
-            # Annotation for the mounted period
-            dict.append({
-                "type": "annotation",
-                "t": (x_mount + (x_unmount-x_mount)/2).strftime('%H:%M:%S.%f'),  # Center the annotation
-                "y": 0.02,  # Adjust y position to avoid overlap with the rect
-                # "yshift": -10,
-                "text": "Device Mounted (lap)",
-                "showarrow": False,
-                "size": 12,
-                "color": "green"
-            })
-
     with open(log_csv, 'r') as log_file:
         log_df = pd.read_csv(log_file)
         if 'Time' not in log_df.columns or 'Message' not in log_df.columns:
@@ -198,6 +92,7 @@ def convert_states_to_json(log_csv, states_fpath):
                     "linetype": "solid",
                     "color": "blue"
                 })
+                x_unmount = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update unmount x value
 
 
             # Device Sleep
@@ -246,6 +141,114 @@ def convert_states_to_json(log_csv, states_fpath):
                     "linetype": "solid",
                     "color": "orange"
                 })
+
+    with open(states_fpath, 'r') as states_file:
+        for line in states_file:
+            if line.strip():  # Ignore empty lines
+                dict.append({})  # Create a new dictionary for each line
+                line = line.replace('  - ',' - ').replace(' -  ',' - ')
+                time, state = line.strip().split(' - ')
+                time = time.replace(' ', '')
+                if pd.to_datetime(time, format='%H:%M:%S.%f', errors='coerce') is pd.NaT:
+                    raise ValueError(f"Invalid time format: {time} in line \'{line}\',\nfile: {states_fpath}")
+                dict[len(dict)-1]["type"] = "line"
+                dict[len(dict)-1]["orientation"] = "vertical"  # Assuming vertical orientation since all events will be vertical lines
+                dict[len(dict)-1]["time"] = str(time)
+                dict[len(dict)-1]["label"] = str(state)
+                dict[len(dict)-1]["linetype"] = "dash"
+                if state.lower() == "start":
+                    dict[len(dict)-1]["color"] = "green"
+                elif state.lower() == "mount":  # Assuming "mount" indicates the start of a mounted period
+                    dict[len(dict)-1]["color"] = "blue"
+                    x_mount = pd.Timestamp(time)  # Update mount x value
+                elif state.lower() == "idle":
+                    dict[len(dict)-1]["color"] = "gray"
+                    x_idle = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update idle x value
+                elif state.lower() == "open app": # Assuming "open app" indicates the start of an app period
+                    dict[len(dict)-1]["color"] = "cyan"
+                    x_start = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update start x value
+                elif state.lower() == "quit app": # Assuming "quit app" indicates the end of an app period
+                    dict[len(dict)-1]["color"] = "green"
+                    x_stop = pd.to_datetime(time, format='%H:%M:%S.%f')
+                elif "unmount" == state.lower() and x_unmount==0:  # Assuming "unmount" indicates the end of a mounted period
+                    dict[len(dict)-1]["color"] = "blue"
+                    x_unmount = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update unmount x value
+                elif "device sleep" in state.lower():
+                    dict[len(dict)-1]["color"] = "black"
+                else:
+                    dict[len(dict)-1]["color"] = "gray"  # Default color for app states
+
+        if x_start and x_stop:
+            dict.append({
+                "type": "rect",
+                "t0": x_start.strftime('%H:%M:%S.%f'),
+                "t1": x_stop.strftime('%H:%M:%S.%f'),
+                "y0": 0.93,
+                "y1": 1.03,
+                "label": "App Running",
+                "fillcolor": "blue",
+                "opacity": 0.2,
+                "line_width": 1  # No border
+            })
+            # Annotation for the app period
+            dict.append({
+                "type": "annotation",
+                "time": (x_start + (x_stop-x_start)/2).strftime('%H:%M:%S.%f'),
+                "y": 1.0,
+                "text": "App Running",
+                "showarrow": False,
+                "size": 12,
+                "color": "blue"
+            })
+        if x_mount and x_idle:
+            # Horizontal line from idle to unmount (Idle Period)
+            dict.append({
+                "type": "rect",
+                "t0": x_mount.strftime('%H:%M:%S.%f'),
+                "t1": x_idle.strftime('%H:%M:%S.%f'),
+                "y0": 0.93,
+                "y1": 1.03,
+                "label": "Device Idle (lap)",
+                "fillcolor": "gray",
+                "opacity": 0.2,
+                "line_width": 1
+            })
+            # Annotation for the idle period
+            dict.append({
+                "type": "annotation",
+                "t": (x_mount + (x_idle-x_mount)/2).strftime('%H:%M:%S.%f'),
+                "y": 1.0,
+                "text": "Device Idle (lap)",
+                "showarrow": False,
+                "size": 12,
+                "color": "gray"
+            })
+        if x_mount and x_unmount:
+            # Horizontal line from mount to unmount (Mounted Period)
+            dict.append({
+                "type": "rect",
+                "t0": x_mount.strftime('%H:%M:%S.%f'),
+                "t1": x_unmount.strftime('%H:%M:%S.%f'),
+                "y0": -0.03,
+                "y1": 1.03,
+                "label": "Device Mounted (lap)",
+                "fillcolor": "green",
+                "opacity": 0.1,
+                "line_width": 1
+            })
+            # Annotation for the mounted period
+            dict.append({
+                "type": "annotation",
+                "t": (x_mount + (x_unmount-x_mount)/2).strftime('%H:%M:%S.%f'),  # Center the annotation
+                "y": 0.02,  # Adjust y position to avoid overlap with the rect
+                # "yshift": -10,
+                "text": "Device Mounted (lap)",
+                "showarrow": False,
+                "size": 12,
+                "color": "green"
+            })
+
+
 
     # Add app_stop_dict to the dictionary if it was found. This is done because I only want 1 app stop event and that is the last one in the log.
     if app_stop_dict:

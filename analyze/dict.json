@@ -179,7 +179,7 @@
     "interval_stop_strings": ["Stop ov7251 streaming 0x8"]
   },
   {
-    "label": "imx471",
+    "label": "RGB Cameras",
     "key": "imx471",
     "color": "violet",
     "count": 1,
@@ -251,7 +251,7 @@
     "interval_stop_strings": ["[passthrough]]", "stop","completed"]
   },
   {
-    "label": "IMX471",
+    "label": "RGB Cameras",
     "key": "IMX471",
     "color": "green",
     "count": 2,
@@ -259,7 +259,7 @@
     "interval_stop_strings": ["imx471", "CAM_STOP_DEV"]
   },
   {
-    "label": "OG01A1B",
+    "label": "B\\&W Cameras",
     "key": "OG01A1B",
     "color": "yellow",
     "count": 2,
@@ -267,7 +267,7 @@
     "interval_stop_strings": ["og01a1b", "CAM_STOP_DEV"]
   },
   {
-    "label": "OV7251",
+    "label": "B\\&W Cameras",
     "key": "OV7251",
     "color": "darkred",
     "count": 2,
@@ -275,9 +275,9 @@
     "interval_stop_strings": ["ov7251", "CAM_STOP_DEV"]
   },
   {
-    "label": "OG0VE1B",
+    "label": "B\\&W Cameras",
     "key": "OG0VE1B",
-    "color": "violet",
+    "color": "darkblue",
     "count": 4,
     "interval_start_strings": ["og0ve1b", "CAM_START_DEV"],
     "interval_stop_strings": ["og0ve1b", "CAM_STOP_DEV"]
