@@ -8,9 +8,9 @@ from plotly_cdf import plotly_cdf
 from matplotlib_cdf import matplotlib_cdf_multi
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate CDF graph(s) from one or more HMD unmount lap sleep lap duration CSV files into a matplotlib/plotly graph (output is png/HTML).")
+    parser = argparse.ArgumentParser(description="Generate CDF graph(s) from one or more HMD unmount lap sleep log duration CSV files into a matplotlib/plotly graph (output is png/HTML).")
     parser.add_argument("csv_files", nargs='+', help="Path(s) to the input combined CSV(s).")
-    parser.add_argument("--variable_for_cdf", default=["umount_lap_to_sleep_lap_duration"], help="The variable to use for the CDF. (Default: umount_lap_to_sleep_lap_durations)")
+    parser.add_argument("--variable_for_cdf", default=["umount_log_to_sleep_log_duration"], help="The variable to use for the CDF. (Default: umount_log_to_sleep_log_durations)")
     parser.add_argument("--export_stats", action='store_true', help="Add summary statistics to the graph.")
     parser.add_argument("--graphing_tool", default="both", choices=["plotly", "matplotlib", "both"], help="Choose the graphing tool to use for plotting the CDF. (Default: both)")
     parser.add_argument("--legend_labels", nargs='+', help="Legend labels for each plotted component (same order as files).")
@@ -29,8 +29,8 @@ if __name__ == "__main__":
             raise FileNotFoundError(f"CSV file {csv_file} does not exist.")
 
         df = pd.read_csv(csv_file)
-        values = df["umount_lap_to_sleep_lap_duration"].astype(float)
-        label = args.legend_labels[idx] if args.legend_labels and idx < len(args.legend_labels) else f"{os.path.splitext(os.path.basename(csv_file))[0].replace('_',' ')} – umount_lap_to_sleep_lap_duration"
+        values = df["umount_log_to_sleep_log_duration"].astype(float)
+        label = args.legend_labels[idx] if args.legend_labels and idx < len(args.legend_labels) else f"{os.path.splitext(os.path.basename(csv_file))[0].replace('_',' ')} – umount_log_to_sleep_log_duration"
         multi_data.append(values)
         multi_labels.append(label)
 
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     matplotlib_extension = 'png'
     plotly_extension = 'html'
     stats_extension = 'txt'
-    base_name = "hmd_umount_lap_to_sleep_lap_durations_cdf"
+    base_name = "hmd_umount_log_to_sleep_log_durations_cdf"
 
     matplotlib_output_file = args.output or os.path.join(out_dir, matplolib_subdir, f"{base_name}.{matplotlib_extension}")
     plotly_output_file = args.output or os.path.join(out_dir, plotly_subdir, f"{base_name}.{plotly_extension}")
@@ -52,7 +52,7 @@ if __name__ == "__main__":
             output=matplotlib_output_file,
             export_stats=args.export_stats,
             stats_txt_path=output_stats_file,
-            title="CDF of HMD Unmount Lap to Sleep Lap Durations",
+            title="CDF of HMD Unmount Log to Sleep Log Durations",
             xaxis_label="Duration (seconds)",
             yaxis_label="CDF",
             combine_graph=args.combine_graph,
@@ -71,7 +71,7 @@ if __name__ == "__main__":
             output=matplotlib_output_file,
             export_stats=args.export_stats,
             stats_txt_path=output_stats_file,
-            title="CDF of HMD Unmount Lap Sleep Lap Durations",
+            title="CDF of HMD Unmount Log to Sleep Log Durations",
             xaxis_label="Duration (seconds)",
             yaxis_label="CDF",
             combine_graph=args.combine_graph,
@@ -83,4 +83,5 @@ if __name__ == "__main__":
             if not args.combine_graph or args.output is None:
                 out_file = os.path.join(out_dir, plotly_subdir, f"{label.replace(' ', '_')}_cdf.{plotly_extension}")
             plotly_cdf(values, out_file, export_stats=args.export_stats, title=f"CDF of {label}", xaxis_label="Duration (seconds)", yaxis_label="CDF")
+
 
