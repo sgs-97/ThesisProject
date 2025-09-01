@@ -5,6 +5,9 @@ from matplotlib.ticker import FuncFormatter
 import pandas as pd
 import argparse
 import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import helpers
 
 # Use Overleaf/LaTeX font everywhere and set global font size to 24
 plt.rcParams.update({
@@ -22,7 +25,7 @@ plt.rcParams.update({
     "text.latex.preamble": r"\usepackage{amsmath}"
 })
 
-def matplotlib_cdf(values, output: str, export_stats=False, stats_txt_path=None, title="CDF", xaxis_label="Value", yaxis_label="CDF", remove_title=False, ax=None, color='blue', linewidth=3, label=None, linestyle='-'):
+def matplotlib_cdf(values, output: str, export_stats=False, stats_txt_path=None, title="CDF", xaxis_label="Value", yaxis_label="CDF", remove_title=False, ax=None, color='blue', linewidth=3, label=None, linestyle='-', remove_legend=False, remove_yaxis_label=False, remove_xaxis_label=False):
     sorted_vals = np.sort(values)
     cdf_vals = np.arange(1, len(sorted_vals) + 1) / len(sorted_vals)
     stats = {
@@ -43,12 +46,17 @@ def matplotlib_cdf(values, output: str, export_stats=False, stats_txt_path=None,
     ax.plot(sorted_vals, cdf_vals, color=color, linewidth=linewidth, label=label, linestyle=linestyle)
     if not remove_title:
         ax.set_title(r'\textbf{' + title.replace('_', r'\_') + '}')
-    ax.set_xlabel(r'\textbf{' + xaxis_label.replace('_', r'\_') + '}')
-    ax.set_ylabel(r'\textbf{' + yaxis_label.replace('_', r'\_') + '}')
+    if not remove_xaxis_label:
+        ax.set_xlabel(r'\textbf{' + xaxis_label.replace('_', r'\_') + '}')
+    if not remove_yaxis_label:
+        ax.set_ylabel(r'\textbf{' + yaxis_label.replace('_', r'\_') + '}')
     ax.set_ylim(0, 1)
     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.2f}"))
-    sns.despine(ax=ax)
-
+    ax.grid(False)
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(2)
+    sns.despine(ax=ax, top=False, right=False, left=False, bottom=False)
     return stats
 
 def get_stat_label(label, values, stats_in_legend):
@@ -71,8 +79,10 @@ data_list: List of tuples (label, values)
 """
 def matplotlib_cdf_multi(
     data_list, output, export_stats=False, stats_txt_path=None, title="CDF", xaxis_label="Value", yaxis_label="CDF",
-    combine_graph=True, remove_title=False, stats_in_legend=["median"]
+    combine_graph=True, remove_title=False, stats_in_legend=["median"],
+    remove_legend=False, remove_yaxis_label=False, remove_xaxis_label=False
 ):
+    helpers.ensure_parent_dir(output)
     fig = plt.figure(figsize=(16, 10), dpi=600)
     ax = fig.add_subplot(1, 1, 1)
     stats_all = []
@@ -97,23 +107,32 @@ def matplotlib_cdf_multi(
             color=colors[idx],
             linewidth=3,
             label=legend_label,
-            linestyle=linestyles[idx]
+            linestyle=linestyles[idx],
+            remove_legend=remove_legend,
+            remove_yaxis_label=remove_yaxis_label,
+            remove_xaxis_label=remove_xaxis_label
         )
         stats["label"] = label
         stats_all.append(stats)
 
     if not remove_title:
         ax.set_title(r'\textbf{' + title.replace('_', r'\_') + '}')
-    ax.set_xlabel(r'\textbf{' + xaxis_label.replace('_', r'\_') + '}')
-    ax.set_ylabel(r'\textbf{' + yaxis_label.replace('_', r'\_') + '}')
+    if not remove_xaxis_label:
+        ax.set_xlabel(r'\textbf{' + xaxis_label.replace('_', r'\_') + '}')
+    if not remove_yaxis_label:
+        ax.set_ylabel(r'\textbf{' + yaxis_label.replace('_', r'\_') + '}')
     ax.set_ylim(0, 1.01)
     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.2f}"))
-    ax.grid(True, linestyle='--', linewidth=0.4, alpha=0.6)
-    sns.despine(ax=ax)
-    ax.legend(fontsize=24, loc='lower left', bbox_to_anchor=(0.0, 1.0), frameon=True, ncol=1, prop={'weight':'bold'})
-    leg = ax.get_legend()
-    for text in leg.get_texts():
-        text.set_fontweight('bold')
+    ax.grid(False)
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(2)
+    sns.despine(ax=ax, top=False, right=False, left=False, bottom=False)
+    if not remove_legend:
+        ax.legend(fontsize=24, loc='lower left', bbox_to_anchor=(0.0, 1.0), frameon=True, ncol=1, prop={'weight':'bold'})
+        leg = ax.get_legend()
+        for text in leg.get_texts():
+            text.set_fontweight('bold')
 
     plt.savefig(output, bbox_inches='tight', dpi=600)
     print(f"CDF saved to: {output}")
@@ -149,6 +168,9 @@ if __name__ == "__main__":
     parser.add_argument("--yaxis_label", default="CDF", help="Y axis label.")
     parser.add_argument("--combine_graph", action='store_true', help="Plot all CDFs in one graph. If not set, generate separate graphs.")
     parser.add_argument("--remove_title", action='store_true', help="Remove the plot title.")
+    parser.add_argument("--remove_legend", action='store_true', help="Remove the legend from the plot.")
+    parser.add_argument("--remove_yaxis_label", action='store_true', help="Remove the y-axis label from the plot.")
+    parser.add_argument("--remove_xaxis_label", action='store_true', help="Remove the x-axis label from the plot.")
     parser.add_argument("--stats_in_legend", nargs='+', default=["median"], choices=["median", "mean", "stdev"], help="Statistic(s) to show in legend (median, mean, stdev).")
     args = parser.parse_args()
 
@@ -181,7 +203,10 @@ if __name__ == "__main__":
             yaxis_label=args.yaxis_label,
             combine_graph=True,
             remove_title=args.remove_title,
-            stats_in_legend=args.stats_in_legend
+            stats_in_legend=args.stats_in_legend,
+            remove_legend=args.remove_legend,
+            remove_yaxis_label=args.remove_yaxis_label,
+            remove_xaxis_label=args.remove_xaxis_label
         )
     else:
         for idx, (label, values) in enumerate(data_list):
@@ -200,5 +225,8 @@ if __name__ == "__main__":
                 yaxis_label=args.yaxis_label,
                 combine_graph=False,
                 remove_title=args.remove_title,
-                stats_in_legend=args.stats_in_legend
+                stats_in_legend=args.stats_in_legend,
+                remove_legend=args.remove_legend,
+                remove_yaxis_label=args.remove_yaxis_label,
+                remove_xaxis_label=args.remove_xaxis_label
             )
