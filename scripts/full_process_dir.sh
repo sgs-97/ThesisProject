@@ -60,12 +60,12 @@ function main() {
     
     "$SCRIPT_DIR"/preprocess_dir.sh "$dir" $VERBOSE_LITERAL
     "$SCRIPT_DIR"/graph_dir.sh "$dir" $VERBOSE_LITERAL
-    "$SCRIPT_DIR"/hmd_umount_sleep_imx471_durations.sh "$dir"
-    "$SCRIPT_DIR"/imx471_spikes_csv_dir.sh "$dir"
-    "$SCRIPT_DIR"/hmd_umount_sleep_pt_durations.sh "$dir"
-    "$SCRIPT_DIR"/hmd_umount_to_sleep_durations.sh "$dir"
-    "$SCRIPT_DIR"/hmd_umount_lap_to_sleep_lap_durations.sh "$dir"
-    "$SCRIPT_DIR"/hmd_umount_log_to_lap_durations.sh "$dir"
+#    "$SCRIPT_DIR"/hmd_umount_sleep_imx471_durations.sh "$dir"
+#    "$SCRIPT_DIR"/imx471_spikes_csv_dir.sh "$dir"
+#    "$SCRIPT_DIR"/hmd_umount_sleep_pt_durations.sh "$dir"
+#    "$SCRIPT_DIR"/hmd_umount_to_sleep_durations.sh "$dir"
+#    "$SCRIPT_DIR"/hmd_umount_lap_to_sleep_lap_durations.sh "$dir"
+#    "$SCRIPT_DIR"/hmd_umount_log_to_lap_durations.sh "$dir"
 
 }
 

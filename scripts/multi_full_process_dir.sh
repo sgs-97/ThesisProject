@@ -117,28 +117,28 @@ function main() {
         i=1
         for sub_dir in "$dir"/*/; do
             if (( i <= SKIP_FIRST )); then
-                echo "[INFO] Skipping: $i\/$dir_count $sub_dir"
+                echo -e "[\033[0;34mINFO\033[0m] Skipping: $i/$dir_count $sub_dir"
                 ((i++))
                 continue
             fi
-            echo "[INFO] Running: $i/$dir_count $SCRIPT_DIR/full_process_dir.sh \"$sub_dir\""
+            echo -e "[\033[0;34mINFO\033[0m] Running: $i/$dir_count $SCRIPT_DIR/full_process_dir.sh \"$sub_dir\""
             ((i++))
             "$SCRIPT_DIR"/full_process_dir.sh "$sub_dir" "$SKIP_ON_EXIST"
         done
-        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_sleep_imx471_durations.csv'
-        python3 ./analyze/cdfs/hmd_umount_sleep_imx471_durations_cdf.py "$dir"/hmd_umount_sleep_imx471_durations_combined.csv all --graphing_tool matplotlib
-        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_sleep_pt_durations.csv'
-        python3 ./analyze/cdfs/hmd_umount_sleep_pt_durations_cdf.py "$dir"/hmd_umount_sleep_pt_durations_combined.csv all --graphing_tool matplotlib
-        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_to_sleep_durations.csv'
-        python3 ./analyze/cdfs/hmd_umount_to_sleep_durations_cdf.py "$dir"/hmd_umount_to_sleep_durations_combined.csv --graphing_tool matplotlib
-        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_lap_to_sleep_lap_durations.csv'
-        python3 ./analyze/cdfs/hmd_umount_lap_to_sleep_lap_durations_cdf.py "$dir"/hmd_umount_lap_to_sleep_lap_durations_combined.csv --graphing_tool matplotlib --output "$dir"/hmd_umount_lap_to_sleep_lap_durations_cdf.png
-        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_log_to_lap_durations.csv'
-        python3 ./analyze/cdfs/hmd_umount_log_to_lap_durations_cdf.py "$dir"/hmd_umount_log_to_lap_durations_combined.csv --graphing_tool matplotlib --output "$dir"/hmd_umount_log_to_lap_durations_cdf.png
-        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'imx471_spikes.csv'
-        python3 ./analyze/cdfs/imx471_spikes_cdf.py "$dir"/imx471_spikes_combined.csv --variable_for_cdf duration --graphing_tool matplotlib --output "$dir"/imx471_spikes_duration.png --remove_title
-        python3 ./analyze/cdfs/imx471_spikes_cdf.py "$dir"/imx471_spikes_combined.csv --variable_for_cdf period --graphing_tool matplotlib --output "$dir"/imx471_spikes_period.png --remove_title
-        python3 ./scripts/ovr_metrics_summary.py "$dir" --time-window 0 --columns all
+#        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_sleep_imx471_durations.csv'
+#        python3 ./analyze/cdfs/hmd_umount_sleep_imx471_durations_cdf.py "$dir"/hmd_umount_sleep_imx471_durations_combined.csv all --graphing_tool matplotlib
+#        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_sleep_pt_durations.csv'
+#        python3 ./analyze/cdfs/hmd_umount_sleep_pt_durations_cdf.py "$dir"/hmd_umount_sleep_pt_durations_combined.csv all --graphing_tool matplotlib
+#        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_to_sleep_durations.csv'
+#        python3 ./analyze/cdfs/hmd_umount_to_sleep_durations_cdf.py "$dir"/hmd_umount_to_sleep_durations_combined.csv --graphing_tool matplotlib
+#        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_lap_to_sleep_lap_durations.csv'
+#        python3 ./analyze/cdfs/hmd_umount_lap_to_sleep_lap_durations_cdf.py "$dir"/hmd_umount_lap_to_sleep_lap_durations_combined.csv --graphing_tool matplotlib --output "$dir"/hmd_umount_lap_to_sleep_lap_durations_cdf.png
+#        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_log_to_lap_durations.csv'
+#        python3 ./analyze/cdfs/hmd_umount_log_to_lap_durations_cdf.py "$dir"/hmd_umount_log_to_lap_durations_combined.csv --graphing_tool matplotlib --output "$dir"/hmd_umount_log_to_lap_durations_cdf.png
+#        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'imx471_spikes.csv'
+#        python3 ./analyze/cdfs/imx471_spikes_cdf.py "$dir"/imx471_spikes_combined.csv --variable_for_cdf duration --graphing_tool matplotlib --output "$dir"/imx471_spikes_duration.png --remove_title
+#        python3 ./analyze/cdfs/imx471_spikes_cdf.py "$dir"/imx471_spikes_combined.csv --variable_for_cdf period --graphing_tool matplotlib --output "$dir"/imx471_spikes_period.png --remove_title
+#        python3 ./scripts/ovr_metrics_summary.py "$dir" --time-window 0 --columns all
 
     fi
 }
