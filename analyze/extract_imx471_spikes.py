@@ -11,11 +11,13 @@ def get_imx_spikes(sensor_events):
     :return: List of IMX471 activation intervals that do not have any overlap with the Pasthrough activation intervals and have duration less than 1.8s.
     """
     # Assume extracted sensor events from extract_sensor_events()
-    imx471_events = sensor_events['IMX471']
+    # imx471_events = sensor_events['IMX471']
+    imx471_events = sensor_events['RGB Cameras']
     passthrough_events = sensor_events['Passthrough']
 
     # Convert to named intervals
-    imx_intervals = helpers.events_to_intervals(imx471_events, label='IMX471')
+    # imx_intervals = helpers.events_to_intervals(imx471_events, label='IMX471')
+    imx_intervals = helpers.events_to_intervals(imx471_events, label='RGB Cameras')
     pass_intervals = helpers.events_to_intervals(passthrough_events, label='Passthrough')
 
     # Remove overlapping intervals

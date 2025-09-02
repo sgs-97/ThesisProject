@@ -73,17 +73,17 @@ if __name__ == '__main__':
         print(f"[\033[1;34mINFO\033[0m] HMD Unmount Times: {hmd_umount_time}")
         print(f"[\033[1;34mINFO\033[0m] HMD Sleep Times: {hmd_sleep_time}")
 
-    umount_log_to_sleep_log_durations = abs(pd.Timestamp(hmd_sleep_time) - pd.Timestamp(hmd_umount_time)).total_seconds() if (hmd_umount_time and hmd_sleep_time) else None
+    umount_log_to_sleep_log_duration = abs(pd.Timestamp(hmd_sleep_time) - pd.Timestamp(hmd_umount_time)).total_seconds() if (hmd_umount_time and hmd_sleep_time) else None
 
     # Report oddly large durations
-    if umount_log_to_sleep_log_durations is not None and umount_log_to_sleep_log_durations > 10:
-        print(f"[\033[1;31mWARNING\033[0m] Unmount to Passthrough Start Duration for: {os.path.dirname(exp_dir)}/{os.path.basename(exp_dir)} is unusually large: {umount_log_to_sleep_log_durations} seconds.")
+    if umount_log_to_sleep_log_duration is not None and umount_log_to_sleep_log_duration > 10:
+        print(f"[\033[1;31mWARNING\033[0m] Unmount to Passthrough Start Duration for: {os.path.dirname(exp_dir)}/{os.path.basename(exp_dir)} is unusually large: {umount_log_to_sleep_log_duration} seconds.")
     
     # Write to file (hmd_umount_sleep_pt_durations.csv)
 
     with open(output_file, 'w') as f:
-        f.write(f"umount_log_to_sleep_log_durations\n")
-        f.write(f"{umount_log_to_sleep_log_durations}\n")
+        f.write(f"umount_log_to_sleep_log_duration\n")
+        f.write(f"{umount_log_to_sleep_log_duration}\n")
 
     if verbosity >= 1:
         print(f"[\033[1;32mEXIT\033[0m] {script_name} ended successfully!\033[0m")
