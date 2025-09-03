@@ -31,7 +31,12 @@ def _bold_latex(s: Optional[str]) -> Optional[str]:
         return None
     return r'\textbf{' + str(s).replace('_', r'\_') + '}'
 
-def matplotlib_cdf(values, output: str, export_stats=False, stats_txt_path=None, title="CDF", xaxis_label="Value", yaxis_label="CDF (\%)", remove_title=False, ax=None, color='blue', linewidth=3, label=None, linestyle='-', remove_legend=False, remove_yaxis_label=False, remove_xaxis_label=False):
+def matplotlib_cdf(values, output: str, export_stats=False, stats_txt_path=None, title="CDF", xaxis_label="Value", yaxis_label="CDF (\%)", remove_title=False, ax=None, color='blue', linewidth=3, label=None, linestyle='-', remove_legend=False, remove_yaxis_label=False, remove_xaxis_label=False,
+figsize=None, remove_yaxis_ticks=False, xlim=None, ylim=None):
+    """
+    Plot a single CDF using matplotlib.
+    If ax is provided, plot on that axis; otherwise create a new figure.
+    """
     sorted_vals = np.sort(values)
     cdf_vals = np.arange(1, len(sorted_vals) + 1) / len(sorted_vals) * 100  # CDF as percentage
     stats = {
@@ -44,7 +49,7 @@ def matplotlib_cdf(values, output: str, export_stats=False, stats_txt_path=None,
     }
 
     if ax is None:
-        fig = plt.figure(figsize=(9,5), dpi=600)
+        fig = plt.figure(figsize=figsize if figsize else (16, 8), dpi=600)
         ax = fig.add_subplot(1, 1, 1)
     else:
         fig = ax.figure
@@ -61,15 +66,37 @@ def matplotlib_cdf(values, output: str, export_stats=False, stats_txt_path=None,
     y_min, y_max = ax.get_ylim()
     margin = 3  # percent units
     ax.set_ylim(y_min - margin, y_max + margin)
+    # Always set xlim/ylim if either min or max is provided
+    xlim_to_set = list(ax.get_xlim())
+    if xlim is not None:
+        if xlim[0] is not None:
+            xlim_to_set[0] = xlim[0]
+        if xlim[1] is not None:
+            xlim_to_set[1] = xlim[1]
+        ax.set_xlim(xlim_to_set)
+    ylim_to_set = list(ax.get_ylim())
+    if ylim is not None:
+        if ylim[0] is not None:
+            ylim_to_set[0] = ylim[0]
+        if ylim[1] is not None:
+            ylim_to_set[1] = ylim[1]
+        ax.set_ylim(ylim_to_set)
     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: r'\textbf{' + str(int(x)) if x == int(x) else r'\textbf{' + f"{x:g}" + '}'))
     ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: r'\textbf{' + str(int(y)) if y == int(y) else r'\textbf{' + f"{y:g}" + '}'))
     ax.tick_params(axis='x', labelsize=24)
     ax.tick_params(axis='y', labelsize=24)
+    if remove_yaxis_ticks:
+        ax.set_yticks([])
     ax.grid(False)
     for spine in ax.spines.values():
         spine.set_visible(True)
-        spine.set_linewidth(2)
+        spine.set_linewidth(3)
     sns.despine(ax=ax, top=False, right=False, left=False, bottom=False)
+    # Set axis limits LAST so user values always take precedence
+    if xlim is not None:
+        ax.set_xlim([x if x is not None else ax.get_xlim()[i] for i, x in enumerate(xlim)])
+    if ylim is not None:
+        ax.set_ylim([y if y is not None else ax.get_ylim()[i] for i, y in enumerate(ylim)])
     return stats
 
 def get_stat_label(label, values, stats_in_legend):
@@ -97,7 +124,7 @@ def matplotlib_cdf_multi(
     combine_graph=True, remove_title=False, stats_in_legend=None,
     remove_legend=False, remove_yaxis_label=False, remove_xaxis_label=False,
     side_by_side_shared_yaxis=False, legend_ncol=1, legend_position='lower left',
-    xlim=None, ylim=None
+    xlim=None, ylim=None, figsize=None, remove_yaxis_ticks=False
 ):
     helpers.ensure_parent_dir(output)
     stats_all = []
@@ -116,7 +143,7 @@ def matplotlib_cdf_multi(
             return {'loc': 'lower left', 'bbox_to_anchor': None, 'ncol': ncol}
 
     if side_by_side_shared_yaxis and len(data_list) == 2:
-        fig, axs = plt.subplots(1, 2, figsize=(16, 8), dpi=600, sharey=True)
+        fig, axs = plt.subplots(1, 2, figsize=figsize if figsize else (16, 8), dpi=600, sharey=True)
         colors = sns.color_palette("tab10", 2)
         linestyles = ['-', '--']
         for idx, (label, values) in enumerate(data_list):
@@ -137,7 +164,11 @@ def matplotlib_cdf_multi(
                 linestyle='-',
                 remove_legend=remove_legend,
                 remove_yaxis_label=remove_yaxis_label if idx != 0 else False,
-                remove_xaxis_label=remove_xaxis_label
+                remove_xaxis_label=remove_xaxis_label,
+                figsize=figsize,
+                remove_yaxis_ticks=remove_yaxis_ticks,
+                xlim=xlim,
+                ylim=ylim
             )
             stats["label"] = label
             stats_all.append(stats)
@@ -148,6 +179,14 @@ def matplotlib_cdf_multi(
                 for text in leg.get_texts():
                     text.set_fontweight('bold')
                     text.set_fontsize(24)
+            xlim = [xlim[0] if xlim[0] is not None else axs[0].get_xlim()[0],
+                    xlim[1] if xlim[1] is not None else axs[0].get_xlim()[1]]
+            ylim = [ylim[0] if ylim[0] is not None else axs[0].get_ylim()[0],
+                    ylim[1] if ylim[1] is not None else axs[0].get_ylim()[1]]
+            axs[0].set_xlim(xlim)
+            axs[1].set_xlim(xlim)
+            axs[0].set_ylim(ylim)
+            axs[1].set_ylim(ylim)
             axs[idx].tick_params(axis='x', labelsize=24)
             axs[idx].tick_params(axis='y', labelsize=24)
             axs[idx].xaxis.set_major_formatter(FuncFormatter(lambda x, _: r'\textbf{' + str(int(x)) if x == int(x) else r'\textbf{' + f"{x:g}" + '}'))
@@ -156,7 +195,7 @@ def matplotlib_cdf_multi(
         if not remove_title:
             fig.suptitle(r'\textbf{' + title.replace('_', r'\_') + '}', fontsize=24)
     else:
-        fig = plt.figure(figsize=(9,5), dpi=600)
+        fig = plt.figure(figsize=figsize if figsize else (16, 8), dpi=600)
         ax = fig.add_subplot(1, 1, 1)
         colors = sns.color_palette("tab10", len(data_list))
         linestyles = ['-', '--', '-.', ':']
@@ -180,7 +219,11 @@ def matplotlib_cdf_multi(
                 linestyle=linestyles[idx],
                 remove_legend=remove_legend,
                 remove_yaxis_label=remove_yaxis_label,
-                remove_xaxis_label=remove_xaxis_label
+                remove_xaxis_label=remove_xaxis_label,
+                figsize=figsize,
+                remove_yaxis_ticks=remove_yaxis_ticks,
+                xlim=xlim,
+                ylim=ylim
             )
             stats["label"] = label
             stats_all.append(stats)
@@ -195,14 +238,31 @@ def matplotlib_cdf_multi(
         y_min, y_max = ax.get_ylim()
         margin = 3  # percent units
         ax.set_ylim(y_min - margin, y_max + margin)
+        # Always set xlim/ylim if either min or max is provided
+        xlim_to_set = list(ax.get_xlim())
+        if xlim is not None:
+            if xlim[0] is not None:
+                xlim_to_set[0] = xlim[0]
+            if xlim[1] is not None:
+                xlim_to_set[1] = xlim[1]
+            ax.set_xlim(xlim_to_set)
+        ylim_to_set = list(ax.get_ylim())
+        if ylim is not None:
+            if ylim[0] is not None:
+                ylim_to_set[0] = ylim[0]
+            if ylim[1] is not None:
+                ylim_to_set[1] = ylim[1]
+            ax.set_ylim(ylim_to_set)
         ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: r'\textbf{' + str(int(x)) if x == int(x) else r'\textbf{' + f"{x:g}" + '}'))
         ax.yaxis.set_major_formatter(FuncFormatter(lambda y, _: r'\textbf{' + str(int(y)) if y == int(y) else r'\textbf{' + f"{y:g}" + '}'))
         ax.tick_params(axis='x', labelsize=24)
         ax.tick_params(axis='y', labelsize=24)
+        if remove_yaxis_ticks:
+            ax.set_yticks([])
         ax.grid(False)
         for spine in ax.spines.values():
             spine.set_visible(True)
-            spine.set_linewidth(2)
+            spine.set_linewidth(3)
         sns.despine(ax=ax, top=False, right=False, left=False, bottom=False)
         if not remove_legend:
             legend_args = get_legend_args(legend_position, legend_ncol)
@@ -211,22 +271,7 @@ def matplotlib_cdf_multi(
             for text in leg.get_texts():
                 text.set_fontweight('bold')
                 text.set_fontsize(24)
-    if not side_by_side_shared_yaxis:
-        xlim = [xlim[0] if xlim is not None and xlim[0] is not None else ax.get_xlim()[0],
-                xlim[1] if xlim is not None and xlim[1] is not None else ax.get_xlim()[1]]
-        ylim = [ylim[0] if ylim is not None and ylim[0] is not None else ax.get_ylim()[0],
-                ylim[1] if ylim is not None and ylim[1] is not None else ax.get_ylim()[1]]
-        ax.set_xlim(xlim)
-        ax.set_ylim(ylim)
-    else:
-        xlim = [xlim[0] if xlim[0] is not None else axs[0].get_xlim()[0],
-                xlim[1] if xlim[1] is not None else axs[0].get_xlim()[1]]
-        ylim = [ylim[0] if ylim[0] is not None else axs[0].get_ylim()[0],
-                ylim[1] if ylim[1] is not None else axs[0].get_ylim()[1]]
-        axs[0].set_xlim(xlim)
-        axs[1].set_xlim(xlim)
-        axs[0].set_ylim(ylim)
-        axs[1].set_ylim(ylim)
+
     plt.savefig(output, bbox_inches='tight', dpi=600)
     print(f"CDF saved to: {output}")
     plt.close(fig)
@@ -243,7 +288,8 @@ def matplotlib_cdf_dual_x(
         xaxis_label_bottom="Value (bottom axis)", xaxis_label_top="Value (top axis)",
         yaxis_label="CDF (\%)",
         remove_title=False, stats_in_legend=[], remove_legend=False,
-        remove_yaxis_label=False, remove_xaxis_label=False
+        remove_yaxis_label=False, remove_xaxis_label=False,
+        figsize=None, remove_yaxis_ticks=False
 ):
     """
     Plot exactly two CDFs on one figure with shared y-axis and two independent x-axes:
@@ -261,7 +307,7 @@ def matplotlib_cdf_dual_x(
     c1, c2 = colors[0], colors[1]
 
     # Build the base figure/axes
-    fig = plt.figure(figsize=(9,5), dpi=600)
+    fig = plt.figure(figsize=figsize if figsize else (9,5), dpi=600)
     ax_bottom = fig.add_subplot(1, 1, 1)      # bottom x-axis
     ax_top = ax_bottom.twiny()                 # top x-axis, shared y
 
@@ -277,7 +323,8 @@ def matplotlib_cdf_dual_x(
         values1, output=None, export_stats=False, stats_txt_path=None,
         title="", xaxis_label="", yaxis_label="", remove_title=True,
         ax=ax_bottom, color=c1, linewidth=3, label=legend_label1, linestyle='-',
-        remove_legend=True, remove_yaxis_label=True, remove_xaxis_label=True
+        remove_legend=True, remove_yaxis_label=True, remove_xaxis_label=True,
+        remove_yaxis_ticks=remove_yaxis_ticks
     )
 
     # Plot second CDF on top axis (same y, independent x)
@@ -287,7 +334,9 @@ def matplotlib_cdf_dual_x(
         values2, output=None, export_stats=False, stats_txt_path=None,
         title="", xaxis_label="", yaxis_label="", remove_title=True,
         ax=ax_top, color=c2, linewidth=3, label=legend_label2, linestyle='--',
-        remove_legend=True, remove_yaxis_label=True, remove_xaxis_label=True
+        remove_legend=True, remove_yaxis_label=True, remove_xaxis_label=True,
+        figsize=figsize,
+        remove_yaxis_ticks=remove_yaxis_ticks
     )
 
     # Axis ranges & cosmetics
@@ -379,6 +428,7 @@ if __name__ == "__main__":
     parser.add_argument("--remove_legend", action='store_true', help="Remove the legend from the plot.")
     parser.add_argument("--remove_yaxis_label", action='store_true', help="Remove the y-axis label from the plot.")
     parser.add_argument("--remove_xaxis_label", action='store_true', help="Remove the x-axis label from the plot.")
+    parser.add_argument("--remove_yaxis_ticks", action='store_true', help="Remove the y-axis ticks from the plot.")
     parser.add_argument("--stats_in_legend", nargs='+', default=[], choices=["median", "mean", "stdev"], help="Statistic(s) to show in legend (median, mean, stdev).")
     parser.add_argument("--side_by_side_shared_yaxis", action='store_true', help="Plot two graphs side by side with shared y-axis.")
     parser.add_argument("--top_bottom_shared_yaxis", action='store_true',
@@ -389,10 +439,11 @@ if __name__ == "__main__":
     parser.add_argument("--xlim_max", type=float, help="Set x-axis limits (max).")
     parser.add_argument("--ylim_min",type=float, help="Set y-axis limits (min).")
     parser.add_argument("--ylim_max",type=float, help="Set y-axis limits (max).")
+    parser.add_argument("--figsize", nargs=2, type=float, metavar=('width', 'height'), help="Figure size in inches as two floats: width height (e.g. --figsize 12 6).")
     args = parser.parse_args()
 
-    xlim = [args.xlim_min, args.xlim_max]
-    ylim = [args.ylim_min, args.ylim_max]
+    xlim = [args.xlim_min if args.xlim_min is not None else None, args.xlim_max if args.xlim_max is not None else None]
+    ylim = [args.ylim_min if args.ylim_min is not None else None, args.ylim_max if args.ylim_max is not None else None]
     # Prepare data for plotting
     data_list = []
     label_idx = 0
@@ -425,7 +476,9 @@ if __name__ == "__main__":
             stats_in_legend=args.stats_in_legend,
             remove_legend=args.remove_legend,
             remove_yaxis_label=args.remove_yaxis_label,
-            remove_xaxis_label=args.remove_xaxis_label
+            remove_xaxis_label=args.remove_xaxis_label,
+            figsize=args.figsize,
+            remove_yaxis_ticks=args.remove_yaxis_ticks
         )
     elif args.side_by_side_shared_yaxis and len(data_list) == 2:
         output = args.output or "side_by_side_cdf.png"
@@ -447,7 +500,9 @@ if __name__ == "__main__":
             legend_ncol=args.legend_ncol,
             legend_position=args.legend_position,
             xlim=xlim,
-            ylim=ylim
+            ylim=ylim,
+            figsize=args.figsize,
+            remove_yaxis_ticks=args.remove_yaxis_ticks
         )
     elif args.combine_graph:
         output = args.output or "combined_cdf.png"
@@ -468,7 +523,9 @@ if __name__ == "__main__":
             legend_ncol=args.legend_ncol,
             legend_position=args.legend_position,
             xlim=xlim,
-            ylim=ylim
+            ylim=ylim,
+            figsize=args.figsize,
+            remove_yaxis_ticks=args.remove_yaxis_ticks
         )
     else:
         for idx, (label, values) in enumerate(data_list):
@@ -494,5 +551,7 @@ if __name__ == "__main__":
                 legend_ncol=args.legend_ncol,
                 legend_position=args.legend_position,
                 xlim=xlim,
-                ylim=ylim
+                ylim=ylim,
+                figsize=args.figsize,
+                remove_yaxis_ticks=args.remove_yaxis_ticks
             )

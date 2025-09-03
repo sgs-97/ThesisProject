@@ -438,8 +438,9 @@ def build_unified_legend(fig: plt.Figure, axes: List[plt.Axes], ax2_list: List[O
     for txt in legend.get_texts():
         txt.set_fontweight('bold')
         txt.set_fontsize(24)
-    # Set legend border thickness
+    # Set legend border thickness and color
     legend.get_frame().set_linewidth(4)
+    legend.get_frame().set_edgecolor('black')
 
 # ------------------------------ #
 # CLI helpers

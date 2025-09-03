@@ -26,7 +26,8 @@ def lap_device_through_boundary(exp_dir):
     with open(laps_fpath, 'r') as f:
         laps_data = f.readlines()
         if not laps_data:
-            raise ValueError(f"The laps file '{laps_fpath}' is empty.")
+            print(f"The laps file '{laps_fpath}' is empty.")
+            return pd.Timedelta(0)
 
         for lap in laps_data:
             if 'device' in lap.lower() and 'through' in lap.lower() and 'boundary' in lap.lower():
