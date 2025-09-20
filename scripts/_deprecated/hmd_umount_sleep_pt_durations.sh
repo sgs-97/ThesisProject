@@ -46,8 +46,8 @@ function main() {
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
     if ! ls "$dir"/passthrough_activations_intervals.csv 1> /dev/null 2>&1; then
-        print_warning "passthrough_activations_intervals.csv not found in dir '$dir'. Running extract_passthrough_activations.py"
-        python3 "$SCRIPT_DIR"/../analyze/extract_passthrough_activations.py "$dir"
+        print_warning "passthrough_activations_intervals.csv not found in dir '$dir'. Running extract_pt_activations.py"
+        python3 "$SCRIPT_DIR"/../analyze/extract_pt_activations.py "$dir"
     fi
     python3 "$SCRIPT_DIR"/../analyze/hmd_umount_sleep_pt_durations.py "$dir"
 

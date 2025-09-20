@@ -27,87 +27,92 @@
    ```
 
 5. After the above have been executed there have been created files necessary to run scripts like:
-- `scripts/imx471_spikes_csv_dir.sh`
-- `scripts/hmd_umount_sleep_pt_durations.sh`
+- `scripts/extract_dirations.sh --imx471_spikes_csv`
+- `scripts/extract_dirations.sh --umount_log_to_sleep_log`
 - etc.
     </br>And all their multi versions.
 
 ## CDF extractions
->To run the below preprocessing and graphing commands must have been executed first
-1. **hmd unmount & sleep to pt activation durations**: 
-   ```
-   scripts/hmd_umount_sleep_pt_durations.sh /path/to/experiment_dir
-   ```
-   or for multiple directories:
-   ```
-   scripts/multi_hmd_umount_sleep_pt_durations.sh /path/to/parent_dir
-   ```
-   ```
-   python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'hmd_umount_sleep_pt_durations.csv'
-   python3 ./analyze/cdfs/hmd_umount_sleep_pt_durations_cdf.py /path/to_super_parent_dir/hmd_umount_sleep_pt_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
-   ```
-2. **hmd umount & sleep to imx471 activation durations**: 
-   ```
-   scripts/hmd_umount_sleep_imx471_durations.sh /path/to/experiment_dir
-   ```
-   or for multiple directories:
-   ```
-   scripts/multi_hmd_umount_sleep_imx471_durations.sh /path/to/parent_dir
-   ```
-   ```
-   python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'hmd_umount_sleep_imx471_durations.csv'
-   python3 ./analyze/cdfs/hmd_umount_sleep_imx471_durations_cdf.py /path/to_super_parent_dir/hmd_umount_sleep_imx471_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
-   ```
-3. **hmd umount to sleep duration**:
-   ```
-    scripts/hmd_umount_to_sleep_durations.sh /path/to/experiment_dir
-    ```
-    or for multiple directories:
-    ```
-    scripts/multi_hmd_umount_to_sleep_durations.sh /path/to/parent_dir
-    ```
-    ```
-    python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'hmd_umount_to_sleep_durations.csv'
-    python3 ./analyze/cdfs/hmd_umount_to_sleep_durations_cdf.py /path/to_super_parent_dir/hmd_umount_to_sleep_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
-    ```
-4. **hmd umount lap to sleep lap duration**:
-   ```
-    scripts/hmd_umount_lap_to_sleep_lap_durations.sh /path/to/experiment_dir
-    ```
-    or for multiple directories:
-    ```
-    scripts/multi_hmd_umount_lap_to_sleep_lap_durations.sh /path/to/parent_dir
-    ```
-    ```
-    python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'hmd_umount_lap_to_sleep_lap_durations.csv'
-    python3 ./analyze/cdfs/hmd_umount_lap_to_sleep_lap_durations_cdf.py /path/to_super_parent_dir/hmd_umount_lap_to_sleep_lap_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
-    ```
-   ```
-5. **hmd umount log to lap duration**:
-   ```
-    scripts/hmd_umount_log_to_lap_durations.sh /path/to/experiment_dir
-    ```
-    or for multiple directories:
-    ```
-    scripts/multi_hmd_umount_log_to_lap_durations.sh /path/to/parent_dir
-    ```
-    ```
-    python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'hmd_umount_log_to_lap_durations.csv'
-    python3 ./analyze/cdfs/hmd_umount_log_to_lap_durations_cdf.py /path/to_super_parent_dir/hmd_umount_log_to_lap_durations_combined.csv all [--graphing_tool <matplotlib|plotly>]
-    ```
-6. **imx471 spikes**: 
-   ```
-    scripts/imx471_spikes_csv_dir.sh /path/to/experiment_dir
-    ```
-    or for multiple directories:
-    ```
-    scripts/multi_imx471_spikes_csv_dir.sh /path/to/parent_dir
-    ```
-    ```
-    python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir 'imx471_spikes.csv'
-    python3 ./analyze/cdfs/imx471_spikes_cdf.py /path/to_super_parent_dir/imx471_spikes_combined.csv all [--graphing_tool <matplotlib|plotly>]
-    ```
-   
+>To run the below preprocessing and graphing commands, preprocessing and graphing must have been executed first.
+
+For all the following, you can use:
+- For a single directory:
+  ```
+  scripts/extract_durations.sh /path/to/experiment_dir [OPTIONS]
+  ```
+- For multiple directories:
+  ```
+  scripts/multi_extract_durations.sh /path/to/parent_dir [OPTIONS]
+  ```
+Where `[OPTIONS]` can be one or more of:
+- `--umount_sleep_pt` (hmd unmount & sleep to pt activation durations)
+- `--umount_sleep_imx471` (hmd umount & sleep to imx471 activation durations)
+- `--umount_to_sleep` (hmd umount to sleep duration)
+- `--umount_lap_to_sleep_lap` (hmd umount lap to sleep lap duration)
+- `--umount_log_to_lap` (hmd umount log to lap duration)
+- `--umount_lap_to_sleep_log` (hmd umount lap to sleep log duration)
+- `--umount_log_to_sleep_log` (hmd umount log to sleep log duration)
+- `--imx471_spikes_csv` (imx471 spikes)
+
+After running the above, concatenate the results and generate CDFs:
+
+- Concatenate CSVs:
+  ```
+  python3 ./scripts/concat_multi_dir_csvs.py /path/to_super_parent_dir '<csv_filename>'
+  ```
+  Where `<csv_filename>` is the output file for the selected option, e.g.:
+    - `hmd_umount_sleep_pt_durations.csv`
+    - `hmd_umount_sleep_imx471_durations.csv`
+    - `hmd_umount_to_sleep_durations.csv`
+    - `hmd_umount_lap_to_sleep_lap_durations.csv`
+    - `hmd_umount_log_to_lap_durations.csv`
+    - `hmd_umount_lap_to_sleep_log_durations.csv`
+    - `hmd_umount_log_to_sleep_log_durations.csv`
+    - `imx471_spikes.csv`
+
+- Generate CDFs:
+  ```
+  python3 analyze/cdfs/generate_durations_cdf.py [CDF_OPTIONS] [--graphing_tool <matplotlib|plotly|both>] [--export_stats] [--combine_graph] [--output <output_path>]
+  ```
+  Where [CDF_OPTIONS] can be one or more of:
+    - `--umount_sleep_pt <csv> <unmount_pt_start|pt_stop_sleep|all>`
+    - `--umount_sleep_imx471 <csv> <unmount_imx471_start|imx471_stop_sleep|all>`
+    - `--umount_to_sleep <csv1> [<csv2> ...]`
+    - `--umount_lap_to_sleep_lap <csv1> [<csv2> ...]`
+    - `--umount_log_to_lap <csv1> [<csv2> ...]`
+    - `--umount_lap_to_sleep_log <csv1> [<csv2> ...]`
+    - `--umount_log_to_sleep_log <csv1> [<csv2> ...]`
+    # (add more as supported)
+
+  Example:
+  ```
+  python3 analyze/cdfs/generate_durations_cdf.py \
+    --umount_sleep_pt experiments/hmd_umount_sleep_pt_durations_combined.csv all \
+    --umount_lap_to_sleep_lap experiments/hmd_umount_lap_to_sleep_lap_durations_combined.csv \
+    --graphing_tool matplotlib --export_stats
+  ```
+    
+---
+
+### Example: Full CDF Extraction Procedure
+```bash
+# 1. Preprocess all experiment directories
+scripts/multi_preprocess_dir.sh experiments
+# 2. Generate graphs for all experiment directories
+scripts/multi_graph_dir.sh experiments
+# 3. Extract durations for all experiment directories (choose your option, e.g. --umount_sleep_pt)
+scripts/multi_extract_durations.sh experiments --umount_sleep_pt
+# 4. Concatenate all resulting CSVs
+python3 scripts/concat_multi_dir_csvs.py experiments hmd_umount_sleep_pt_durations.csv
+# This creates: experiments/hmd_umount_sleep_pt_durations_combined.csv
+# 5. Generate the CDF plot and stats
+python3 analyze/cdfs/generate_durations_cdf.py \
+    --umount_sleep_pt experiments/hmd_umount_sleep_pt_durations_combined.csv all \
+    --graphing_tool matplotlib --export_stats
+# Output: CDF plot and stats in the same directory
+```
+# You can repeat the above with any of the available options and corresponding CDF scripts/CSV names.
+
 
 ## Commands for `adb`
 - **Clear the logs**
@@ -116,7 +121,7 @@
    ```
 
 - **Collect logs**
-   - **Mac/Linux**: 
+   - **Mac/Linux**:
      ```
      adb logcat -d > adb_log_$(date +"%Y-%m-%d_%H-%M-%S")_<appname>.log
      ```
@@ -203,4 +208,3 @@ To homogenize the file names of laps and logs files in directories (as per laps.
     done
     ```
 </span>
-

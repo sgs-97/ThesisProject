@@ -65,6 +65,8 @@ function main() {
 #    "$SCRIPT_DIR"/hmd_umount_sleep_pt_durations.sh "$dir"
 #    "$SCRIPT_DIR"/hmd_umount_to_sleep_durations.sh "$dir"
 #    "$SCRIPT_DIR"/hmd_umount_lap_to_sleep_lap_durations.sh "$dir"
+#    "$SCRIPT_DIR"/hmd_umount_lap_to_sleep_log_durations.sh "$dir"
+#    "$SCRIPT_DIR"/hmd_umount_log_to_sleep_log_durations.sh "$dir"
 #    "$SCRIPT_DIR"/hmd_umount_log_to_lap_durations.sh "$dir"
 
 }

@@ -133,6 +133,10 @@ function main() {
 #        python3 ./analyze/cdfs/hmd_umount_to_sleep_durations_cdf.py "$dir"/hmd_umount_to_sleep_durations_combined.csv --graphing_tool matplotlib
 #        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_lap_to_sleep_lap_durations.csv'
 #        python3 ./analyze/cdfs/hmd_umount_lap_to_sleep_lap_durations_cdf.py "$dir"/hmd_umount_lap_to_sleep_lap_durations_combined.csv --graphing_tool matplotlib --output "$dir"/hmd_umount_lap_to_sleep_lap_durations_cdf.png
+#        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_lap_to_sleep_log_durations.csv'
+#        python3 ./analyze/cdfs/hmd_umount_lap_to_sleep_log_durations_cdf.py "$dir"/hmd_umount_lap_to_sleep_log_durations_combined.csv --graphing_tool matplotlib --output "$dir"/hmd_umount_lap_to_sleep_log_durations_cdf.png
+#        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_log_to_sleep_log_durations.csv'
+#        python3 ./analyze/cdfs/hmd_umount_log_to_sleep_log_durations_cdf.py "$dir"/hmd_umount_log_to_sleep_log_durations_combined.csv --graphing_tool matplotlib --output "$dir"/hmd_umount_log_to_sleep_log_durations_cdf.png
 #        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'hmd_umount_log_to_lap_durations.csv'
 #        python3 ./analyze/cdfs/hmd_umount_log_to_lap_durations_cdf.py "$dir"/hmd_umount_log_to_lap_durations_combined.csv --graphing_tool matplotlib --output "$dir"/hmd_umount_log_to_lap_durations_cdf.png
 #        python3 ./scripts/concat_multi_dir_csvs.py "$dir" 'imx471_spikes.csv'
@@ -147,7 +151,7 @@ function main() {
 function cleanup {
     : # Add cleanup code here
 }
-function on_error { 
+function on_error {
     : # Add additional trap code here
 }
 

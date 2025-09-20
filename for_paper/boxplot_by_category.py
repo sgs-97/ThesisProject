@@ -66,18 +66,26 @@ def read_table(path: Path, sheet: Optional[str]):
         print(f"Unsupported file type: {suffix}. Use CSV/TSV/XLSX/XLS.", file=sys.stderr)
         sys.exit(1)
 
-def print_stats_per_category(df, column, csv_label):
+def print_stats_per_category(df, column, csv_label, whis=1.4):
     grouped = df.groupby("category")[column]
     print(f"\nStatistics for file: {csv_label}")
     for cat, series in grouped:
         values = series.values / 1000 if column == "mean_power_wattage" else series.values
+        s = pd.Series(values)
+        Q1 = s.quantile(0.25)
+        Q3 = s.quantile(0.75)
+        IQR = Q3 - Q1
+        lower_whisker = s[s >= Q1 - whis * IQR].min()
+        upper_whisker = s[s <= Q3 + whis * IQR].max()
         stats = {
-            "mean": round(float(pd.Series(values).mean()), 4),
-            "median": round(float(pd.Series(values).median()), 4),
-            "min": round(float(pd.Series(values).min()), 4),
-            "max": round(float(pd.Series(values).max()), 4),
-            "1st_quartile": round(float(pd.Series(values).quantile(0.25)), 4),
-            "3rd_quartile": round(float(pd.Series(values).quantile(0.75)), 4)
+            "mean": round(float(s.mean()), 4),
+            "median": round(float(s.median()), 4),
+            "min": round(float(s.min()), 4),
+            "max": round(float(s.max()), 4),
+            "1st_quartile": round(float(Q1), 4),
+            "3rd_quartile": round(float(Q3), 4),
+            "whisker_min": round(float(lower_whisker), 4),
+            "whisker_max": round(float(upper_whisker), 4)
         }
         print(f"  Category: {cat}")
         for k, v in stats.items():
@@ -96,6 +104,8 @@ def main():
     ap.add_argument("--yaxis_label", type=str, default="Mean Power (W)", help="Label for the y-axis.")
     ap.add_argument("--figsize", nargs=2, type=float, metavar=('width', 'height'), help="Figure size in inches as two floats: width height (e.g. --figsize 12 8).")
     args = ap.parse_args()
+
+    WHIS = 1.4  # For boxplot whiskers
 
     all_data = []
     all_labels = []
@@ -117,7 +127,7 @@ def main():
             print(f"No data left after cleaning in {input_path}. Check your input.", file=sys.stderr)
             sys.exit(1)
         csv_label = args.legend_label[idx] if args.legend_label and idx < len(args.legend_label) else input_path.stem
-        print_stats_per_category(df, args.column, csv_label)
+        print_stats_per_category(df, args.column, csv_label, whis=WHIS)
         grouped = df.groupby("category")[args.column]
         n_cats = 0
         for cat, series in grouped:
@@ -144,7 +154,7 @@ def main():
     flierprops = dict(marker='o', markersize=0, linewidth=0) # Hide fliers by default
     # Make boxplots closer by reducing widths
     bp = plt.boxplot(all_data, positions=range(1, len(all_data) + 1), tick_labels=all_labels, showfliers=True, widths=0.5,
-                     whis=1.4,
+                     whis=WHIS,
                      boxprops=boxprops, whiskerprops=whiskerprops, capprops=capprops, medianprops=medianprops, flierprops=flierprops, patch_artist=True)
     ax = plt.gca()
     # Make all spines thick

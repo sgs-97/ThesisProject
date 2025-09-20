@@ -82,7 +82,7 @@ function main() {
     if [[ -f "$dir"/passthrough_activations_intervals.csv && ${skip_on_exist} == true ]]; then
       echo "Passthrough activations CSV already exists in the directory. Skipping passthrough activations extraction."
     else
-      python3 $SCRIPT_DIR/../analyze/extract_passthrough_activations.py "$dir"
+      python3 $SCRIPT_DIR/../analyze/extract_pt_activations.py "$dir"
     fi
 
     # Check if the directory contains HMD through boundary CSV and skip if skip_on_exist is true
