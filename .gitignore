@@ -1,1 +1,25 @@
+# System / IDE / venv
+.DS_Store
+.idea
+.venv
+__pycache__
+
+# Temporary files
+_temp
+_test
 io_files/*
+_output
+
+# scripts trash
+scripts/*.log
+scripts/multmux_logs
+scripts/commands.txt
+
+# Data
+/experiments
+
+# Misc
+/nnmav_README.md
+
+/for_paper
+/for_paper/*

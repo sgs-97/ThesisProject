@@ -1,0 +1,109 @@
+import os
+import pandas as pd
+import argparse
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import helpers
+from matplotlib.ticker import FuncFormatter
+from plotly_cdf import plotly_cdf
+from matplotlib_cdf import matplotlib_cdf_multi
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate CDF graph(s) from one or more imx471 spikes CSV files into a matplotlib/plotly graph (output is png/HTML).")
+    parser.add_argument("csv_files", nargs='+', help="Path(s) to the input combined CSV(s).")
+    parser.add_argument("--variable_for_cdf", required=True, choices=["duration", "period"], help="The variable to use for the CDF. (Choices: duration, period)")
+    parser.add_argument("--export_stats", action='store_true', help="Add summary statistics to the graph.")
+    parser.add_argument("--graphing_tool", default="both", choices=["plotly", "matplotlib", "both"], help="Choose the graphing tool to use for plotting the CDF. (Default: both)")
+    parser.add_argument("--legend_labels", nargs='+', help="Legend labels for each plotted component (same order as files).")
+    parser.add_argument("--remove_title", action='store_true', help="Remove the plot title.")
+    parser.add_argument("--combine_graph", action='store_true', help="Plot all CDFs in one graph. If not set, generate separate graphs.")
+    parser.add_argument("--output", default=None, help="Output file path for the combined graph.")
+    parser.add_argument("--legend_position", type=str, default="lower left", help="Position of the legend (e.g. 'upper right', 'lower left', 'top', 'bottom', etc.)")
+    args = parser.parse_args()
+
+    multi_data = []
+    multi_labels = []
+    for idx, csv_file in enumerate(args.csv_files):
+        csv_file = os.path.realpath(csv_file)
+        if not csv_file.endswith(".csv"):
+            raise ValueError(f"Input file {csv_file} must be a CSV.")
+        if not os.path.exists(csv_file):
+            raise FileNotFoundError(f"CSV file {csv_file} does not exist.")
+
+        df = pd.read_csv(csv_file)
+        xaxis_label = ""
+        if args.variable_for_cdf == "duration":
+            values = df["duration"].astype(float)
+            label = args.legend_labels[idx] if args.legend_labels and idx < len(args.legend_labels) else f"{os.path.splitext(os.path.basename(csv_file))[0].replace('_',' ')} – duration"
+            # Save durations to a new CSV next to the input CSV
+            durations_csv_path = os.path.join(os.path.dirname(csv_file), f"{os.path.splitext(os.path.basename(csv_file))[0]}_durations.csv")
+            pd.DataFrame({"duration": values}).to_csv(durations_csv_path, index=False)
+            print(f"Saved durations to: {durations_csv_path}")
+            xaxis_label = "Duration (s)"
+        elif args.variable_for_cdf == "period":
+            intervals = helpers.df_to_intervals(df)
+            values = helpers.get_intervals_periods(intervals, duration_between_starts_filter=[0, 25])
+            label = args.legend_labels[idx] if args.legend_labels and idx < len(args.legend_labels) else f"{os.path.splitext(os.path.basename(csv_file))[0].replace('_',' ')} – period"
+            # Save periods to a new CSV next to the input CSV
+            periods_csv_path = os.path.join(os.path.dirname(csv_file), f"{os.path.splitext(os.path.basename(csv_file))[0]}_periods.csv")
+            pd.DataFrame({"period": values}).to_csv(periods_csv_path, index=False)
+            print(f"Saved periods to: {periods_csv_path}")
+            xaxis_label = "Interspike Duration (s)"
+        multi_data.append(values)
+        multi_labels.append(label)
+
+    # Output file names
+    out_dir = os.path.dirname(args.output) if args.output else os.path.dirname(os.path.realpath(args.csv_files[0]))
+    matplolib_subdir = "analysis/cdfs/matplotlib/"
+    plotly_subdir = "analysis/cdfs/plotly/"
+    matplotlib_extension = 'png'
+    plotly_extension = 'html'
+    stats_extension = 'txt'
+    base_name = f"imx471_spikes_{args.variable_for_cdf}_cdf"
+
+    # Use --output if provided, otherwise default
+    matplotlib_output_file = args.output or os.path.join(out_dir, matplolib_subdir, f"{base_name}.{matplotlib_extension}")
+    plotly_output_file = args.output or os.path.join(out_dir, plotly_subdir, f"{base_name}.{plotly_extension}")
+    output_stats_file = args.output.split('.')[0] + f'.{stats_extension}' or os.path.join(out_dir, matplolib_subdir, f"{base_name}_stats.{stats_extension}")
+
+    # Plot
+    if args.graphing_tool == "matplotlib":
+        matplotlib_cdf_multi(
+            list(zip(multi_labels, multi_data)),
+            output=matplotlib_output_file,
+            export_stats=args.export_stats,
+            stats_txt_path=output_stats_file,
+            title=f"CDF of imx471 Spikes {args.variable_for_cdf.capitalize()}",
+            xaxis_label=xaxis_label,
+            yaxis_label="CDF (\%)",
+            combine_graph=args.combine_graph,
+            remove_title=args.remove_title,
+            legend_position=args.legend_position,
+            xlim=[0, None]
+        )
+    elif args.graphing_tool == "plotly":
+        # Only supports single variable at a time for plotly_cdf
+        for values, label in zip(multi_data, multi_labels):
+            out_file = plotly_output_file
+            if not args.combine_graph or args.output is None:
+                out_file = os.path.join(out_dir, plotly_subdir, f"{label.replace(' ', '_')}_cdf.{plotly_extension}")
+            plotly_cdf(values, out_file, export_stats=args.export_stats, title=f"CDF of {label}", xaxis_label=xaxis_label, yaxis_label="CDF (\%)")
+    elif args.graphing_tool == "both":
+        matplotlib_cdf_multi(
+            list(zip(multi_labels, multi_data)),
+            output=matplotlib_output_file,
+            export_stats=args.export_stats,
+            stats_txt_path=output_stats_file,
+            title=f"CDF of imx471 Spikes {args.variable_for_cdf.capitalize()}",
+            xaxis_label=xaxis_label,
+            yaxis_label="CDF (\%)",
+            combine_graph=args.combine_graph,
+            remove_title=args.remove_title,
+            legend_position=args.legend_position,
+            xlim=[0, None]
+        )
+        for values, label in zip(multi_data, multi_labels):
+            out_file = plotly_output_file
+            if not args.combine_graph or args.output is None:
+                out_file = os.path.join(out_dir, plotly_subdir, f"{label.replace(' ', '_')}_cdf.{plotly_extension}")
+            plotly_cdf(values, out_file, export_stats=args.export_stats, title=f"CDF of {label}", xaxis_label=xaxis_label, yaxis_label="CDF (\%)")
