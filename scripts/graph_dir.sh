@@ -16,6 +16,7 @@ function show_help() {
     echo "  --include_video    Include timestamped video in the output HTML (if found inside the directory where the graph is going to be placed). Default: False"
     εψηο "  --skip_hmd_bound   Skip HMD through boundary calculation of times and output CSV"
     echo "  --skip_on_exist    Skip generating files that already exist in the subdirectory"
+    echo "  --skip-traffic-analysis  Skip running traffic_analysis_script.sh"
     echo "  -h, --help         Show this help message and exit"
     echo
 }
@@ -31,6 +32,7 @@ function main() {
     local include_video=''
     local skip_on_exist=false
     local skip_hmd_bound=false
+    local skip_traffic_analysis=false
     for arg in "$@"; do
         case $arg in
             --show_in_browser)
@@ -44,6 +46,9 @@ function main() {
                 ;;
             --skip_on_exist)
                 skip_on_exist=true
+                ;;
+            --skip-traffic-analysis)
+                skip_traffic_analysis=true
                 ;;
         esac
     done
@@ -69,13 +74,25 @@ function main() {
     fi
 
     SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+    if [[ "${skip_traffic_analysis}" == true ]]; then
+        echo "Skipping traffic analysis step (--skip-traffic-analysis set)."
+    else
+        bash "$SCRIPT_DIR/traffic_analysis_script.sh" "$dir/ip.json"
+
+    fi
 
     no_html_files=$(find "$dir" -maxdepth 1 -type f -name "*.html" | wc -l)
     # Check if the directory contains HTML files and skip if skip_on_exist is true
     if [[ $no_html_files != 0 ]] && [[ $skip_on_exist == true ]]; then
       echo "HTML files already exist in the directory. Skipping graph generation."
     else
-      python3 $SCRIPT_DIR/../analyze/graph.py "$dir"/adb_log*.csv --user_events "$dir"/annotated_events.json $show_in_browser $include_video
+      python3 $SCRIPT_DIR/../analyze/graph.py "$dir"/adb_log*.csv \
+        --user_events "$dir"/annotated_events.json \
+        --traffic_csv "$dir"/traffic.csv \
+        --ip_json "$dir"/ip.json \
+        # --hosts_out "$dir"
+        $show_in_browser $include_video
+
     fi
 
     # Check if the directory contains CSV files and skip if skip_on_exist is true
