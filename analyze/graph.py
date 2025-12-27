@@ -364,11 +364,34 @@ if __name__ == "__main__":
     parser.add_argument('--include_imx471_spikes_csv', action='store_true', help='Include IMX471 spikes CSV in the output. Default: False')
     parser.add_argument("--show_in_browser", action='store_true', help="Skip showing the figure in the browser. Default: False")
     parser.add_argument('--include_video', action='store_true', help='Include timestamped video in the output HTML (if found inside the directory where the graph is going to be placed). Default: False')
+    parser.add_argument("--include_traffic", action="store_true",
+                    help="Overlay traffic.csv scatter traces. Default: False")
+    parser.add_argument("--traffic_csv", default="../io_files/traffic.csv",
+                        help="Path to traffic.csv. Default: ../io_files/traffic.csv")
+    parser.add_argument("--ip_json", default="../io_files/ip.json",
+                        help="Path to ip.json. Default: ../io_files/ip.json")
+    # parser.add_argument("--hosts_out", default=None,
+    #                 help="Write unique IP -> hostname list to this text file (excludes router/device).")
     args = parser.parse_args()
     
     logfile_path = os.path.realpath(args.logfile)
     if not os.path.exists(logfile_path):
         raise FileNotFoundError(f"CSV file {logfile_path} does not exist.")
+    
+    if args.traffic_csv is None:
+        raise ValueError("--traffic_csv must be provided")
+
+    if args.ip_json is None:
+        raise ValueError("--ip_json must be provided")
+
+    traffic_csv_path = os.path.realpath(args.traffic_csv)
+    ip_json_path = os.path.realpath(args.ip_json)
+
+    if not os.path.exists(traffic_csv_path):
+        raise FileNotFoundError(f"traffic.csv not found: {traffic_csv_path}")
+
+    if not os.path.exists(ip_json_path):
+        raise FileNotFoundError(f"ip.json not found: {ip_json_path}")
 
     plot_ovr_metrics_enabled = not args.skip_ovr_metrics
 
@@ -431,6 +454,63 @@ if __name__ == "__main__":
                 fig.add_trace(trace, secondary_y=True)
             fig.update_yaxes(title_text="OVR Metrics", secondary_y=True)
 
+    ip_map = helpers.load_ip_map(ip_json_path)
+
+    traffic_df, uplink, downlink, device_ip, router_ip = helpers.prepare_traffic_df(
+        traffic_csv_path, ip_map
+    )
+
+    traffic_df = helpers.normalize_traffic_timestamp(
+        traffic_df, ip_map, ts_col="timestamp"
+    )
+
+    ip_name_map = helpers.build_ip_name_map(ip_map)
+
+    # if args.hosts_out:
+    #     hosts_out = os.path.realpath(args.hosts_out)
+
+    #     # If a directory is provided, write ip_hostnames.txt inside it
+    #     if os.path.isdir(hosts_out):
+    #         hosts_out = os.path.join(hosts_out, "ip_hostnames.txt")
+
+    #     helpers.write_unique_ip_hostnames_txt(
+    #         traffic_df=traffic_df,
+    #         ip_name_map=ip_name_map,
+    #         out_path=hosts_out,
+    #         exclude_ips={router_ip, device_ip},
+    #     )
+
+
+
+    for pair in traffic_df["ip_pair"].unique():
+        d = traffic_df[traffic_df["ip_pair"] == pair].sort_values("timestamp")
+
+        host1 = helpers.ip_to_hostname(pair[0], ip_name_map)
+        host2 = helpers.ip_to_hostname(pair[1], ip_name_map)
+
+        label = (
+            f"{host1} → {host2}" if uplink and not downlink else
+            f"{host2} → {host1}" if downlink and not uplink else
+            f"{host1} ↔ {host2}"
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=d["timestamp"],
+                y=np.random.rand(len(d)),  # placeholder Y
+                mode="markers",
+                name=label,
+                text=[f"Traffic: {label}<br>Protocol: {p}" for p in d["protocol"]],  # Hover text
+                hoverinfo="text+x+y"
+            ) 
+        )
+
+        if len(traffic_df) > 0:
+            fig.update_yaxes(
+            range=[-0.1, 1.1],  # Match the range of random values (0-1)
+            title_text="Traffic",
+            )
+      
     # Video HTML generation
     video_html = ''
     if include_video:
@@ -458,14 +538,17 @@ if __name__ == "__main__":
     )
     fig.update_layout(
         title=title,
-        xaxis=dict(range=[graph_start_time - timer_lag, graph_end_time], title='Time'),
+        xaxis=dict(range=[graph_start_time - timer_lag, graph_end_time], title='Time',
+                   #removing year from the graph
+                           tickformat='%H:%M:%S.%3f',  
+                            hoverformat='%H:%M:%S.%3f'   ),
         yaxis_title='Sensor Activity (1=Active, 0=Inactive)',
         yaxis=dict(range=[-0.1, 1.1], tickvals=[0, 1], ticktext=['Inactive', 'Active']),
         height=900
     )
 
     html_page_with_components(plotly_graph_file, fig, title, video_html)
-
+    fig.update_xaxes(type="date")
     if show_in_browser:
         fig.show()
 
