@@ -370,8 +370,8 @@ if __name__ == "__main__":
                         help="Path to traffic.csv. Default: ../io_files/traffic.csv")
     parser.add_argument("--ip_json", default="../io_files/ip.json",
                         help="Path to ip.json. Default: ../io_files/ip.json")
-    # parser.add_argument("--hosts_out", default=None,
-    #                 help="Write unique IP -> hostname list to this text file (excludes router/device).")
+    parser.add_argument("--hosts_out", default=None,
+                    help="Write unique IP -> hostname list to this text file (excludes router/device).")
     args = parser.parse_args()
     
     logfile_path = os.path.realpath(args.logfile)
@@ -466,19 +466,19 @@ if __name__ == "__main__":
 
     ip_name_map = helpers.build_ip_name_map(ip_map)
 
-    # if args.hosts_out:
-    #     hosts_out = os.path.realpath(args.hosts_out)
+    if args.hosts_out:
+        hosts_out = os.path.realpath(args.hosts_out)
 
-    #     # If a directory is provided, write ip_hostnames.txt inside it
-    #     if os.path.isdir(hosts_out):
-    #         hosts_out = os.path.join(hosts_out, "ip_hostnames.txt")
+        # If a directory is provided, write ip_hostnames.txt inside it
+        if os.path.isdir(hosts_out):
+            hosts_out = os.path.join(hosts_out, "ip_hostnames.txt")
 
-    #     helpers.write_unique_ip_hostnames_txt(
-    #         traffic_df=traffic_df,
-    #         ip_name_map=ip_name_map,
-    #         out_path=hosts_out,
-    #         exclude_ips={router_ip, device_ip},
-    #     )
+        helpers.write_unique_ip_hostnames_txt(
+            traffic_df=traffic_df,
+            ip_name_map=ip_name_map,
+            out_path=hosts_out,
+            exclude_ips={router_ip, device_ip},
+        )
 
 
 

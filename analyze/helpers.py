@@ -980,3 +980,57 @@ def ip_to_hostname(ip: str, ip_name_map: dict) -> str:
         return socket.gethostbyaddr(ip)[0]
     except Exception:
         return ip
+
+def write_unique_ip_hostnames_txt(
+    traffic_df: pd.DataFrame,
+    ip_name_map: dict,
+    out_path: str,
+    *,
+    exclude_ips: set | None = None
+) -> str:
+    """
+    Write all unique IPs found in traffic_df (src_ip + dst_ip) to a text file, one per line:
+        ipaddr - hostname
+
+    Notes:
+    - Skips any IPs in exclude_ips (e.g., {router_ip, device_ip})
+    - Uses ip_to_hostname(ip, ip_name_map) for hostname resolution
+    - Returns the absolute output file path
+    """
+    if exclude_ips is None:
+        exclude_ips = set()
+
+    if traffic_df is None or traffic_df.empty:
+        raise ValueError("traffic_df is empty; nothing to write.")
+
+    required_cols = {"src_ip", "dst_ip"}
+    missing = required_cols - set(traffic_df.columns)
+    if missing:
+        raise ValueError(f"traffic_df missing required columns: {sorted(missing)}")
+
+    out_path = os.path.realpath(out_path)
+
+    # Ensure parent directory exists
+    out_dir = os.path.dirname(out_path) or "."
+    os.makedirs(out_dir, exist_ok=True)
+
+    # Collect unique IPs from src + dst
+    src_ips = traffic_df["src_ip"].dropna().astype(str)
+    dst_ips = traffic_df["dst_ip"].dropna().astype(str)
+    all_ips = set(src_ips.tolist()) | set(dst_ips.tolist())
+
+    # Filter excluded + trivial blanks
+    all_ips = {ip for ip in all_ips if ip and ip not in exclude_ips}
+
+    # Deterministic output ordering (stable diff in git)
+    ips_sorted = sorted(all_ips)
+
+    lines = []
+    for ip in ips_sorted:
+        hostname = ip_to_hostname(ip, ip_name_map)
+        lines.append(f"{ip} - {hostname}")
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + ("\n" if lines else ""))
+
+    return out_path

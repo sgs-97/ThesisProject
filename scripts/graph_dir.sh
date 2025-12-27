@@ -90,7 +90,7 @@ function main() {
         --user_events "$dir"/annotated_events.json \
         --traffic_csv "$dir"/traffic.csv \
         --ip_json "$dir"/ip.json \
-        # --hosts_out "$dir"
+        --hosts_out "$dir"
         $show_in_browser $include_video
 
     fi
