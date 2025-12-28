@@ -464,6 +464,47 @@ if __name__ == "__main__":
         traffic_df, ip_map, ts_col="timestamp"
     )
 
+    # ---------------- Traffic rolling rates (packet Hz + byte throughput) ----------------
+TRAFFIC_BIN_MS = 50       # bin resolution (ms)
+TRAFFIC_WINDOW_S = 1.0    # rolling window size (sec)
+
+traffic_rates_df = helpers.compute_rolling_traffic_rates(
+    traffic_df,
+    ts_col="timestamp",
+    bytes_col=None,          # OR set explicitly if your CSV column is known, e.g. "frame_len"
+    bin_ms=TRAFFIC_BIN_MS,
+    window_s=TRAFFIC_WINDOW_S,
+    min_periods=1,
+    as_bits_per_sec=False,   # True => bits/sec
+)
+
+# Add traces on secondary_y=True (so it doesn't clash with sensor activity 0/1)
+if len(traffic_rates_df) > 0:
+    fig.add_trace(
+        go.Scatter(
+            x=traffic_rates_df["timestamp"],
+            y=traffic_rates_df["packet_rate_hz"],
+            mode="lines",
+            name=f"Traffic Packet rate (Hz) [{TRAFFIC_WINDOW_S:.1f}s win]",
+            hovertemplate="Time=%{x}<br>Packet rate=%{y:.2f} Hz<extra></extra>",
+        ),
+        secondary_y=True,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=traffic_rates_df["timestamp"],
+            y=traffic_rates_df["byte_rate_per_sec"],
+            mode="lines",
+            name=f"Traffic Byte rate (B/s) [{TRAFFIC_WINDOW_S:.1f}s win]",
+            hovertemplate="Time=%{x}<br>Byte rate=%{y:.0f} B/s<extra></extra>",
+        ),
+        secondary_y=True,
+    )
+
+    # Optional: label secondary axis so it isn't just "OVR Metrics"
+    fig.update_yaxes(title_text="OVR / Traffic rates", secondary_y=True)
+
     ip_name_map = helpers.build_ip_name_map(ip_map)
 
     if args.hosts_out:
@@ -505,11 +546,11 @@ if __name__ == "__main__":
             ) 
         )
 
-        if len(traffic_df) > 0:
-            fig.update_yaxes(
-            range=[-0.1, 1.1],  # Match the range of random values (0-1)
-            title_text="Traffic",
-            )
+        # if len(traffic_df) > 0:
+        #     fig.update_yaxes(
+        #     range=[-0.1, 1.1],  # Match the range of random values (0-1)
+        #     title_text="Traffic",
+        #     )
       
     # Video HTML generation
     video_html = ''

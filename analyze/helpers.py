@@ -1034,3 +1034,80 @@ def write_unique_ip_hostnames_txt(
         f.write("\n".join(lines) + ("\n" if lines else ""))
 
     return out_path
+
+
+def _pick_bytes_col(df: pd.DataFrame, candidates: Iterable[str]) -> Optional[str]:
+    """Return the first existing bytes/length column name, else None."""
+    for c in candidates:
+        if c in df.columns:
+            return c
+    return None
+
+
+def compute_rolling_traffic_rates(
+    traffic_df: pd.DataFrame,
+    *,
+    ts_col: str = "timestamp",
+    bytes_col: Optional[str] = None,
+    bytes_col_candidates: Tuple[str, ...] = ("bytes", "length", "len", "frame_len", "frame_length", "ip_len"),
+    bin_ms: int = 50,
+    window_s: float = 1.0,
+    min_periods: int = 1,
+    as_bits_per_sec: bool = False,
+) -> pd.DataFrame:
+    """
+    Build rolling packet-rate + byte-rate from per-packet traffic rows.
+
+    Output columns:
+      - timestamp (uniform grid)
+      - packet_rate_hz
+      - byte_rate_per_sec  (bytes/sec by default; bits/sec if as_bits_per_sec=True)
+
+    Works with irregular timestamps by resampling to fixed bins first.
+    """
+    if traffic_df is None or len(traffic_df) == 0:
+        return pd.DataFrame(columns=[ts_col, "packet_rate_hz", "byte_rate_per_sec"])
+
+    df = traffic_df.copy()
+    df[ts_col] = pd.to_datetime(df[ts_col], errors="coerce")
+    df = df.dropna(subset=[ts_col]).sort_values(ts_col)
+
+    # Choose bytes column if not provided
+    if bytes_col is None:
+        bytes_col = _pick_bytes_col(df, bytes_col_candidates)
+
+    # If missing, we can still compute packet rate; throughput will be 0.
+    if bytes_col is None:
+        df["_bytes"] = 0
+    else:
+        df["_bytes"] = pd.to_numeric(df[bytes_col], errors="coerce").fillna(0).clip(lower=0)
+
+    # Bin to uniform time grid
+    bin_freq = f"{int(bin_ms)}ms"
+    g = df.set_index(ts_col)
+
+    packet_count = g["_bytes"].resample(bin_freq).size().rename("packet_count")
+    bytes_sum = g["_bytes"].resample(bin_freq).sum().rename("bytes_sum")
+
+    binned = pd.concat([packet_count, bytes_sum], axis=1).fillna(0)
+
+    if window_s <= 0:
+        raise ValueError("window_s must be > 0")
+
+    bins_per_window = max(1, int(round((window_s * 1000) / bin_ms)))
+
+    roll_packets = binned["packet_count"].rolling(bins_per_window, min_periods=min_periods).sum()
+    roll_bytes = binned["bytes_sum"].rolling(bins_per_window, min_periods=min_periods).sum()
+
+    packet_rate_hz = roll_packets / window_s
+    byte_rate = roll_bytes / window_s
+
+    if as_bits_per_sec:
+        byte_rate = byte_rate * 8.0
+
+    out = pd.DataFrame({
+        ts_col: binned.index,
+        "packet_rate_hz": packet_rate_hz.values,
+        "byte_rate_per_sec": byte_rate.values,
+    })
+    return out

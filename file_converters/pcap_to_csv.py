@@ -68,12 +68,27 @@ def extract_packet_data(pcapng_path: str):
                 # Alternatively, you could get a list of all layers
                 # all_layers = list(pkt.layers)
                 # protocol = " > ".join([layer.layer_name.upper() for layer in all_layers])
+
+                # --- packet size in bytes ---
+                bytes_len = None
+                # frame_info.len = actual on-the-wire packet size (best for throughput)
+
+                if hasattr(pkt, "frame_info") and hasattr(pkt.frame_info, "len"):
+                    bytes_len = int(pkt.frame_info.len)
+                elif hasattr(pkt, "length"):
+                    bytes_len = int(pkt.length)
+                elif hasattr(pkt, "frame_info") and hasattr(pkt.frame_info, "cap_len"):
+                    bytes_len = int(pkt.frame_info.cap_len)
+                else:
+                    bytes_len = 0
+
                 
                 records.append([
                     timestamp,
                     src_ip,
                     dst_ip,
-                    protocol
+                    protocol,
+                    bytes_len
                 ])
 
             except Exception as e:
@@ -90,7 +105,7 @@ def write_csv(records, output_csv: str):
     """
     with open(output_csv, mode="w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["timestamp", "src_ip", "dst_ip", "protocol"])
+        writer.writerow(["timestamp", "src_ip", "dst_ip", "protocol","bytes"])
         writer.writerows(records)
 
 
