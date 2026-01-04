@@ -372,6 +372,12 @@ if __name__ == "__main__":
                         help="Path to ip.json. Default: ../io_files/ip.json")
     parser.add_argument("--hosts_out", default=None,
                     help="Write unique IP -> hostname list to this text file (excludes router/device).")
+    parser.add_argument("--rate_window_ms", type=int, default=500,
+                    help="Rolling window size in milliseconds for packet/byte rate. Default: 500")
+    parser.add_argument("--rate_step_ms", type=int, default=50,
+                    help="Time bin step in milliseconds for resampling. Default: 50")
+
+
     args = parser.parse_args()
     
     logfile_path = os.path.realpath(args.logfile)
@@ -405,6 +411,16 @@ if __name__ == "__main__":
         raise FileNotFoundError(f"JSON file {dict_file_path} does not exist.")
 
     plotly_graph_file = os.path.realpath(args.output.replace('<logfile_dir>', (os.path.realpath(os.path.dirname(logfile_path)))))
+    base_title = (
+    plotly_graph_file.lower().split('experiments')[-1]
+    if 'experiments1' in plotly_graph_file.lower()
+    else '/'.join(os.path.relpath(plotly_graph_file).split('/')[-4:-1])
+    )
+
+    title = base_title
+    traffic_title = f"{base_title} (Traffic Rates)"
+
+
     if not os.path.exists(os.path.dirname(plotly_graph_file)):
         os.makedirs(os.path.dirname(plotly_graph_file), exist_ok=True)
 
@@ -424,11 +440,27 @@ if __name__ == "__main__":
     # Load adb log (CSV)
     df = helpers.load_logfile_csv(logfile_path)
 
+    # These are needed by BOTH fig and fig2 (avoid NameError later)
+    timer_lag = pd.Timedelta(seconds=0)
+    graph_start_time = df["Time"].min()
+    graph_end_time = df["Time"].max()
+
+    for item in user_events:
+        if "label" in item and "device sleep" in item["label"].lower():
+            graph_end_time = pd.to_datetime(item["time"], format="%H:%M:%S.%f") + pd.Timedelta(
+                hours=graph_start_time.hour,
+                minutes=graph_start_time.minute,
+                seconds=graph_start_time.second,
+                milliseconds=graph_start_time.microsecond // 1000,
+            )
+
+
     # Extract sensor events from the CSV file using the parsing conditions from the JSON file
     sensor_events, colors, sensor_names = helpers.extract_sensor_events(df, dict_file_path)
 
     # Create a figure with a secondary y-axis
     fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig2 = go.Figure()
 
     sensor_fig = sensor_events_fig(sensor_events, colors, sensor_names, df, user_events)
     for trace in sensor_fig.data:
@@ -464,87 +496,124 @@ if __name__ == "__main__":
         traffic_df, ip_map, ts_col="timestamp"
     )
 
-    # ---------------- Traffic rolling rates (packet Hz + byte throughput) ----------------
-TRAFFIC_BIN_MS = 50       # bin resolution (ms)
-TRAFFIC_WINDOW_S = 1.0    # rolling window size (sec)
+    # Ensure correct dtypes for resampling
+    traffic_df["timestamp"] = pd.to_datetime(traffic_df["timestamp"], errors="coerce")
+    traffic_df = traffic_df.dropna(subset=["timestamp"]).sort_values("timestamp").copy()
 
-traffic_rates_df = helpers.compute_rolling_traffic_rates(
-    traffic_df,
-    ts_col="timestamp",
-    bytes_col=None,          # OR set explicitly if your CSV column is known, e.g. "frame_len"
-    bin_ms=TRAFFIC_BIN_MS,
-    window_s=TRAFFIC_WINDOW_S,
-    min_periods=1,
-    as_bits_per_sec=False,   # True => bits/sec
-)
+    if "bytes" not in traffic_df.columns:
+        traffic_df["bytes"] = 0
+    traffic_df["bytes"] = pd.to_numeric(traffic_df["bytes"], errors="coerce").fillna(0).astype(float)
 
-# Add traces on secondary_y=True (so it doesn't clash with sensor activity 0/1)
-if len(traffic_rates_df) > 0:
-    fig.add_trace(
-        go.Scatter(
-            x=traffic_rates_df["timestamp"],
-            y=traffic_rates_df["packet_rate_hz"],
-            mode="lines",
-            name=f"Traffic Packet rate (Hz) [{TRAFFIC_WINDOW_S:.1f}s win]",
-            hovertemplate="Time=%{x}<br>Packet rate=%{y:.2f} Hz<extra></extra>",
-        ),
-        secondary_y=True,
+    step = f"{args.rate_step_ms}ms"
+    win = f"{args.rate_window_ms}ms"
+
+    pkt_bins = (
+        traffic_df.set_index("timestamp")
+                .assign(pkt=1)
+                .resample(step)["pkt"]
+                .sum()
+                .fillna(0.0)
     )
 
-    fig.add_trace(
-        go.Scatter(
-            x=traffic_rates_df["timestamp"],
-            y=traffic_rates_df["byte_rate_per_sec"],
-            mode="lines",
-            name=f"Traffic Byte rate (B/s) [{TRAFFIC_WINDOW_S:.1f}s win]",
-            hovertemplate="Time=%{x}<br>Byte rate=%{y:.0f} B/s<extra></extra>",
-        ),
-        secondary_y=True,
+    byte_bins = (
+        traffic_df.set_index("timestamp")
+                .resample(step)["bytes"]
+                .sum()
+                .fillna(0.0)
     )
 
-    # Optional: label secondary axis so it isn't just "OVR Metrics"
-    fig.update_yaxes(title_text="OVR / Traffic rates", secondary_y=True)
+    # Create second figure ONLY for traffic rates
+    fig2 = go.Figure()
 
-    ip_name_map = helpers.build_ip_name_map(ip_map)
+        # ---------------- Traffic rolling rates (packet Hz + byte throughput) ----------------
+    if "bytes" not in traffic_df.columns:
+        traffic_df["bytes"] = 0
 
-    if args.hosts_out:
-        hosts_out = os.path.realpath(args.hosts_out)
+    # Build rolling window rates on a fixed time grid
+    traffic_df = traffic_df.sort_values("timestamp").copy()
+    traffic_df = traffic_df.dropna(subset=["timestamp"]).copy()
 
-        # If a directory is provided, write ip_hostnames.txt inside it
-        if os.path.isdir(hosts_out):
-            hosts_out = os.path.join(hosts_out, "ip_hostnames.txt")
+    if args.include_traffic:
+        # Rolling sums over the window -> convert to rates
+        win_seconds = args.rate_window_ms / 1000.0
+        pkt_rate_hz = pkt_bins.rolling(win, min_periods=1).sum() / win_seconds
+        byte_rate_mbps = (byte_bins.rolling(win, min_periods=1).sum() / win_seconds) / (1024.0 * 1024.0)
 
-        helpers.write_unique_ip_hostnames_txt(
-            traffic_df=traffic_df,
-            ip_name_map=ip_name_map,
-            out_path=hosts_out,
-            exclude_ips={router_ip, device_ip},
+        if len(pkt_rate_hz) > 0:
+            fig2.add_trace(
+                go.Scatter(
+                    x=pkt_rate_hz.index,
+                    y=pkt_rate_hz.values,
+                    mode="lines",
+                    name=f"Packet rate (Hz) [{args.rate_window_ms}ms win]",
+                    hovertemplate="Time=%{x}<br>Packet rate=%{y:.2f} Hz<extra></extra>",
+                )
+            )
+
+        if len(byte_rate_mbps) > 0:
+            fig2.add_trace(
+                go.Scatter(
+                    x=byte_rate_mbps.index,
+                    y=byte_rate_mbps.values,
+                    mode="lines",
+                    name=f"Byte rate (MB/s) [{args.rate_window_ms}ms win]",
+                    hovertemplate="Time=%{x}<br>Byte rate=%{y:.4f} MB/s<extra></extra>",
+                )
+            )
+
+        fig2.update_layout(
+            title=traffic_title,
+            xaxis=dict(
+                range=[graph_start_time - timer_lag, graph_end_time],
+                title="Time",
+                tickformat="%H:%M:%S.%3f",
+                hoverformat="%H:%M:%S.%3f",
+            ),
+            yaxis_title="Traffic Rate",
+            height=600
         )
+        fig2.update_xaxes(type="date")
+        if args.include_traffic:
+            ip_name_map = helpers.build_ip_name_map(ip_map)
+
+            if args.hosts_out:
+                hosts_out = os.path.realpath(args.hosts_out)
+
+                # If a directory is provided, write ip_hostnames.txt inside it
+                if os.path.isdir(hosts_out):
+                    hosts_out = os.path.join(hosts_out, "ip_hostnames.txt")
+
+                helpers.write_unique_ip_hostnames_txt(
+                    traffic_df=traffic_df,
+                    ip_name_map=ip_name_map,
+                    out_path=hosts_out,
+                    exclude_ips={router_ip, device_ip},
+                )
 
 
 
-    for pair in traffic_df["ip_pair"].unique():
-        d = traffic_df[traffic_df["ip_pair"] == pair].sort_values("timestamp")
+            for pair in traffic_df["ip_pair"].unique():
+                d = traffic_df[traffic_df["ip_pair"] == pair].sort_values("timestamp")
 
-        host1 = helpers.ip_to_hostname(pair[0], ip_name_map)
-        host2 = helpers.ip_to_hostname(pair[1], ip_name_map)
+                host1 = helpers.ip_to_hostname(pair[0], ip_name_map)
+                host2 = helpers.ip_to_hostname(pair[1], ip_name_map)
 
-        label = (
-            f"{host1} → {host2}" if uplink and not downlink else
-            f"{host2} → {host1}" if downlink and not uplink else
-            f"{host1} ↔ {host2}"
-        )
+                label = (
+                    f"{host1} → {host2}" if uplink and not downlink else
+                    f"{host2} → {host1}" if downlink and not uplink else
+                    f"{host1} ↔ {host2}"
+                )
 
-        fig.add_trace(
-            go.Scatter(
-                x=d["timestamp"],
-                y=np.random.rand(len(d)),  # placeholder Y
-                mode="markers",
-                name=label,
-                text=[f"Traffic: {label}<br>Protocol: {p}" for p in d["protocol"]],  # Hover text
-                hoverinfo="text+x+y"
-            ) 
-        )
+                fig.add_trace(
+                    go.Scatter(
+                        x=d["timestamp"],
+                        y=np.random.rand(len(d)),  # placeholder Y
+                        mode="markers",
+                        name=label,
+                        text=[f"Traffic: {label}<br>Protocol: {p}" for p in d["protocol"]],  # Hover text
+                        hoverinfo="text+x+y"
+                    ) 
+                )
 
         # if len(traffic_df) > 0:
         #     fig.update_yaxes(
@@ -572,11 +641,11 @@ if len(traffic_rates_df) > 0:
                 milliseconds=graph_start_time.microsecond // 1000
             )
     plot_additional_components(fig, user_events, graph_start_time)
-    title = (
-        plotly_graph_file.lower().split('experiments')[-1]
-        if 'experiments1' in plotly_graph_file.lower()
-        else '/'.join(os.path.relpath(plotly_graph_file).split('/')[-4:-1])
-    )
+    # title = (
+    #     plotly_graph_file.lower().split('experiments')[-1]
+    #     if 'experiments1' in plotly_graph_file.lower()
+    #     else '/'.join(os.path.relpath(plotly_graph_file).split('/')[-4:-1])
+    # )
     fig.update_layout(
         title=title,
         xaxis=dict(range=[graph_start_time - timer_lag, graph_end_time], title='Time',
@@ -590,6 +659,12 @@ if len(traffic_rates_df) > 0:
 
     html_page_with_components(plotly_graph_file, fig, title, video_html)
     fig.update_xaxes(type="date")
+    if args.include_traffic:
+        plotly_graph_file2 = plotly_graph_file.replace(".html", "_traffic_rates.html")
+        html_page_with_components(plotly_graph_file2, fig2, traffic_title, "")
+
+        if show_in_browser:
+            fig2.show()
     if show_in_browser:
         fig.show()
 
