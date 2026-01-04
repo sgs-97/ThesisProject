@@ -460,7 +460,9 @@ if __name__ == "__main__":
 
     # Create a figure with a secondary y-axis
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig2 = go.Figure()
+    # Create second figure ONLY for traffic rates (dual y-axis)
+    fig2 = make_subplots(specs=[[{"secondary_y": True}]])
+
 
     sensor_fig = sensor_events_fig(sensor_events, colors, sensor_names, df, user_events)
     for trace in sensor_fig.data:
@@ -523,7 +525,7 @@ if __name__ == "__main__":
     )
 
     # Create second figure ONLY for traffic rates
-    fig2 = go.Figure()
+    # fig2 = go.Figure()
 
         # ---------------- Traffic rolling rates (packet Hz + byte throughput) ----------------
     if "bytes" not in traffic_df.columns:
@@ -547,7 +549,8 @@ if __name__ == "__main__":
                     mode="lines",
                     name=f"Packet rate (Hz) [{args.rate_window_ms}ms win]",
                     hovertemplate="Time=%{x}<br>Packet rate=%{y:.2f} Hz<extra></extra>",
-                )
+                ),
+                secondary_y=False,
             )
 
         if len(byte_rate_mbps) > 0:
@@ -558,7 +561,8 @@ if __name__ == "__main__":
                     mode="lines",
                     name=f"Byte rate (MB/s) [{args.rate_window_ms}ms win]",
                     hovertemplate="Time=%{x}<br>Byte rate=%{y:.4f} MB/s<extra></extra>",
-                )
+                ),
+                secondary_y=True,
             )
 
         fig2.update_layout(
@@ -569,9 +573,15 @@ if __name__ == "__main__":
                 tickformat="%H:%M:%S.%3f",
                 hoverformat="%H:%M:%S.%3f",
             ),
-            yaxis_title="Traffic Rate",
-            height=600
+            height=600,
+            legend=dict(orientation="h"),
         )
+        # Left y-axis (packet rate)
+        fig2.update_yaxes(title_text="Packet rate (Hz)", secondary_y=False)
+
+        # Right y-axis (byte rate)
+        fig2.update_yaxes(title_text="Byte rate (MB/s)", secondary_y=True)
+
         fig2.update_xaxes(type="date")
         if args.include_traffic:
             ip_name_map = helpers.build_ip_name_map(ip_map)
