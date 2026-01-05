@@ -156,7 +156,7 @@ def main():
     records, protocol_trees = extract_packet_data(pcapng_path)
     write_csv(records, output_csv)
 
-    protocol_tree_txt = os.path.join(directory, "protocol_trees.txt")
+    protocol_tree_txt = os.path.join(directory, "traffic_protocol_trees.txt")
     write_unique_protocol_trees(protocol_trees, protocol_tree_txt)
 
     print(f"PCAPNG file read: {pcapng_path}")
