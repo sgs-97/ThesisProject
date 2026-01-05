@@ -31,6 +31,8 @@ def extract_packet_data(pcapng_path: str):
     Extract timestamp, src_ip, dst_ip, protocol from pcapng - ALL PROTOCOLS
     """
     records = []
+    protocol_trees = set()
+
 
     with pyshark.FileCapture(pcapng_path, keep_packets=False) as capture:
         for pkt in capture:
@@ -63,7 +65,22 @@ def extract_packet_data(pcapng_path: str):
                     dst_ip = pkt.arp.dst_proto_ipv4 if hasattr(pkt.arp, 'dst_proto_ipv4') else pkt.arp.dst_hw_mac
 
                 # Get the protocol - use highest_layer to capture ALL protocols
+                # CSV protocol remains unchanged
                 protocol = pkt.highest_layer
+
+                # Build protocol tree separately (full layer stack)
+                try:
+                    layers = []
+                    for layer in pkt.layers:
+                        name = getattr(layer, "layer_name", "")
+                        if name:
+                            layers.append(name.lower())
+                    protocol_tree = ":".join(layers)
+                except Exception:
+                    protocol_tree = str(pkt.highest_layer).lower()
+
+                if protocol_tree:
+                    protocol_trees.add(protocol_tree)
                 
                 # Alternatively, you could get a list of all layers
                 # all_layers = list(pkt.layers)
@@ -96,7 +113,7 @@ def extract_packet_data(pcapng_path: str):
                 # print(f"Error processing packet {pkt.number}: {e}")
                 continue
 
-    return records
+    return records, protocol_trees
 
 
 def write_csv(records, output_csv: str):
@@ -108,6 +125,16 @@ def write_csv(records, output_csv: str):
         writer.writerow(["timestamp", "src_ip", "dst_ip", "protocol","bytes"])
         writer.writerows(records)
 
+def write_unique_protocol_trees(protocol_trees, output_txt: str):
+    """
+    Write unique protocol trees to a text file.
+    """
+    with open(output_txt, "w", encoding="utf-8") as f:
+        for tree in sorted(protocol_trees):
+            f.write(tree + "\n")
+
+    print(f"protocol_trees.txt written to: {output_txt}")
+    print(f"Unique protocol trees: {len(protocol_trees)}")
 
 def main():
     parser = argparse.ArgumentParser(
@@ -126,8 +153,11 @@ def main():
 
     output_csv = os.path.join(directory, "traffic.csv")
 
-    records = extract_packet_data(pcapng_path)
+    records, protocol_trees = extract_packet_data(pcapng_path)
     write_csv(records, output_csv)
+
+    protocol_tree_txt = os.path.join(directory, "protocol_trees.txt")
+    write_unique_protocol_trees(protocol_trees, protocol_tree_txt)
 
     print(f"PCAPNG file read: {pcapng_path}")
     print(f"traffic.csv written to: {output_csv}")
