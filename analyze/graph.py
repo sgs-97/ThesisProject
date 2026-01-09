@@ -502,6 +502,15 @@ if __name__ == "__main__":
     traffic_df["timestamp"] = pd.to_datetime(traffic_df["timestamp"], errors="coerce")
     traffic_df = traffic_df.dropna(subset=["timestamp"]).sort_values("timestamp").copy()
 
+
+    # --- keep only important packets for traffic-rate computation ---
+    if "important" in traffic_df.columns:
+        # important may be True/False or "True"/"False" in CSV
+        important_mask = traffic_df["important"].astype(str).str.lower().isin(["true", "1", "yes"])
+        traffic_df = traffic_df[important_mask].copy()
+    else:
+        print(f"[{script_name}] WARNING: 'important' column not found in traffic.csv. Using all packets.")
+
     if "bytes" not in traffic_df.columns:
         traffic_df["bytes"] = 0
     traffic_df["bytes"] = pd.to_numeric(traffic_df["bytes"], errors="coerce").fillna(0).astype(float)

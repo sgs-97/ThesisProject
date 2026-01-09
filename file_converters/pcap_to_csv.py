@@ -33,6 +33,7 @@ def extract_packet_data(pcapng_path: str):
     records = []
     protocol_trees = set()
 
+    false_protocols = set()
 
     with pyshark.FileCapture(pcapng_path, keep_packets=False) as capture:
         for pkt in capture:
@@ -99,13 +100,82 @@ def extract_packet_data(pcapng_path: str):
                 else:
                     bytes_len = 0
 
+                                # ---------------- mark important vs non-important (no filtering) ----------------
+                important = True
+                reason = ""
+
+                # Normalize protocol name for consistent checks
+                proto_u = str(protocol).upper()
+
+                # Always non-data/control protocols
+                if proto_u in {"ICMP", "ICMPV6", "DNS", "MDNS", "ARP"}:
+                    important = False
+                    reason = f"{proto_u.lower()}_control"
+
+                # TCP overhead classification (ACK-only / handshake / teardown)
+                elif hasattr(pkt, "tcp"):
+                    tcp_len = 0
+                    try:
+                        if hasattr(pkt.tcp, "len"):
+                            tcp_len = int(pkt.tcp.len)
+                    except Exception:
+                        tcp_len = 0
+
+                    syn = getattr(pkt.tcp, "flags_syn", "0")
+                    fin = getattr(pkt.tcp, "flags_fin", "0")
+                    rst = getattr(pkt.tcp, "flags_reset", "0")
+                    ack = getattr(pkt.tcp, "flags_ack", "0")
+
+                    # SYN/FIN/RST are control (setup/teardown)
+                    if syn == "1":
+                        important = False
+                        reason = "tcp_handshake_syn"
+                    elif fin == "1" or rst == "1":
+                        important = False
+                        reason = "tcp_teardown_fin_rst"
+                    # ACK-only: ack flag set but no TCP payload
+                    elif ack == "1" and tcp_len == 0:
+                        important = False
+                        reason = "tcp_ack_only"
+
+                    # Retransmission flags (if tshark exposes them via pyshark)
+                    if important:
+                        for attr, label in [
+                            ("analysis_retransmission", "tcp_retransmission"),
+                            ("analysis_fast_retransmission", "tcp_fast_retransmission"),
+                            ("analysis_spurious_retransmission", "tcp_spurious_retransmission"),
+                        ]:
+                            if hasattr(pkt.tcp, attr):
+                                important = False
+                                reason = label
+                                break
+
+                # TLS handshake classification (keep TLS application data as important)
+                if important and hasattr(pkt, "tls"):
+                    # record_content_type: 22=handshake, 23=application_data (if available)
+                    ctype = getattr(pkt.tls, "record_content_type", None)
+                    if ctype is not None and str(ctype) == "22":
+                        important = False
+                        reason = "tls_handshake"
+
+                # QUIC handshake classification (best-effort): long header usually = Initial/Handshake/0-RTT
+                if important and hasattr(pkt, "quic"):
+                    header_form = getattr(pkt.quic, "header_form", None)  # often 1=long, 0=short
+                    if header_form is not None and str(header_form) == "1":
+                        important = False
+                        reason = "quic_long_header_handshake"
+
+                if not important:
+                    false_protocols.add(str(protocol))
                 
                 records.append([
                     timestamp,
                     src_ip,
                     dst_ip,
                     protocol,
-                    bytes_len
+                    bytes_len,
+                    important,
+                    reason
                 ])
 
             except Exception as e:
@@ -113,7 +183,7 @@ def extract_packet_data(pcapng_path: str):
                 # print(f"Error processing packet {pkt.number}: {e}")
                 continue
 
-    return records, protocol_trees
+    return records, protocol_trees, false_protocols
 
 
 def write_csv(records, output_csv: str):
@@ -122,7 +192,7 @@ def write_csv(records, output_csv: str):
     """
     with open(output_csv, mode="w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["timestamp", "src_ip", "dst_ip", "protocol","bytes"])
+        writer.writerow(["timestamp", "src_ip", "dst_ip", "protocol","bytes","important", "non_important_reason"])
         writer.writerows(records)
 
 def write_unique_protocol_trees(protocol_trees, output_txt: str):
@@ -153,7 +223,7 @@ def main():
 
     output_csv = os.path.join(directory, "traffic.csv")
 
-    records, protocol_trees = extract_packet_data(pcapng_path)
+    records, protocol_trees,false_protocols = extract_packet_data(pcapng_path)
     write_csv(records, output_csv)
 
     protocol_tree_txt = os.path.join(directory, "traffic_protocol_trees.txt")
@@ -168,6 +238,7 @@ def main():
         protocols = set([record[3] for record in records])
         print(f"Unique protocols found: {len(protocols)}")
         print("Protocols:", ", ".join(sorted(protocols)))
+
 
 
 if __name__ == "__main__":
