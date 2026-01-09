@@ -550,6 +550,32 @@ if __name__ == "__main__":
         pkt_rate_hz = pkt_bins.rolling(win, min_periods=1).sum() / win_seconds
         byte_rate_mbps = (byte_bins.rolling(win, min_periods=1).sum() / win_seconds) / (1024.0 * 1024.0)
 
+        large_pkt_bins = (
+            traffic_df[traffic_df["bytes"] > 1200]
+                .set_index("timestamp")
+                .assign(pkt=1)
+                .resample(step)["pkt"]
+                .sum()
+                .fillna(0.0)
+        )
+
+        large_pkt_rate_hz = large_pkt_bins.rolling(win, min_periods=1).sum() / win_seconds
+
+        if len(large_pkt_rate_hz) > 0:
+            fig2.add_trace(
+                go.Scatter(
+                    x=large_pkt_rate_hz.index,
+                    y=large_pkt_rate_hz.values,
+                    mode="lines",
+                    name=f"Packets >1200B rate (Hz) [{args.rate_window_ms}ms win]",
+                    hovertemplate="Time=%{x}<br>>1200B pkt rate=%{y:.2f} Hz<extra></extra>",
+                    line=dict(color="green")
+                ),
+                secondary_y=False,   # same axis as packet rate
+            )
+
+
+
         if len(pkt_rate_hz) > 0:
             fig2.add_trace(
                 go.Scatter(
