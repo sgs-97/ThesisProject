@@ -494,6 +494,9 @@ if __name__ == "__main__":
         traffic_csv_path, ip_map
     )
 
+    metrics_path = os.path.join(os.path.dirname(traffic_csv_path), "network_traffic_metrics.txt")
+    helpers.write_network_traffic_metrics(traffic_df, metrics_path)
+
     traffic_df = helpers.normalize_traffic_timestamp(
         traffic_df, ip_map, ts_col="timestamp"
     )
@@ -550,31 +553,28 @@ if __name__ == "__main__":
         pkt_rate_hz = pkt_bins.rolling(win, min_periods=1).sum() / win_seconds
         byte_rate_mbps = (byte_bins.rolling(win, min_periods=1).sum() / win_seconds) / (1024.0 * 1024.0)
 
-        large_pkt_bins = (
+        large_byte_bins = (
             traffic_df[traffic_df["bytes"] > 1200]
                 .set_index("timestamp")
-                .assign(pkt=1)
-                .resample(step)["pkt"]
+                .resample(step)["bytes"]
                 .sum()
                 .fillna(0.0)
         )
 
-        large_pkt_rate_hz = large_pkt_bins.rolling(win, min_periods=1).sum() / win_seconds
+        large_byte_rate_mbps = (large_byte_bins.rolling(win, min_periods=1).sum() / win_seconds) / (1024.0 * 1024.0)
 
-        if len(large_pkt_rate_hz) > 0:
+        if len(large_byte_rate_mbps) > 0:
             fig2.add_trace(
                 go.Scatter(
-                    x=large_pkt_rate_hz.index,
-                    y=large_pkt_rate_hz.values,
+                    x=large_byte_rate_mbps.index,
+                    y=large_byte_rate_mbps.values,
                     mode="lines",
-                    name=f"Packets >1200B rate (Hz) [{args.rate_window_ms}ms win]",
-                    hovertemplate="Time=%{x}<br>>1200B pkt rate=%{y:.2f} Hz<extra></extra>",
+                    name=f">1200B Byte rate (MB/s) [{args.rate_window_ms}ms win]",
+                    hovertemplate="Time=%{x}<br>>1200B Byte rate=%{y:.4f} MB/s<extra></extra>",
                     line=dict(color="green")
                 ),
-                secondary_y=False,   # same axis as packet rate
+                secondary_y=True,
             )
-
-
 
         if len(pkt_rate_hz) > 0:
             fig2.add_trace(
@@ -586,7 +586,7 @@ if __name__ == "__main__":
                     hovertemplate="Time=%{x}<br>Packet rate=%{y:.2f} Hz<extra></extra>",
                     # legendgroup="traffic",
                     showlegend=True,   # shows ONE legend item
-                    line=dict(color="blue")
+                    line=dict(color="blue", dash="dot")
                 ),
                 secondary_y=False,
             )
@@ -602,7 +602,7 @@ if __name__ == "__main__":
                     # legendgroup="traffic",
                     # showlegend=False,      # hidden from legend
                     showlegend=True,
-                    line=dict(color="red", dash="dot"),
+                    line=dict(color="red"),
                     yaxis="y2"
                 ),
                 secondary_y=True,
@@ -620,10 +620,16 @@ if __name__ == "__main__":
             legend=dict(orientation="h"),
         )
         # Left y-axis (packet rate)
-        fig2.update_yaxes(title_text="Packet rate (Hz)", secondary_y=False)
-
+        fig2.update_yaxes(
+        title_text=f"Packet rate (Hz, {args.rate_window_ms} ms window)",
+        secondary_y=False
+        )
         # Right y-axis (byte rate)
-        fig2.update_yaxes(title_text="Byte rate (MB/s)", secondary_y=True)
+        fig2.update_yaxes(
+        title_text=f"Byte rate (MB/s, {args.rate_window_ms} ms window)",
+        secondary_y=True
+        )
+
 
         fig2.update_xaxes(type="date")
         if args.include_traffic:
