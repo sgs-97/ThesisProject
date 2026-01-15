@@ -92,8 +92,8 @@ function main() {
         --ip_json "$dir"/ip.json \
         --hosts_out "$dir" \
         --include_traffic \
-        --rate_window_ms 50 \
-        --rate_step_ms 50
+        --rate_window_ms 100 \
+        --rate_step_ms 100
         $show_in_browser $include_video
 
     fi
