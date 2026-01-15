@@ -584,7 +584,7 @@ if __name__ == "__main__":
                     mode="lines",
                     name=f"Packet rate (Hz) [{args.rate_window_ms}ms win]",
                     hovertemplate="Time=%{x}<br>Packet rate=%{y:.2f} Hz<extra></extra>",
-                    legendgroup="traffic",
+                    # legendgroup="traffic",
                     showlegend=True,   # shows ONE legend item
                     line=dict(color="blue")
                 ),
@@ -599,8 +599,9 @@ if __name__ == "__main__":
                     mode="lines",
                     name=f"Byte rate (MB/s) [{args.rate_window_ms}ms win]",
                     hovertemplate="Time=%{x}<br>Byte rate=%{y:.4f} MB/s<extra></extra>",
-                    legendgroup="traffic",
-                    showlegend=False,      # hidden from legend
+                    # legendgroup="traffic",
+                    # showlegend=False,      # hidden from legend
+                    showlegend=True,
                     line=dict(color="red", dash="dot"),
                     yaxis="y2"
                 ),
