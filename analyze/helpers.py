@@ -951,6 +951,11 @@ def prepare_traffic_df(traffic_csv_path: str, ip_map: dict):
     # timestamp must exist for plotting
     traffic_df = traffic_df.dropna(subset=["timestamp"]).copy()
 
+    traffic_df["direction"] = "unknown"
+    if device_ip:
+        traffic_df.loc[traffic_df["src_ip"] == device_ip, "direction"] = "uplink"
+        traffic_df.loc[traffic_df["dst_ip"] == device_ip, "direction"] = "downlink"
+   
     # direction filtering + ip_pair
     if uplink and not downlink:
         traffic_df = traffic_df[traffic_df["src_ip"] == device_ip].copy()
@@ -1111,3 +1116,45 @@ def compute_rolling_traffic_rates(
         "byte_rate_per_sec": byte_rate.values,
     })
     return out
+
+def write_network_traffic_metrics(traffic_df, out_path="network_traffic_metrics.txt"):
+    """
+    Write basic network traffic metrics to a text file.
+    Expects traffic_df to already contain:
+    - 'important' column (True/False or string)
+    - 'bytes'
+    - 'direction' column with values: 'uplink' / 'downlink'
+    """
+
+    total_packets = len(traffic_df)
+
+    unimportant_packets = (
+        traffic_df["important"].astype(str).str.lower().isin(["false", "0", "no"])
+        .sum()
+        if "important" in traffic_df.columns
+        else 0
+    )
+
+    large_packets = (traffic_df["bytes"] > 1200).sum() if "bytes" in traffic_df.columns else 0
+
+    uplink_packets = (
+        (traffic_df["direction"] == "uplink").sum()
+        if "direction" in traffic_df.columns
+        else 0
+    )
+
+    downlink_packets = (
+        (traffic_df["direction"] == "downlink").sum()
+        if "direction" in traffic_df.columns
+        else 0
+    )
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(f"Total packets: {total_packets}\n")
+        f.write(f"Unimportant packets: {unimportant_packets}\n")
+        f.write(f"Packets with bytes > 1200: {large_packets}\n")
+        f.write(f"Uplink packets: {uplink_packets}\n")
+        f.write(f"Downlink packets: {downlink_packets}\n")
+
+    print(f"[INFO] Network traffic metrics written to: {out_path}")
+
