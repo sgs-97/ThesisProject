@@ -23,17 +23,58 @@ import pandas as pd
 import os
 import io
 from contextlib import redirect_stdout, redirect_stderr
+from typing import List, Tuple, Optional
+import json
+
 
 
 
 REQUIRED_COLS = {"src_ip", "dst_ip", "bytes"}
+METRICS_EXPLANATION_TEXT = """
+    ------------------------------------------------------------
+    INTERPRETATION NOTES
+
+    - pct_packets:
+    Percentage of packets attributed to a given IP within the
+    same traffic direction (uplink or downlink).
+
+    - pct_bytes:
+    Percentage of total data volume (bytes) attributed to a
+    given IP within the same traffic direction.
+
+    - Percentages are computed independently for:
+    * UPLINK traffic (device -> remote)
+    * DOWNLINK traffic (remote -> device)
+
+    - Percentages across multiple IPs may sum to more than 100%
+    when visually inspected across tables, because each row
+    represents an independent share of the same total.
+
+    - Hostnames are resolved using ip_hostnames.txt located in
+    the same directory as traffic.csv.
+
+    ------------------------------------------------------------
+    """
+
+def load_traffic_timezone(csv_path: str) -> str:
+    base_dir = os.path.dirname(os.path.abspath(csv_path))
+    ip_json_path = os.path.join(base_dir, "ip.json")
+
+    if not os.path.isfile(ip_json_path):
+        return "UTC"
+
+    with open(ip_json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    tz = str(data.get("traffic_timezone", "UTC")).strip()
+    return tz or "UTC"
 
 
 def _pct(n: float, d: float) -> float:
     return (100.0 * n / d) if d else 0.0
 
 
-def load_traffic(csv_path: str) -> pd.DataFrame:
+def load_traffic(csv_path: str, traffic_tz: str) -> pd.DataFrame:
     df = pd.read_csv(csv_path)
 
     missing = REQUIRED_COLS - set(df.columns)
@@ -43,6 +84,27 @@ def load_traffic(csv_path: str) -> pd.DataFrame:
     # Clean + types
     df["src_ip"] = df["src_ip"].fillna("").astype(str).str.strip()
     df["dst_ip"] = df["dst_ip"].fillna("").astype(str).str.strip()
+
+    if "timestamp" in df.columns:
+        # traffic.csv timestamp is UTC time-of-day (HH:MM:SS.xxx)
+        df["timestamp"] = df["timestamp"].fillna("").astype(str).str.strip()
+
+        # Build a dummy UTC date (same for all rows) so we can tz-convert correctly
+        dummy_date = "1970-01-01 "
+        ts_utc = pd.to_datetime(dummy_date + df["timestamp"], errors="coerce", utc=True)
+
+        # Convert to traffic timezone from ip.json
+        ts_local = ts_utc.dt.tz_convert(traffic_tz)
+
+        # store both: localized datetime + localized time-of-day string + timedelta for window filtering
+        df["_ts_local_dt"] = ts_local
+        df["_ts_local_str"] = ts_local.dt.strftime("%H:%M:%S.%f").str[:-3]
+        df["_ts_td"] = pd.to_timedelta(df["_ts_local_str"], errors="coerce")
+    else:
+        df["_ts_local_dt"] = pd.NaT
+        df["_ts_local_str"] = ""
+        df["_ts_td"] = pd.NaT
+
 
     # bytes can be messy; coerce and drop invalid
     df["bytes"] = pd.to_numeric(df["bytes"], errors="coerce").fillna(0).astype("int64")
@@ -168,6 +230,67 @@ def load_ip_hostname_map(csv_path: str) -> dict:
 
     return ip_to_host
 
+def _parse_hhmmss_to_timedelta(t: str) -> pd.Timedelta:
+    # supports "HH:MM:SS", "HH:MM:SS.s", "HH:MM:SS.ms"
+    t = t.strip()
+    parts = t.split(":")
+    if len(parts) != 3:
+        raise ValueError(f"Bad time format: {t}")
+    hh = int(parts[0])
+    mm = int(parts[1])
+    ss = float(parts[2])
+    return pd.to_timedelta(hh, unit="h") + pd.to_timedelta(mm, unit="m") + pd.to_timedelta(ss, unit="s")
+
+
+def load_time_windows(csv_path: str) -> List[Tuple[pd.Timedelta, pd.Timedelta, str]]:
+    """
+    Reads network_metrics_input.txt from same folder as traffic.csv.
+    Each line: 'HH:MM:SS.s - HH:MM:SS.s'
+    Returns list of (start_td, end_td, raw_line_label).
+    """
+    base_dir = os.path.dirname(os.path.abspath(csv_path))
+    win_file = os.path.join(base_dir, "network_metrics_input.txt")
+
+    windows: List[Tuple[pd.Timedelta, pd.Timedelta, str]] = []
+
+    if not os.path.isfile(win_file):
+        return windows
+
+    with open(win_file, "r", encoding="utf-8") as f:
+        for line in f:
+            raw = line.strip()
+            if not raw or " - " not in raw:
+                continue
+            start_s, end_s = raw.split(" - ", 1)
+            try:
+                start_td = _parse_hhmmss_to_timedelta(start_s)
+                end_td = _parse_hhmmss_to_timedelta(end_s)
+                if end_td <= start_td:
+                    continue
+                windows.append((start_td, end_td, raw))
+            except Exception:
+                continue
+
+    return windows
+
+def run_report(df_slice: pd.DataFrame, title: str, args, ip_hostname_map: dict) -> None:
+    print("=" * 80)
+    print(title)
+    print("=" * 80)
+
+    print_total_packets(df_slice)
+
+    if not args.uplink and not args.downlink:
+        print("No direction flags passed. Use --uplink and/or --downlink for directional analysis.")
+        print("-" * 60)
+        return
+
+    if args.uplink:
+        analyze_uplink(df_slice, args.device_ip, args.top, ip_hostname_map)
+
+    if args.downlink:
+        analyze_downlink(df_slice, args.device_ip, args.top, ip_hostname_map)
+
 
 def main() -> int:
     args = parse_args()
@@ -177,8 +300,15 @@ def main() -> int:
     buf = io.StringIO()
     with redirect_stdout(buf), redirect_stderr(buf):
         try:
-            df = load_traffic(args.csv)
+            traffic_tz = load_traffic_timezone(args.csv)
+            df = load_traffic(args.csv, traffic_tz)
+
+            print(f"Traffic timezone (from ip.json): {traffic_tz}")
+            print("-" * 60)
+
             ip_hostname_map = load_ip_hostname_map(args.csv)
+            windows = load_time_windows(args.csv)
+
 
         except Exception as e:
             print(f"ERROR: {e}", file=sys.stderr)
@@ -189,22 +319,25 @@ def main() -> int:
 
             return 2
 
-        print_total_packets(df)
-
-        # Only do uplink/downlink analysis if user passed the flags
-        if not args.uplink and not args.downlink:
-            print("No direction flags passed. Use --uplink and/or --downlink for directional analysis.")
+        # If windows file missing/empty/invalid -> analyze entire dataset
+        if not windows:
+            run_report(df, "FULL DATASET (no windows provided)", args, ip_hostname_map)
         else:
-            if args.uplink:
-                analyze_uplink(df, args.device_ip, args.top, ip_hostname_map)
+            # Need timestamp column parsed into _ts_td
+            if df["_ts_td"].isna().all():
+                run_report(df, "FULL DATASET (timestamp parse failed / missing)", args, ip_hostname_map)
+            else:
+                for i, (start_td, end_td, raw_label) in enumerate(windows, start=1):
+                    df_w = df[(df["_ts_td"] >= start_td) & (df["_ts_td"] <= end_td)]
+                    run_report(df_w, f"WINDOW {i}: {raw_label}", args, ip_hostname_map)
 
-            if args.downlink:
-                analyze_downlink(df, args.device_ip, args.top, ip_hostname_map)
-
+   
 
     # Write captured output to txt in same folder as traffic.csv
     with open(out_txt, "w", encoding="utf-8") as f:
         f.write(buf.getvalue())
+        f.write(METRICS_EXPLANATION_TEXT)
+
 
     # Also print to terminal like before
     print(buf.getvalue(), end="")
