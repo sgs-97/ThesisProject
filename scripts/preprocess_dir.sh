@@ -161,6 +161,12 @@ function main() {
     else
       python3 "$SCRIPT_DIR"/../file_converters/states_to_json.py "$dir"/laps.txt "$dir"/adb_log_*.csv $VERBOSE_LITERAL
     fi
+    echo "dir = $dir"
+    echo "SCRIPT_DIR = $SCRIPT_DIR"
+
+    if ls "$dir"/*.pcapng 1> /dev/null 2>&1; then
+      python3 "$SCRIPT_DIR"/../file_converters/pcap_to_csv.py "$dir" $VERBOSE_LITERAL
+    fi
 
 }
 

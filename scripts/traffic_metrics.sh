@@ -66,6 +66,7 @@ echo "----------------------------------------"
 python3 "$PY_SCRIPT" \
     --csv "$TRAFFIC_PATH" \
     --device-ip "$DEVICE_IP" \
+    --top 5 \
     $UPLINK_FLAG \
     $DOWNLINK_FLAG
 
