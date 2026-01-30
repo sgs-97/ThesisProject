@@ -35,11 +35,15 @@ def extract_packet_data(pcapng_path: str):
 
     false_protocols = set()
 
-    with pyshark.FileCapture(pcapng_path, keep_packets=False) as capture:
-        for pkt in capture:
+    with pyshark.FileCapture(pcapng_path, 
+                            keep_packets=False) as capture:
+        for i, pkt in enumerate(capture):
+            if i % 5000 == 0:
+                print(f"[pcap_to_csv] processed {i} packets")
+
             try:
                 timestamp = pd.to_datetime(
-                    float(pkt.frame_info.time_epoch),
+                    float(pkt.sniff_timestamp),  # Pyshark version of pkt.frame_info.time_epoch
                     unit="s",
                     utc=True
                 ).strftime("%H:%M:%S.%f")[:-3]
