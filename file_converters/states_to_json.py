@@ -94,6 +94,17 @@ def convert_states_to_json(log_csv, states_fpath):
                 })
                 x_unmount = pd.to_datetime(time, format='%H:%M:%S.%f')  # Update unmount x value
 
+            # Device Mount (sys.hmt.mounted=1)
+            if 'sys.hmt.mounted=1' in event.lower():
+                dict.append({
+                    "type": "line",
+                    "orientation": "vertical",
+                    "time": formatted_time,
+                    "label": "Mount (log)",
+                    "linetype": "solid",
+                    "color": "pink"
+                })
+                x_mount = pd.to_datetime(time, format='%H:%M:%S.%f')
 
             # Device Sleep
             if 'shellapp' in event.lower() and 'going to sleep' in event.lower():
@@ -159,7 +170,7 @@ def convert_states_to_json(log_csv, states_fpath):
                 if state.lower() == "start":
                     dict[len(dict)-1]["color"] = "green"
                 elif state.lower() == "mount":  # Assuming "mount" indicates the start of a mounted period
-                    dict[len(dict)-1]["color"] = "blue"
+                    dict[len(dict)-1]["color"] = "pink"
                     x_mount = pd.Timestamp(time)  # Update mount x value
                 elif state.lower() == "idle":
                     dict[len(dict)-1]["color"] = "gray"
