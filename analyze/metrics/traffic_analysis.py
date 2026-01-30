@@ -13,6 +13,11 @@ Assumptions:
 
 Example:
   python traffic_analyze.py --csv traffic.csv --device-ip 192.168.2.2 --uplink --downlink --top 10
+
+To analyse for specific time window, add network_metrics_input.txt in the traffic.csv file location
+and give the windows like the below example format
+22:43:02.0 - 22:43:10.0
+22:45:08.0 - 22:45:14.0
 """
 
 from __future__ import annotations
@@ -175,6 +180,27 @@ def analyze_uplink(df: pd.DataFrame, device_ip: str, top_n: int, ip_hostname_map
         ip_hostname_map=ip_hostname_map,
     )
 
+def load_device_ip_from_ip_json(csv_path: str) -> str:
+    """
+    Load device_ip from ip.json in the same directory as traffic.csv
+    """
+    base_dir = os.path.dirname(os.path.abspath(csv_path))
+    ip_json_path = os.path.join(base_dir, "ip.json")
+
+    if not os.path.isfile(ip_json_path):
+        raise FileNotFoundError(f"ip.json not found next to traffic.csv: {ip_json_path}")
+
+    with open(ip_json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # accept both naming conventions
+    device_ip = (data.get("device_ip") or data.get("device") or "").strip()
+
+    if not device_ip:
+        raise ValueError("device_ip missing or empty in ip.json (expected key: device or device_ip)")
+
+    return device_ip
+
 
 
 def analyze_downlink(df: pd.DataFrame, device_ip: str, top_n: int, ip_hostname_map: dict) -> None:
@@ -194,7 +220,7 @@ def analyze_downlink(df: pd.DataFrame, device_ip: str, top_n: int, ip_hostname_m
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
     p.add_argument("--csv", default="traffic.csv", help="Path to traffic.csv")
-    p.add_argument("--device-ip", required=True, help="Device IP (e.g., 192.168.2.2)")
+    p.add_argument("--device-ip", default=None, help="Optional override; otherwise read from ip.json")
     p.add_argument("--top", type=int, default=10, help="Top N IPs to display (default: 10)")
     p.add_argument("--uplink", action="store_true", help="Include uplink analysis")
     p.add_argument("--downlink", action="store_true", help="Include downlink analysis")
@@ -294,14 +320,24 @@ def run_report(df_slice: pd.DataFrame, title: str, args, ip_hostname_map: dict) 
 
 def main() -> int:
     args = parse_args()
-
+    if not args.device_ip:
+        args.device_ip = load_device_ip_from_ip_json(args.csv)
     out_txt = get_output_txt_path(args.csv)
 
     buf = io.StringIO()
     with redirect_stdout(buf), redirect_stderr(buf):
         try:
+            
             traffic_tz = load_traffic_timezone(args.csv)
             df = load_traffic(args.csv, traffic_tz)
+
+            print("Top src_ip:", df["src_ip"].value_counts().head(10).to_string())
+            print("Top dst_ip:", df["dst_ip"].value_counts().head(10).to_string())
+            print("-" * 60)
+
+            print(f"Device IP (from ip.json): {args.device_ip}")
+            print("-" * 60)
+
 
             print(f"Traffic timezone (from ip.json): {traffic_tz}")
             print("-" * 60)
