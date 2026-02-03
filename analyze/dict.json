@@ -259,7 +259,7 @@
     "interval_stop_strings": ["imx471", "CAM_STOP_DEV"]
   },
   {
-    "label": "B\\&W Cameras",
+    "label": "B\\&W Cameras OG01A1B",
     "key": "OG01A1B",
     "color": "yellow",
     "count": 2,
@@ -267,7 +267,7 @@
     "interval_stop_strings": ["og01a1b", "CAM_STOP_DEV"]
   },
   {
-    "label": "B\\&W Cameras",
+    "label": "B\\&W Cameras OV7251",
     "key": "OV7251",
     "color": "darkred",
     "count": 2,
@@ -275,7 +275,7 @@
     "interval_stop_strings": ["ov7251", "CAM_STOP_DEV"]
   },
   {
-    "label": "B\\&W Cameras",
+    "label": "B\\&W Cameras OG0VE1B",
     "key": "OG0VE1B",
     "color": "darkblue",
     "count": 4,

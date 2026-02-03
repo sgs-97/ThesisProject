@@ -134,6 +134,22 @@ def load_logfile_csv(logfile_path, normalize_timestamps=False):
 
 import json
 
+def validate_dict_json(parsing_conditions):
+    """
+    Validate that all labels in dict.json are unique.
+    Raises ValueError if duplicates are found.
+    """
+    
+    labels = [cond["label"] for cond in parsing_conditions]
+    duplicates = [label for label in set(labels) if labels.count(label) > 1]
+    
+    if duplicates:
+        raise ValueError(
+            f"❌ ERROR: Duplicate labels found in dict.json: {duplicates}\n"
+            f"All 'label' values must be unique. If tracking multiple instances of the same sensor,\n"
+            f"append identifiers to make labels unique (e.g., 'RGB Cameras 0x10', 'RGB Cameras 0x20')"
+        )
+
 def extract_sensor_events(df, json_file_path):
     """
     Extract sensor events from a DataFrame based on parsing conditions defined in a JSON file.
@@ -143,6 +159,11 @@ def extract_sensor_events(df, json_file_path):
     """
     with open(json_file_path, 'r') as json_file:
         parsing_conditions = json.load(json_file)
+    
+    # Validate unique labels
+    # Adding this check as the code expects unique label 
+    # else it is replacing existing label. ERROR occured for IMX471 in Quest Pro
+    validate_dict_json(parsing_conditions)
 
     sensor_events = {}
     colors = []
