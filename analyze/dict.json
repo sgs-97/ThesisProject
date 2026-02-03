@@ -179,7 +179,7 @@
     "interval_stop_strings": ["Stop ov7251 streaming 0x8"]
   },
   {
-    "label": "RGB Cameras",
+    "label": "IMX471 0x10",
     "key": "imx471",
     "color": "violet",
     "count": 1,
