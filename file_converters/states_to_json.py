@@ -234,30 +234,30 @@ def convert_states_to_json(log_csv, states_fpath):
                 "size": 12,
                 "color": "gray"
             })
-        if x_mount and x_unmount:
-            # Horizontal line from mount to unmount (Mounted Period)
-            dict.append({
-                "type": "rect",
-                "t0": x_mount.strftime('%H:%M:%S.%f'),
-                "t1": x_unmount.strftime('%H:%M:%S.%f'),
-                "y0": -0.03,
-                "y1": 1.03,
-                "label": "Device Mounted (lap)",
-                "fillcolor": "green",
-                "opacity": 0.1,
-                "line_width": 1
-            })
-            # Annotation for the mounted period
-            dict.append({
-                "type": "annotation",
-                "t": (x_mount + (x_unmount-x_mount)/2).strftime('%H:%M:%S.%f'),  # Center the annotation
-                "y": 0.02,  # Adjust y position to avoid overlap with the rect
-                # "yshift": -10,
-                "text": "Device Mounted (lap)",
-                "showarrow": False,
-                "size": 12,
-                "color": "green"
-            })
+        # if x_mount and x_unmount:
+        #     # Horizontal line from mount to unmount (Mounted Period)
+        #     dict.append({
+        #         "type": "rect",
+        #         "t0": x_mount.strftime('%H:%M:%S.%f'),
+        #         "t1": x_unmount.strftime('%H:%M:%S.%f'),
+        #         "y0": -0.03,
+        #         "y1": 1.03,
+        #         "label": "Device Mounted (lap)",
+        #         "fillcolor": "green",
+        #         "opacity": 0.1,
+        #         "line_width": 1
+        #     })
+        #     # Annotation for the mounted period
+        #     dict.append({
+        #         "type": "annotation",
+        #         "t": (x_mount + (x_unmount-x_mount)/2).strftime('%H:%M:%S.%f'),  # Center the annotation
+        #         "y": 0.02,  # Adjust y position to avoid overlap with the rect
+        #         # "yshift": -10,
+        #         "text": "Device Mounted (lap)",
+        #         "showarrow": False,
+        #         "size": 12,
+        #         "color": "green"
+        #     })
 
 
 
