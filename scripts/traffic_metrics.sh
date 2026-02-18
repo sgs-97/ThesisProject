@@ -42,6 +42,24 @@ fi
 #     exit 1
 # fi
 
+# ----------- RUN CDF FIRST -----------
+echo "----------------------------------------"
+echo "Running CDF analysis..."
+
+CDF_SCRIPT="$SCRIPT_DIR/traffic_cdf_by_hostname.sh"
+
+if [ ! -f "$CDF_SCRIPT" ]; then
+    echo "ERROR: traffic_cdf_by_hostname.sh not found at $CDF_SCRIPT"
+    exit 1
+fi
+
+# Pass experiment directory (folder containing traffic.csv)
+EXP_DIR="$(dirname "$TRAFFIC_PATH")"
+
+"$CDF_SCRIPT" "$EXP_DIR"
+
+echo "CDF analysis completed."
+echo "----------------------------------------"
 
 # ----------- MODE HANDLING -----------
 UPLINK_FLAG=""
