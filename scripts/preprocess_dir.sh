@@ -13,6 +13,7 @@ function show_help() {
     echo
     echo "Options:"
     echo "  --skip_on_exist   Skip asking for files if they already exist in the directory"
+    echo "  --skip_traffic     Skip network traffic (pcapng) preprocessing"
     echo "  -h, --help         Show this help message and exit" # Keep as it is
     echo "  -v, --verbose    Enable verbose output"
     echo
@@ -40,6 +41,9 @@ function main() {
                 ;;
             --skip_on_exist)
                 skip_on_exist=true # Set a flag to skip asking for files
+                ;;
+            --skip_traffic)
+                skip_traffic=true
                 ;;
             *)
                 print_error "Unknown option: $1"
@@ -164,7 +168,11 @@ function main() {
     echo "dir = $dir"
     echo "SCRIPT_DIR = $SCRIPT_DIR"
 
-    if ls "$dir"/*.pcapng 1> /dev/null 2>&1; then
+    if [[ "${skip_traffic:-false}" == true ]]; then
+      print_info "Skipping traffic preprocessing (--skip_traffic flag set)."
+    elif [[ "$skip_on_exist" == true ]] && ls "$dir"/traffic.csv 1> /dev/null 2>&1; then
+      print_info "Skipping traffic preprocessing as traffic.csv already exists in '$dir'."
+    elif ls "$dir"/*.pcapng 1> /dev/null 2>&1; then
       python3 "$SCRIPT_DIR"/../file_converters/pcap_to_csv.py "$dir" $VERBOSE_LITERAL
     fi
 
