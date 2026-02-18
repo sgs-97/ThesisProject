@@ -384,9 +384,9 @@ if __name__ == "__main__":
                         help="Path to ip.json. Default: ../io_files/ip.json")
     parser.add_argument("--hosts_out", default=None,
                     help="Write unique IP -> hostname list to this text file (excludes router/device).")
-    parser.add_argument("--rate_window_ms", type=int, default=500,
+    parser.add_argument("--rate_window_ms", type=int, default=100,
                     help="Rolling window size in milliseconds for packet/byte rate. Default: 500")
-    parser.add_argument("--rate_step_ms", type=int, default=50,
+    parser.add_argument("--rate_step_ms", type=int, default=100,
                     help="Time bin step in milliseconds for resampling. Default: 50")
 
 
