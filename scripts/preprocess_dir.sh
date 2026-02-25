@@ -173,6 +173,7 @@ function main() {
     elif [[ "$skip_on_exist" == true ]] && ls "$dir"/traffic.csv 1> /dev/null 2>&1; then
       print_info "Skipping traffic preprocessing as traffic.csv already exists in '$dir'."
     elif ls "$dir"/*.pcapng 1> /dev/null 2>&1; then
+      bash "$SCRIPT_DIR/traffic_analysis_script.sh" "$dir/ip.json"
       python3 "$SCRIPT_DIR"/../file_converters/pcap_to_csv.py "$dir" $VERBOSE_LITERAL
     fi
 
