@@ -43,10 +43,10 @@ def extract_packet_data(pcapng_path: str):
 
             try:
                 timestamp = pd.to_datetime(
-                    float(pkt.sniff_timestamp),  # Pyshark version of pkt.frame_info.time_epoch
+                    float(pkt.sniff_timestamp),
                     unit="s",
                     utc=True
-                ).strftime("%H:%M:%S.%f")[:-3]
+                ).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
                 # Get source and destination IPs from various layers
                 src_ip = ""
@@ -104,7 +104,64 @@ def extract_packet_data(pcapng_path: str):
                 else:
                     bytes_len = 0
 
-                                # ---------------- mark important vs non-important (no filtering) ----------------
+                # --- packet info string ---
+                info = ""
+                try:
+                    if hasattr(pkt, "dhcp"):
+                        msg_type = getattr(pkt.dhcp, "option_dhcp", None)
+                        dhcp_type_map = {
+                            "1": "DHCP Discover",
+                            "2": "DHCP Offer",
+                            "3": "DHCP Request",
+                            "5": "DHCP ACK",
+                            "6": "DHCP NAK",
+                            "7": "DHCP Release",
+                            "8": "DHCP Inform",
+                        }
+                        info = dhcp_type_map.get(str(msg_type), f"DHCP type={msg_type}")
+
+                    elif hasattr(pkt, "wlan"):
+                        fc_type = getattr(pkt.wlan, "fc_type_subtype", None)
+                        wlan_type_map = {
+                            "0":  "Association Request",
+                            "1":  "Association Response",
+                            "2":  "Reassociation Request",
+                            "3":  "Reassociation Response",
+                            "4":  "Probe Request",
+                            "5":  "Probe Response",
+                            "8":  "Beacon",
+                            "11": "Authentication",
+                            "12": "Deauthentication",
+                            "10": "Disassociation",
+                        }
+                        info = wlan_type_map.get(str(fc_type), f"802.11 subtype={fc_type}")
+
+                    elif hasattr(pkt, "tcp"):
+                        syn = getattr(pkt.tcp, "flags_syn", "0")
+                        fin = getattr(pkt.tcp, "flags_fin", "0")
+                        rst = getattr(pkt.tcp, "flags_reset", "0")
+                        ack = getattr(pkt.tcp, "flags_ack", "0")
+                        psh = getattr(pkt.tcp, "flags_push", "0")
+                        flags = []
+                        if syn == "1": flags.append("SYN")
+                        if ack == "1": flags.append("ACK")
+                        if fin == "1": flags.append("FIN")
+                        if rst == "1": flags.append("RST")
+                        if psh == "1": flags.append("PSH")
+                        info = "TCP " + " ".join(flags) if flags else "TCP"
+
+                    elif hasattr(pkt, "dns"):
+                        qr = getattr(pkt.dns, "flags_response", "0")
+                        info = "DNS Response" if qr == "1" else "DNS Query"
+
+                    elif hasattr(pkt, "arp"):
+                        op = getattr(pkt.arp, "opcode", "")
+                        info = "ARP Reply" if str(op) == "2" else "ARP Request"
+
+                except Exception:
+                    info = ""
+                # ---------------- mark important vs non-important (no filtering) ----------------
+                # IMPORTANT INFO - DHCP Discover, DHCP Offer / Request / ACK, ARP Probe / Reply, DNS Query, TCP SYN should always be marked as important
                 important = True
                 reason = ""
 
@@ -179,7 +236,8 @@ def extract_packet_data(pcapng_path: str):
                     protocol,
                     bytes_len,
                     important,
-                    reason
+                    reason,
+                    info
                 ])
 
             except Exception as e:
@@ -196,7 +254,7 @@ def write_csv(records, output_csv: str):
     """
     with open(output_csv, mode="w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["timestamp", "src_ip", "dst_ip", "protocol","bytes","important", "non_important_reason"])
+        writer.writerow(["timestamp", "src_ip", "dst_ip", "protocol","bytes","important", "non_important_reason","info"])
         writer.writerows(records)
 
 def write_unique_protocol_trees(protocol_trees, output_txt: str):

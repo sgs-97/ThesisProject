@@ -921,34 +921,20 @@ def get_payload_protocols(ip_map: dict) -> set:
 
 def normalize_traffic_timestamp(traffic_df: pd.DataFrame, ip_map: dict, ts_col: str = "timestamp") -> pd.DataFrame:
     traffic_df = traffic_df.copy()
-    traffic_df[ts_col] = pd.to_datetime(traffic_df[ts_col], errors="coerce")
+
+    traffic_df[ts_col] = pd.to_datetime(traffic_df[ts_col], utc=True, errors="coerce")
     traffic_df = traffic_df.dropna(subset=[ts_col]).copy()
 
-    if traffic_df[ts_col].dt.tz is None:
-        traffic_df[ts_col] = traffic_df[ts_col].dt.tz_localize('UTC', ambiguous='NaT')
-    
-    default_tz = "America/Chicago"
-    raw_tz = ip_map.get("traffic_timezone")
-    target_tz = str(raw_tz or default_tz)
-
-    try:
-        ZoneInfo(target_tz)  # validate IANA tz
-    except Exception:
-        print_warning(
-            f"Invalid traffic_timezone '{target_tz}'. Falling back to '{default_tz}'."
-        )
-        target_tz = default_tz
-
+    target_tz = ip_map.get("traffic_timezone", "America/Chicago")
     traffic_df[ts_col] = traffic_df[ts_col].dt.tz_convert(target_tz)
 
     traffic_df = traffic_df.sort_values(ts_col)
 
-    # force same-day baseline
+    # Strip tz and normalize date to 1900-01-01 to match logfile
     traffic_df[ts_col] = traffic_df[ts_col].apply(
-        lambda t: t.replace(year=1900, month=1, day=1) if pd.notna(t) else t
+        lambda t: t.replace(year=1900, month=1, day=1, tzinfo=None) if pd.notna(t) else t
     )
 
-    traffic_df[ts_col] = traffic_df[ts_col].dt.tz_localize(None)
     return traffic_df
 
 def prepare_traffic_df(traffic_csv_path: str, ip_map: dict):
@@ -964,8 +950,6 @@ def prepare_traffic_df(traffic_csv_path: str, ip_map: dict):
         traffic_df["protocol"] = ""
 
     # payload_protocols = get_payload_protocols(ip_map)
-    uplink = bool(ip_map.get("uplink", 0))
-    downlink = bool(ip_map.get("downlink", 0))
     device_ip = ip_map.get("device")
     router_ip = ip_map.get("router")
 
@@ -977,19 +961,7 @@ def prepare_traffic_df(traffic_csv_path: str, ip_map: dict):
         traffic_df.loc[traffic_df["src_ip"] == device_ip, "direction"] = "uplink"
         traffic_df.loc[traffic_df["dst_ip"] == device_ip, "direction"] = "downlink"
    
-    # direction filtering + ip_pair
-    if uplink and not downlink:
-        traffic_df = traffic_df[traffic_df["src_ip"] == device_ip].copy()
-        traffic_df["ip_pair"] = list(zip(traffic_df["src_ip"], traffic_df["dst_ip"]))
-    elif downlink and not uplink:
-        traffic_df = traffic_df[traffic_df["dst_ip"] == device_ip].copy()
-        traffic_df["ip_pair"] = list(zip(traffic_df["src_ip"], traffic_df["dst_ip"]))
-    else:
-        traffic_df["ip_pair"] = traffic_df.apply(
-            lambda r: tuple(sorted([r["src_ip"], r["dst_ip"]])),
-            axis=1
-        )
-    return traffic_df, uplink, downlink, device_ip, router_ip 
+    return traffic_df, device_ip, router_ip 
 
 def build_ip_name_map(ip_map: dict) -> dict:
     # reverse map: ip -> name (router/device/etc)

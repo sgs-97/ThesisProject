@@ -72,7 +72,9 @@ def plot_additional_components(fig, additional_components, graph_start_time):
                     ),
                     name=component.get("label", "Line"),
                     showlegend="label" in component,
-                )
+                    
+                ),
+                secondary_y=False
             )
         elif component["type"] == "point":
             fig.add_trace(
@@ -83,7 +85,8 @@ def plot_additional_components(fig, additional_components, graph_start_time):
                     marker=dict(color=component.get("color", "black"), size=component.get("size", 5)),
                     name=component.get("label", "Point"),
                     showlegend="label" in component,
-                )
+                ),
+                secondary_y=False
             )
         elif component["type"] == "rect":
             fig.add_shape(
@@ -111,8 +114,21 @@ def plot_additional_components(fig, additional_components, graph_start_time):
             )
 
 
+def find_dhcp_discover_time(traffic_df):
+    """
+    Find the timestamp of the first DHCP Discover packet.
+    Returns a pandas Timestamp or None.
+    """
+    if "info" not in traffic_df.columns:
+        return None
+    mask = traffic_df["info"].astype(str).str.contains("DHCP Discover", case=False, na=False)
+    matches = traffic_df[mask]
+    if matches.empty:
+        return None
+    return matches["timestamp"].min()
+
 def html_page_with_components(output_path, fig, title, custom_html=""):
-    fig.update_layout(height=900)
+    fig.update_layout(height=500)
     plot_html = fig.to_html(
         full_html=False,
         include_plotlyjs=True,
@@ -155,8 +171,7 @@ def html_page_with_components(output_path, fig, title, custom_html=""):
 def build_traffic_fig(
     traffic_df,
     ip_name_map,
-    uplink,
-    downlink,
+    device_ip,
     rate_window_ms,
     rate_step_ms,
     graph_start_time,
@@ -170,59 +185,128 @@ def build_traffic_fig(
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    grouped = traffic_df.set_index("timestamp").groupby("ip_pair_normalized")
+    # Assign a consistent color per remote host
+    color_palette = [
+        "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+        "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
+    ]
+    host_colors = {}
+    byte_color_palette = [
+        "#e6550d", "#31a354", "#756bb1", "#636363", "#6baed6",
+        "#fd8d3c", "#74c476", "#9e9ac8", "#969696", "#3182bd",
+    ]
 
-    for pair, g in grouped:
+    def get_byte_color(host):
+        idx = list(host_colors.keys()).index(host)
+        return byte_color_palette[idx % len(byte_color_palette)]
+
+    color_idx = 0
+
+    def get_host_color(host):
+        nonlocal color_idx
+        if host not in host_colors:
+            host_colors[host] = color_palette[color_idx % len(color_palette)]
+            color_idx += 1
+        return host_colors[host]
+
+    grouped = traffic_df.set_index("timestamp").groupby("remote_ip")
+
+    for remote_ip, g in grouped:
         g = g.sort_index()
 
-        # Packet rate
-        pkt_bins = g.assign(pkt=1).resample(step)["pkt"].sum().fillna(0.0)
-        pkt_rate_hz = pkt_bins.rolling(win, min_periods=1).sum() / win_seconds
-        if pkt_rate_hz.sum() == 0:
-            continue
+        remote_host = helpers.ip_to_hostname(remote_ip, ip_name_map)
+        color = get_host_color(remote_host)
+        legend_group = f"group_{remote_host}"
 
-        host1 = helpers.ip_to_hostname(pair[0], ip_name_map)
-        host2 = helpers.ip_to_hostname(pair[1], ip_name_map)
+        # Split into uplink and downlink subsets
+        g_up = g[g["src_ip"] == device_ip]
+        g_dn = g[g["dst_ip"] == device_ip]
 
-        if uplink and not downlink:
-            label = f"{host1} → {host2}"
-            remote_host = host2
-        elif downlink and not uplink:
-            label = f"{host2} → {host1}"
-            remote_host = host1
-        else:
-            label = f"{host1} ↔ {host2}"
-            remote_host = label
+        def compute_pkt_rate(subset):
+            if subset.empty:
+                return None
+            bins = subset.assign(pkt=1).resample(step)["pkt"].sum().fillna(0.0)
+            rate = bins.rolling(win, min_periods=1).sum() / win_seconds
+            return rate if rate.sum() > 0 else None
 
-        fig.add_trace(
-            go.Scatter(
-                x=pkt_rate_hz.index,
-                y=pkt_rate_hz.values,
-                mode="lines",
-                name=f"{label} (pkt)",
-                hovertemplate=f"<b>{remote_host}</b><br>Time=%{{x}}<br>Packet rate=%{{y:.2f}} Hz<extra></extra>",
-            ),
-            secondary_y=False,
-        )
+        def compute_byte_rate(subset):
+            if subset.empty:
+                return None
+            bins = subset.resample(step)["bytes"].sum().fillna(0.0)
+            rate = bins.rolling(win, min_periods=1).sum() / win_seconds / (1024.0 * 1024.0)
+            return rate if rate.sum() > 0 else None
 
-        # Byte rate
-        byte_bins = g.resample(step)["bytes"].sum().fillna(0.0)
-        byte_rate_mbps = byte_bins.rolling(win, min_periods=1).sum() / win_seconds / (1024.0 * 1024.0)
-        if byte_rate_mbps.sum() == 0:
-            continue
+        pkt_up = compute_pkt_rate(g_up)
+        pkt_dn = compute_pkt_rate(g_dn)
+        # ✅ Always register the host color before calling get_byte_color
+        byte_color = get_byte_color(remote_host)
+        byte_up = compute_byte_rate(g_up)
+        byte_dn = compute_byte_rate(g_dn)
 
-        fig.add_trace(
-            go.Scatter(
-                x=byte_rate_mbps.index,
-                y=byte_rate_mbps.values,
-                mode="lines",
-                name=f"{label} (MB/s)",
-                line=dict(dash="dot"),
-                hovertemplate=f"<b>{remote_host}</b><br>Time=%{{x}}<br>Byte rate=%{{y:.4f}} MB/s<extra></extra>",
-            ),
-            secondary_y=True,
-        )
+        # --- Uplink packet rate (positive, solid) ---
+        if pkt_up is not None:
+            fig.add_trace(
+                go.Scatter(
+                    x=pkt_up.index,
+                    y=pkt_up.values,
+                    mode="lines",
+                    name=f"{remote_host} (pkt)",
+                    legendgroup=f"{legend_group}_pkt",
+                    # legendgrouptitle=dict(text=f"{remote_host} (pkt)") if pkt_up is not None else None,
+                    showlegend=True,
+                    line=dict(color=color, width=1.5),
+                    hovertemplate=f"<b>{remote_host}</b> ↑ uplink<br>Time=%{{x}}<br>Packet rate=%{{y:.2f}} Hz<extra></extra>",
+                ),
+                secondary_y=False
+            )
 
+        # --- Downlink packet rate (negative, solid) ---
+        if pkt_dn is not None:
+            fig.add_trace(
+                go.Scatter(
+                    x=pkt_dn.index,
+                    y=-pkt_dn.values,
+                    mode="lines",
+                    name=f"{remote_host} (pkt)",
+                    legendgroup=f"{legend_group}_pkt",
+                    showlegend=False,
+                    line=dict(color=color, width=1.5),
+                    hovertemplate=f"<b>{remote_host}</b> ↓ downlink<br>Time=%{{x}}<br>Packet rate=%{{y:.2f}} Hz<extra></extra>",
+                ),
+                secondary_y=False
+            )
+
+        # --- Uplink byte rate (positive, dotted) ---
+        if byte_up is not None:
+            fig.add_trace(
+                go.Scatter(
+                    x=byte_up.index,
+                    y=byte_up.values,
+                    mode="lines",
+                    name=f"{remote_host} (MB/s)",
+                    legendgroup=f"{legend_group}_bytes",
+                    showlegend=True,
+                    line=dict(color=get_byte_color(remote_host), width=1, dash="dot"),
+                    hovertemplate=f"<b>{remote_host}</b> ↑ uplink<br>Time=%{{x}}<br>Byte rate=%{{y:.4f}} MB/s<extra></extra>",
+                ),
+                secondary_y=True
+            )
+
+        # --- Downlink byte rate (negative, dotted) ---
+        if byte_dn is not None:
+            fig.add_trace(
+                go.Scatter(
+                    x=byte_dn.index,
+                    y=-byte_dn.values,
+                    mode="lines",
+                    name=f"{remote_host} (MB/s)",
+                    legendgroup=f"{legend_group}_bytes",
+                    showlegend=False,
+                    line=dict(color=get_byte_color(remote_host), width=1, dash="dot"),
+                    hovertemplate=f"<b>{remote_host}</b> ↓ downlink<br>Time=%{{x}}<br>Byte rate=%{{y:.4f}} MB/s<extra></extra>",
+                ),
+                secondary_y=True
+            )
     fig.update_layout(
         title=title,
         xaxis=dict(
@@ -231,18 +315,64 @@ def build_traffic_fig(
             tickformat="%H:%M:%S.%3f",
             hoverformat="%H:%M:%S.%3f",
         ),
+        yaxis=dict(
+            title=f"↑ Uplink / ↓ Downlink — Packet rate (Hz, {rate_window_ms} ms window)",
+            zeroline=True, zerolinecolor="black", zerolinewidth=1.5,
+        ),
         height=600,
         legend=dict(
-            orientation="h",
-            y=-0.25,
-            x=0.5,
-            xanchor="center",
-            font=dict(size=9),
+            orientation="v",
+            x=1.05,
+            y=1,
+            xanchor="left",
+            yanchor="top",
+            font=dict(size=12),
         ),
     )
-    fig.update_yaxes(title_text=f"Packet rate (Hz, {rate_window_ms} ms window)", secondary_y=False)
-    fig.update_yaxes(title_text=f"Byte rate (MB/s, {rate_window_ms} ms window)", secondary_y=True)
-    # --- Time bin boundary lines ---
+
+    fig.update_yaxes(
+    title_text=f"↑ Uplink / ↓ Downlink — Packet rate (Hz, {rate_window_ms} ms window)",
+    secondary_y=False
+    )
+
+    fig.update_yaxes(
+        title_text=f"↑ Uplink / ↓ Downlink — Byte rate (MB/s, {rate_window_ms} ms window)",
+        secondary_y=True
+    )
+
+    # ---------------------------------------------------
+    # LOCK AXIS RANGES TO PREVENT RESCALING ON LEGEND TOGGLE
+    # ---------------------------------------------------
+
+    all_pkt_vals = []
+    all_byte_vals = []
+
+    for trace in fig.data:
+        if trace.y is None:
+            continue
+
+        if "(pkt)" in str(trace.name):
+            all_pkt_vals.extend(np.abs(trace.y))
+
+        if "(MB/s)" in str(trace.name):
+            all_byte_vals.extend(np.abs(trace.y))
+
+    max_pkt = max(all_pkt_vals) if all_pkt_vals else 1
+    max_byte = max(all_byte_vals) if all_byte_vals else 1
+
+    # Make symmetric around zero
+    fig.update_yaxes(
+        range=[-max_pkt, max_pkt],
+        secondary_y=False
+        )
+
+    fig.update_yaxes(
+        range=[-max_byte, max_byte],
+        secondary_y=True
+        )
+
+
+    # Time bin boundary lines
     all_ys = []
     for trace in fig.data:
         try:
@@ -251,8 +381,8 @@ def build_traffic_fig(
                 all_ys.append(np.nanmax(trace.y))
         except Exception:
             continue
-    y_min = (min(all_ys) - 0.05) if all_ys else -0.1
-    y_max = (max(all_ys) + 0.05) if all_ys else 1.1
+    y_min = (min(all_ys) - 0.05) if all_ys else -1.0
+    y_max = (max(all_ys) + 0.05) if all_ys else 1.0
 
     bin_times = pd.date_range(start=graph_start_time, end=graph_end_time, freq=f"{rate_step_ms}ms")
     first = True
@@ -262,20 +392,35 @@ def build_traffic_fig(
                 x=[bt, bt],
                 y=[y_min, y_max],
                 mode="lines",
-                line=dict(color="black", width=0.1),
-                opacity=0.5,
+                line=dict(color="grey", width=0.5),
+                opacity=0.75,
                 name="Time bins",
                 legendgroup="time_bins",
                 showlegend=first,
             ),
-            secondary_y=False,
+            secondary_y=False
         )
         first = False
+    # --- DHCP Discover annotation: proof of capture from network start ---
+    dhcp_discover_ts = find_dhcp_discover_time(traffic_df)
+    if dhcp_discover_ts is not None:
+        fig.add_trace(
+            go.Scatter(
+                x=[dhcp_discover_ts, dhcp_discover_ts],
+                y=[y_min, y_max],
+                mode="lines",
+                line=dict(color="green", width=2, dash="dash"),
+                name="DHCP Discover (capture origin)",
+                legendgroup="dhcp_discover",
+                showlegend=True,
+            ),
+            secondary_y=False
+        )
+
     plot_additional_components(fig, user_events, graph_start_time)
     fig.update_xaxes(type="date")
 
     return fig
-
 
 if __name__ == "__main__":
     script_name = os.path.basename(__file__)
@@ -338,27 +483,26 @@ if __name__ == "__main__":
     ip_map = helpers.load_ip_map(ip_json_path)
     ip_name_map = helpers.build_ip_name_map(ip_map)
 
-    traffic_df, uplink, downlink, device_ip, router_ip = helpers.prepare_traffic_df(
+    traffic_df, device_ip, router_ip = helpers.prepare_traffic_df(
         traffic_csv_path, ip_map
     )
 
-    # Directional pair assignment
-    if uplink and not downlink:
-        traffic_df = traffic_df[traffic_df["src_ip"] == device_ip].copy()
-    elif downlink and not uplink:
-        traffic_df = traffic_df[traffic_df["dst_ip"] == device_ip].copy()
-
-    traffic_df["ip_pair"] = list(zip(traffic_df["src_ip"], traffic_df["dst_ip"]))
-    traffic_df["ip_pair_normalized"] = traffic_df["ip_pair"].apply(lambda x: tuple(sorted(x)))
-
+    traffic_df["remote_ip"] = traffic_df.apply(
+        lambda r: r["dst_ip"] if r["src_ip"] == device_ip else r["src_ip"], axis=1
+    )
     # Write network metrics
     metrics_path = os.path.join(os.path.dirname(traffic_csv_path), "network_traffic_metrics.txt")
     helpers.write_network_traffic_metrics(traffic_df, metrics_path)
+
+    print("raw traffic timestamp sample:", traffic_df["timestamp"].head(3).tolist())
 
     # Normalize timestamps
     traffic_df = helpers.normalize_traffic_timestamp(traffic_df, ip_map, ts_col="timestamp")
     traffic_df["timestamp"] = pd.to_datetime(traffic_df["timestamp"], errors="coerce")
     traffic_df = traffic_df.dropna(subset=["timestamp"]).sort_values("timestamp").copy()
+
+    print("graph_start_time:", graph_start_time)
+    print("traffic_df timestamp range:", traffic_df["timestamp"].min(), "->", traffic_df["timestamp"].max())
 
     # Filter to important packets only
     if "important" in traffic_df.columns:
@@ -382,8 +526,7 @@ if __name__ == "__main__":
     fig = build_traffic_fig(
         traffic_df=traffic_df,
         ip_name_map=ip_name_map,
-        uplink=uplink,
-        downlink=downlink,
+        device_ip=device_ip,
         rate_window_ms=args.rate_window_ms,
         rate_step_ms=args.rate_step_ms,
         graph_start_time=graph_start_time,

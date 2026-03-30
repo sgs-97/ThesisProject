@@ -16,6 +16,7 @@ function show_help() {
     echo "  --include_video    Include timestamped video in the output HTML (if found inside the directory where the graph is going to be placed). Default: False"
     εψηο "  --skip_hmd_bound   Skip HMD through boundary calculation of times and output CSV"
     echo "  --skip_on_exist    Skip generating files that already exist in the subdirectory"
+    echo "  --skip_traffic_analysis Skip traffic analysis"
     echo "  -h, --help         Show this help message and exit"
     echo
 }

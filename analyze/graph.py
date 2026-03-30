@@ -128,9 +128,9 @@ def sensor_events_fig(sensor_events, colors, sensor_names, df, user_events=None)
         for j, event in enumerate(events):
             if event['Type'] == 'Start':
                 if not active:
-                    if j == 0 and event['Time'] > df['Time'].min():
-                        plot_data.append({'Time': df['Time'].min(), 'Y': 0})
-                        plot_data.append({'Time': event['Time'] - pd.Timedelta(milliseconds=1), 'Y': 0})
+                    # if j == 0 and event['Time'] > df['Time'].min():
+                    #     plot_data.append({'Time': df['Time'].min(), 'Y': 0})
+                    #     plot_data.append({'Time': event['Time'] - pd.Timedelta(milliseconds=1), 'Y': 0})
                     if j > 0 and events[j - 1]['Type'] == 'Stop':
                         plot_data.append({'Time': events[j - 1]['Time'] + pd.Timedelta(milliseconds=1), 'Y': 0})
                         plot_data.append({'Time': event['Time'] - pd.Timedelta(milliseconds=1), 'Y': 0})
@@ -179,7 +179,7 @@ def generate_video_html(video_path):
 
 def html_page_with_components(plotly_graph_file, fig, title, custom_html):
     fig.update_layout(
-        height=900
+        height=500
     )
     plot_html = fig.to_html(
         full_html=False,
@@ -525,8 +525,7 @@ if __name__ == "__main__":
                            tickformat='%H:%M:%S.%3f',  
                             hoverformat='%H:%M:%S.%3f'   ),
         yaxis_title='Sensor Activity (1=Active, 0=Inactive)',
-        yaxis=dict(range=[-0.1, 1.1], tickvals=[0, 1], ticktext=['Inactive', 'Active']),
-        height=900
+        yaxis=dict(range=[-0.1, 1.1], tickvals=[0, 1], ticktext=['Inactive', 'Active'])
     )
 
     html_page_with_components(plotly_graph_file, fig, title, video_html)

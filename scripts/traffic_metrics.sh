@@ -97,9 +97,6 @@ echo "----------------------------------------"
 CMD=(
   python3 "$PY_SCRIPT"
   --csv "$TRAFFIC_PATH"
-  --top 2
-  $UPLINK_FLAG
-  $DOWNLINK_FLAG
 )
 
 # Only pass device-ip if provided
